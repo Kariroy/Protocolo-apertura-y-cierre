@@ -707,25 +707,31 @@ function show(scr){ closePopovers(); SCREENS.forEach(s=>$(s).classList.add("hidd
   $("home-icons").style.display = (scr==="home")?"flex":"none";
   $("progbar").classList.add("hidden");
   document.querySelector(".app").classList.toggle("wide", scr==="config" || scr==="regview" || scr==="count");
+  if(scr==="count" && count && count.reg){ if(!livePoll) livePoll=setInterval(pollLive,LIVE_MS); }
+  else if(livePoll){ clearInterval(livePoll); livePoll=null; }
 }
 
 /* ---------- conteo (tabla editable estilo Sheets) ---------- */
 let count=null; // { rows:[{...item, cantidad_actual, _seen}] }
 async function startCount(){
   if(!items.length){ toast("No hay ítems cargados. Revisá Configuración."); return; }
-  // si ya se guardó stock hoy, la planilla arranca con esas cantidades (las de días anteriores no)
-  let prevQty=new Map();
-  try{ const reg=await todayRegistro();
-    if(reg){ const its=await loadRegistroItems(reg);
-      its.forEach(x=>{ if(num(x.cantidad_actual)>0) prevQty.set((x.item||"").trim().toLowerCase(), num(x.cantidad_actual)); }); }
-  }catch(e){ toast("No se pudo leer el stock de hoy"); }
   const rows = items.slice()
     .sort((a,b)=>(catIdx(a.categoria)-catIdx(b.categoria))||(a.position-b.position))
     .map(it=>({ categoria:it.categoria, proveedor:it.proveedor, item:it.item, paquete:it.paquete,
       por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal),
       cantidad_actual:0, _seen:false }));
-  rows.forEach(r=>{ const k=(r.item||"").trim().toLowerCase(); if(prevQty.has(k)){ r.cantidad_actual=prevQty.get(k); r._seen=true; } });
-  count={ rows };
+  // la planilla es la del día: arranca con lo que ya se cargó hoy (lo de días anteriores no)
+  let reg=null;
+  if(isLive()){ try{ reg=await attachLive(rows); }
+    catch(e){ rows.forEach(r=>{ r._rid=null; }); toast("Sin planilla compartida: "+e.message); } }
+  if(!reg){ // sin conexión en vivo: precarga lo guardado hoy, si hay
+    try{ const t=await todayRegistro();
+      if(t){ const its=await loadRegistroItems(t); const m=new Map();
+        its.forEach(x=>{ if(num(x.cantidad_actual)>0) m.set(keyOf(x.item), num(x.cantidad_actual)); });
+        rows.forEach(r=>{ const k=keyOf(r.item); if(m.has(k)){ r.cantidad_actual=m.get(k); r._seen=true; } }); }
+    }catch(e){ toast("No se pudo leer el stock de hoy"); } }
+  count={ rows, reg };
+  $("count-cancel").textContent = reg ? "Volver" : "Cancelar";
   show("count");
   $("phase").textContent="Hacer stock";
   buildCountFilter();
@@ -747,7 +753,7 @@ function countVisible(){
 function updateCountCounter(){
   const seen=count.rows.filter(r=>r._seen).length;
   const aPedir=count.rows.filter(r=>pedirOf(r)>0).length;
-  $("counter").textContent = seen+" / "+count.rows.length+" contados · "+aPedir+" para pedir";
+  $("counter").textContent = seen+" / "+count.rows.length+" contados · "+aPedir+" para pedir"+(count.reg?" · en vivo":"");
 }
 function renderCountTable(){
   const host=$("count-table"); host.innerHTML="";
@@ -760,10 +766,11 @@ function renderCountTable(){
   vis.forEach(r=>{
     const inp=el("input",{cls:"cell",type:"text",inputmode:"decimal",autocomplete:"off",
       value: r._seen?fmt(r.cantidad_actual):"", placeholder:"0"});
+    r._inp=inp;
     inp.addEventListener("input",()=>{
       let v=inp.value.replace(/[^0-9.,]/g,""); const k=v.search(/[.,]/);
       if(k!==-1) v=v.slice(0,k+1)+v.slice(k+1).replace(/[.,]/g,""); inp.value=v;
-      r.cantidad_actual=num(v); r._seen=(v!==""); updateCountCounter();
+      r.cantidad_actual=num(v); r._seen=(v!==""); updateCountCounter(); queueCell(r);
     });
     const tr=el("tr",{},
       el("td",{cls:"ro",text:r.item}),
@@ -776,6 +783,74 @@ function renderCountTable(){
   let nr=wrap.querySelector(".norows"); if(nr) nr.remove();
   if(!vis.length) wrap.appendChild(el("div",{cls:"norows",text: count.rows.length?"Ningún ítem coincide con el filtro/búsqueda.":"No hay ítems. Revisá Configuración."}));
   updateCountCounter();
+}
+/* ---------- planilla del día compartida en vivo ----------
+   Un registro por fecha (única en la base). Cada celda se guarda sola en stock_registro_items
+   y cada LIVE_MS se traen los cambios de los demás. */
+const LIVE_MS=4000;
+let livePoll=null;
+const liveTimers=new Map();
+function isLive(){ return SB_ON && !offline; }
+function keyOf(s){ return (s||"").trim().toLowerCase(); }
+function snapOf(r,i,rid){ return { registro_id:rid, categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item, paquete:r.paquete||"",
+  por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), position:i }; }
+async function ensureTodayRegistro(){
+  let reg=await todayRegistro(); if(reg) return { reg, fresh:false };
+  try{ const r=await sb("POST","stock_registros",{ body:[{fecha:todayISO()}], prefer:"return=representation" }); return { reg:r[0], fresh:true }; }
+  catch(e){ reg=await todayRegistro(); if(reg) return { reg, fresh:false }; throw e; } // otro lo creó en ese instante
+}
+async function attachLive(rows){
+  const { reg, fresh }=await ensureTodayRegistro();
+  let its=[];
+  if(!fresh){ // si otro recién creó el registro, esperar a que termine de cargar los ítems
+    for(let t=0;t<6;t++){
+      its=(await sb("GET","stock_registro_items",{query:"registro_id=eq."+reg.id+"&order=id.asc"}))||[];
+      if(its.length || Date.now()-new Date(reg.created_at).getTime()>15000) break;
+      await new Promise(res=>setTimeout(res,700)); } }
+  const byKey=new Map(); its.forEach(x=>{ const k=keyOf(x.item); if(!byKey.has(k)) byKey.set(k,x); });
+  const missing=[];
+  rows.forEach((r,i)=>{ const x=byKey.get(keyOf(r.item));
+    if(x){ r._rid=x.id; r.cantidad_actual=num(x.cantidad_actual); r._seen=!!x.contado; } else missing.push([r,i]); });
+  if(missing.length){
+    const ins=(await sb("POST","stock_registro_items",{ body:missing.map(([r,i])=>({ ...snapOf(r,i,reg.id), cantidad_actual:0, contado:false })),
+      prefer:"return=representation" }))||[];
+    const m=new Map(ins.map(x=>[keyOf(x.item),x])); missing.forEach(([r])=>{ const x=m.get(keyOf(r.item)); if(x) r._rid=x.id; }); }
+  return reg;
+}
+function queueCell(r){
+  if(!count || !count.reg || !r._rid) return;
+  r._t=Date.now(); clearTimeout(liveTimers.get(r)); liveTimers.set(r, setTimeout(()=>writeCell(r),600));
+}
+async function writeCell(r){
+  liveTimers.delete(r); r._t=Date.now();
+  try{ await sb("PATCH","stock_registro_items",{ query:"id=eq."+r._rid, body:{ cantidad_actual:num(r.cantidad_actual), contado:!!r._seen } }); }
+  catch(e){ toast("No se pudo guardar "+r.item+" (revisá la conexión)"); }
+  r._t=Date.now();
+}
+async function flushCells(){ const pend=[...liveTimers.keys()]; pend.forEach(r=>clearTimeout(liveTimers.get(r))); await Promise.all(pend.map(writeCell)); }
+async function pollLive(){
+  if(!count || !count.reg || document.hidden) return;
+  const reg=count.reg; let its;
+  try{ its=await sb("GET","stock_registro_items",{ query:"registro_id=eq."+reg.id+"&select=id,cantidad_actual,contado" }); }catch(e){ return; }
+  if(!count || count.reg!==reg) return;
+  const m=new Map((its||[]).map(x=>[x.id,x])); let changed=false;
+  count.rows.forEach(r=>{ const x=m.get(r._rid); if(!x) return;
+    if(liveTimers.has(r) || (r._t && Date.now()-r._t<LIVE_MS+2000) || document.activeElement===r._inp) return; // lo propio manda
+    const q=num(x.cantidad_actual), sn=!!x.contado;
+    if(q!==num(r.cantidad_actual) || sn!==!!r._seen){ r.cantidad_actual=q; r._seen=sn; changed=true;
+      if(r._inp) r._inp.value = sn?fmt(q):""; } });
+  if(changed) updateCountCounter();
+}
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) pollLive(); });
+async function saveLive(){
+  await flushCells();
+  const reg=count.reg;
+  // actualiza la foto de config (mín, ideal, paquete…) sin tocar las cantidades
+  const body=count.rows.map((r,i)=>r._rid?{ id:r._rid, ...snapOf(r,i,reg.id) }:null).filter(Boolean);
+  if(body.length) await sb("POST","stock_registro_items",{ query:"on_conflict=id", body, prefer:"resolution=merge-duplicates" });
+  try{ const up=await sb("PATCH","stock_registros",{ query:"id=eq."+reg.id, body:{ created_at:new Date().toISOString() }, prefer:"return=representation" });
+    if(up&&up[0]) return up[0]; }catch(e){}
+  return reg;
 }
 function goSave(){
   show("save");
@@ -791,7 +866,7 @@ function goSave(){
 async function doSave(){
   $("do-save").disabled=true; $("do-save").textContent="Guardando…";
   try{
-    const reg=await saveRegistro(count.rows);
+    const reg = count.reg ? await saveLive() : await saveRegistro(count.rows);
     toast("Stock guardado");
     count=null;
     await openRegistro(reg);
