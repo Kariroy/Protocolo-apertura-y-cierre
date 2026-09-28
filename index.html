@@ -58,6 +58,16 @@
     border:1px solid var(--line);border-radius:1.5mm;padding:1.4mm 2.4mm;background:var(--paper-2);
   }
 
+  /* acceso al panel de control (para el encargado, con PIN) */
+  .admin{
+    display:flex;align-items:center;justify-content:space-between;gap:3mm;margin-top:8mm;
+    padding:3.4mm 4mm;border:1px dashed #d8d0c2;border-radius:1.5mm;background:var(--paper-2);
+    color:var(--ink);text-decoration:none;
+  }
+  .admin:hover,.admin:focus-visible{border-color:var(--accent);outline:none}
+  .admin .t{font:700 8.5pt/1.2 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase}
+  .admin .d{font-size:9.5pt;color:var(--muted);margin-top:.8mm}
+
   @media (max-width:480px){ body{padding-inline:14px} }
 </style>
 </head>
@@ -68,6 +78,10 @@
     <span class="sub" id="count-label"></span>
   </header>
   <nav class="list" id="list" aria-label="Apps del local"></nav>
+  <a class="admin" href="panel/">
+    <span><span class="t">🔒 Panel de control</span><div class="d">Registros de protocolos, stock y Mise · con PIN</div></span>
+    <span class="go" aria-hidden="true">›</span>
+  </a>
 </div>
 <script>
 /* Para sumar una app: agregarla acá. href = carpeta de la app en este repo.

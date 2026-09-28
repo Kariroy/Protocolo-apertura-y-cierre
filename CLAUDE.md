@@ -14,6 +14,7 @@ protocolos/index.html   Protocolo Apertura y Cierre
 mise/index.html         Mise and Please
 pedidos/index.html      Stock y Pedidos
 guias/index.html        Guías (recetas y guías de cocina)
+panel/index.html        Panel de control (solo lectura, con PIN): registros de Protocolos, Stock y Mise
 ```
 
 ## Reglas de trabajo (no romper)
@@ -35,9 +36,11 @@ guias/index.html        Guías (recetas y guías de cocina)
 ## Apps
 
 - **Protocolos** (`protocolos/`): checklists de apertura (azul) y cierre (azul oscuro) compartidas en vivo (Supabase Realtime). "Marcar como terminado" guarda en historial y reinicia la lista. Notas del turno en cierre. Config ⚙ + PIN (Protocolo · Ítem). Tablas: `protocolos_items` (ítems editables) y `protocolos_dia` (una fila por protocolo y día: ítems marcados en jsonb, notas, terminado; el historial sale de acá).
-- **Mise and Please** (`mise/`): swipe (derecha = listo, izquierda = producir), lista de producción compartida en vivo. Config ⚙ + PIN (Categoría · Ítem) y "Tareas del día". Tablas: `mise_items`, `mise_lista`, `mise_tareas`.
+- **Mise and Please** (`mise/`): swipe (derecha = listo, izquierda = producir), lista de producción compartida en vivo. Config ⚙ + PIN (Categoría · Ítem) y "Tareas del día". Tablas: `mise_items`, `mise_lista` (con `tipo`: produccion | tarea), `mise_tareas`, y `mise_registros` (registro diario, lo llena un trigger).
 - **Stock y Pedidos** (`pedidos/`): toma de stock por tarjetas, registro con fecha. Pestañas Stock (pedir = mín − actual; TSV/CSV) y Pedidos por proveedor (formato `- 4 caja (1L) de Muzzarella`). Config ⚙ + PIN (categoría · proveedor · ítem · paquete · cantidad mínima). Tablas: `stock_items`, `stock_registros`, `stock_registro_items`.
 - **Guías** (`guias/`): recetas y guías de cocina (fichas con buscador, filtro por categoría y detalle en la misma pantalla con "Volver"). Los datos van embebidos en un JSON dentro del HTML (`recipes-data`), algunas fichas con foto en base64. Sin Supabase.
+
+- **Panel de control** (`panel/`): lo mantiene el chat "Inicio y seguridad". Solo lee (no escribe) `protocolos_dia`, `protocolos_config`, `stock_registros`, `stock_registro_items` y `mise_registros` (si no existe, cae a `mise_lista`), por la API REST. Copia la vista de registro de Stock (cuenta de "pedir", tabla, export y formato de pedidos): si eso cambia en `pedidos/`, avisar en `NOVEDADES.md` para actualizar el panel. Pestañas: Protocolos, Stock, Mise and Please (% de producción por día) y Tareas del día (% de limpieza/mantenimiento por día), las dos últimas desde `mise_registros`.
 
 ## Backend
 
