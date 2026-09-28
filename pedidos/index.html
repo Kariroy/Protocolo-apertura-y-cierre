@@ -845,9 +845,13 @@ document.addEventListener("visibilitychange",()=>{ if(!document.hidden) pollLive
 async function saveLive(){
   await flushCells();
   const reg=count.reg;
-  // actualiza la foto de config (mín, ideal, paquete…) sin tocar las cantidades
-  const body=count.rows.map((r,i)=>r._rid?{ id:r._rid, ...snapOf(r,i,reg.id) }:null).filter(Boolean);
-  if(body.length) await sb("POST","stock_registro_items",{ query:"on_conflict=id", body, prefer:"resolution=merge-duplicates" });
+  // actualiza la foto de config (mín, ideal, paquete…) solo en las filas que cambiaron, sin tocar las cantidades
+  // (el id es GENERATED ALWAYS: no se puede mandar en un upsert, por eso va PATCH por fila)
+  const cur=(await sb("GET","stock_registro_items",{ query:"registro_id=eq."+reg.id }))||[];
+  const byId=new Map(cur.map(x=>[x.id,x]));
+  const diff=count.rows.map((r,i)=>[r,snapOf(r,i,reg.id)]).filter(([r,sn])=>{ const x=r._rid&&byId.get(r._rid);
+    return x && Object.keys(sn).some(k=>typeof sn[k]==="number" ? num(x[k])!==sn[k] : (x[k]||"")!==sn[k]); });
+  await Promise.all(diff.map(([r,sn])=>sb("PATCH","stock_registro_items",{ query:"id=eq."+r._rid, body:sn })));
   try{ const up=await sb("PATCH","stock_registros",{ query:"id=eq."+reg.id, body:{ created_at:new Date().toISOString() }, prefer:"return=representation" });
     if(up&&up[0]) return up[0]; }catch(e){}
   return reg;
