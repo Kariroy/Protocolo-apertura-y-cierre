@@ -263,7 +263,7 @@
   .finish{ border-radius:1.5mm; font:700 10.5pt/1.1 'IBM Plex Mono',monospace; letter-spacing:.05em; text-transform:uppercase; padding:18px; }
   .synced{ font-family:'IBM Plex Mono',monospace; letter-spacing:.03em; }
 
-  /* registro + hora límite */
+  /* registro + horario (desde / hasta) */
   .hbtns{ display:flex; gap:8px; }
   .plim{ font:700 8pt/1.2 'IBM Plex Mono',monospace; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-top:6px; }
   .plim.off{ color:var(--amber); }
@@ -273,13 +273,15 @@
   .finish:disabled{ background:#b9b0a2 !important; cursor:default; transform:none; }
   .hdate .d2.late{ color:#b3261e; }
   .horas{ flex:1; overflow-y:auto; padding:16px; }
-  .hora-row{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:1.5mm;
-    padding:14px; margin-bottom:10px; }
+  .hora-row{ background:var(--card); border:1px solid var(--line); border-radius:1.5mm; padding:14px; margin-bottom:10px; }
+  .hora-row .hhd{ display:flex; align-items:center; gap:10px; }
   .hora-row .hl{ flex:1; min-width:0; font-weight:700; font-size:16px; }
-  .hora-row .hl small{ display:block; font:600 8pt/1.3 'IBM Plex Mono',monospace; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
-  .hora-row input[type=time]{ font:600 16px 'IBM Plex Mono',monospace; padding:9px 10px; border:1px solid var(--line); border-radius:1mm;
-    background:var(--cream); color:var(--ink); flex:none; }
-  .hora-row input[type=time]:focus{ outline:none; border-color:var(--accent); }
+  .hora-row .hin{ display:flex; gap:10px; margin-top:12px; }
+  .hcampo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+  .hcampo span{ font:700 8pt/1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .hcampo input[type=time]{ width:100%; min-width:0; font:600 16px 'IBM Plex Mono',monospace; padding:9px 10px; border:1px solid var(--line);
+    border-radius:1mm; background:var(--cream); color:var(--ink); }
+  .hcampo input[type=time]:focus{ outline:none; border-color:var(--accent); }
   .hora-row .hclr{ border:none; background:transparent; color:var(--muted); font:700 8pt/1 'IBM Plex Mono',monospace;
     letter-spacing:.04em; text-transform:uppercase; cursor:pointer; padding:6px; text-decoration:underline; white-space:nowrap; }
   .horas .msg{ margin-top:8px; }
@@ -300,7 +302,7 @@ var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 var ITEMS_TABLE   = "protocolos_items";      // ítems editables (panel de config)
 var DIA_TABLE     = "protocolos_dia";        // un registro por protocolo por día (checklist + notas + historial)
 var ADMIN_PIN     = "1234";                  // PIN para abrir Configuración
-var HORAS_TABLE   = "protocolos_config";     // hora límite de cada protocolo (Configuración → Horarios)
+var HORAS_TABLE   = "protocolos_config";     // horario (desde / hasta) de cada protocolo (Configuración → Horarios)
 
 /* ---- DEFINICIÓN DE COLUMNAS (panel de config) ---- */
 var COLUMNS = [
@@ -556,21 +558,47 @@ async function pushNota(){
   }
 }
 
-/* ---- hora límite: cada protocolo se puede hacer hasta HASTA[k] ("HH:MM"; null = sin límite) ---- */
+/* ---- horario: cada protocolo se puede hacer desde DESDE[k] hasta HASTA[k] ("HH:MM"; null = sin límite) ---- */
+var DESDE = { apertura:null, cierre:null };
 var HASTA = { apertura:null, cierre:null };
+function hm(v){ return v ? String(v).slice(0,5) : null; }
 async function fetchHoras(){
-  var res = await sb.from(HORAS_TABLE).select("proto,hasta");
+  var res = await sb.from(HORAS_TABLE).select("*");
   if(res.error) throw res.error;
-  (res.data||[]).forEach(function(r){ HASTA[normProto(r.proto)] = r.hasta ? String(r.hasta).slice(0,5) : null; });
+  (res.data||[]).forEach(function(r){ var k = normProto(r.proto); DESDE[k] = hm(r.desde); HASTA[k] = hm(r.hasta); });
 }
+/* h = { apertura:{desde,hasta}, cierre:{desde,hasta} }. Devuelve un aviso si la base no tiene la columna desde (falta la 005). */
 async function saveHoras(h){
-  var rows = PROTO_KEYS.map(function(k){ return { proto:k, hasta:(h[k]||null), updated_at:new Date().toISOString() }; });
+  var now = new Date().toISOString();
+  var rows = PROTO_KEYS.map(function(k){ return { proto:k, desde:(h[k].desde||null), hasta:(h[k].hasta||null), updated_at:now }; });
+  var aviso = "";
   var res = await sb.from(HORAS_TABLE).upsert(rows, { onConflict:"proto" });
-  if(res.error) throw res.error;
-  PROTO_KEYS.forEach(function(k){ HASTA[k] = h[k] || null; });
+  if(res.error){
+    rows.forEach(function(r){ delete r.desde; });
+    res = await sb.from(HORAS_TABLE).upsert(rows, { onConflict:"proto" });
+    if(res.error) throw res.error;
+    if(PROTO_KEYS.some(function(k){ return h[k].desde; })) aviso = "Se guardó la hora de fin, pero la de inicio no: falta correr la migración 005 en Supabase.";
+    PROTO_KEYS.forEach(function(k){ HASTA[k] = h[k].hasta || null; });
+    return aviso;
+  }
+  PROTO_KEYS.forEach(function(k){ DESDE[k] = h[k].desde || null; HASTA[k] = h[k].hasta || null; });
+  return aviso;
 }
 function nowHM(){ var d = new Date(); return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); }
-function vencido(k){ return !!HASTA[k] && nowHM() > HASTA[k]; }
+/* "antes" = todavía no empezó · "despues" = ya cerró · null = dentro del horario */
+function fueraHora(k){
+  var t = nowHM();
+  if(DESDE[k] && t < DESDE[k]) return "antes";
+  if(HASTA[k] && t > HASTA[k]) return "despues";
+  return null;
+}
+function vencido(k){ return fueraHora(k) === "despues"; }
+function horarioTxt(k){
+  if(DESDE[k] && HASTA[k]) return "de " + DESDE[k] + " a " + HASTA[k];
+  if(HASTA[k]) return "hasta las " + HASTA[k];
+  if(DESDE[k]) return "desde las " + DESDE[k];
+  return "";
+}
 
 /* ---- realtime: escucha la fila de hoy de este protocolo ---- */
 var channel = null;
@@ -618,7 +646,7 @@ async function init(){
     lastLock = k;
   }, 30000);
 }
-function lockKey(){ return PROTO_KEYS.map(function(k){ return vencido(k) ? 1 : 0; }).join(""); }
+function lockKey(){ return PROTO_KEYS.map(function(k){ return fueraHora(k) || "-"; }).join(","); }
 
 function goHome(){ stopRealtime(); state.screen="home"; state.protoKey=null; CHK=[]; NOTA=""; DIA_ID=null; render(); }
 
@@ -638,7 +666,7 @@ async function openProto(key){
 }
 
 function toggleItem(row){
-  if(vencido(state.protoKey)){ render(); return; }
+  if(fueraHora(state.protoKey)){ render(); return; }
   row.done = !row.done;
   render();
   buzz(row.done ? 16 : 10);
@@ -647,7 +675,7 @@ function toggleItem(row){
 
 function finishProto(){
   var proto = state.protoKey;
-  if(vencido(proto)){ render(); return; }
+  if(fueraHora(proto)){ render(); return; }
   var faltan = CHK.filter(function(r){ return !r.done; }).length;
   var msg = faltan>0
     ? "Quedan "+faltan+" ítem"+(faltan>1?"s":"")+" sin marcar. ¿Marcar el protocolo de hoy como terminado igual? Queda guardado el registro del día."
@@ -725,7 +753,10 @@ function renderHome(wrap){
       iconBox,
       el("div", { style:{ flex:"1" } },
         el("div", { style:{ fontSize:"21px", fontWeight:"700", color:p.ink, lineHeight:"1.2", letterSpacing:"-.01em" }, text:p.nombre }),
-        HASTA[k] ? el("div", { cls:"plim"+(vencido(k)?" off":""), text: vencido(k) ? ("Cerrado · era hasta las "+HASTA[k]) : ("Hasta las "+HASTA[k]) }) : null
+        horarioTxt(k) ? el("div", { cls:"plim"+(fueraHora(k)?" off":""), text:
+            fueraHora(k)==="antes" ? ("Todavía no · abre a las "+DESDE[k])
+          : fueraHora(k)==="despues" ? ("Cerrado · era hasta las "+HASTA[k])
+          : cap(horarioTxt(k)) }) : null
       ),
       icon("chevron", 24, p.accent)
     );
@@ -748,8 +779,9 @@ function renderCheck(wrap){
   var total = CHK.length;
   var done = CHK.filter(function(r){ return r.done; }).length;
   var esCierre = state.protoKey === "cierre";
-  var hasta = HASTA[state.protoKey];
-  var locked = vencido(state.protoKey);
+  var horario = horarioTxt(state.protoKey);
+  var fuera = fueraHora(state.protoKey);
+  var locked = !!fuera;
 
   wrap.className = "wrap chk";
 
@@ -760,7 +792,7 @@ function renderCheck(wrap){
       back,
       el("div", { style:{ flex:"1" } },
         el("div", { cls:"ct", style:{ color:proto.ink }, text:proto.corto }),
-        el("div", { cls:"cs", text: done + " de " + total + " marcados" + (hasta ? " · hasta las " + hasta : "") })
+        el("div", { cls:"cs", text: done + " de " + total + " marcados" + (horario ? " · " + horario : "") })
       )
     ),
     el("div", { cls:"prog" },
@@ -770,7 +802,8 @@ function renderCheck(wrap){
 
   /* lista */
   var list = el("div", { cls:"list" });
-  if(locked) list.appendChild(el("div", { cls:"lockmsg", text:"Este protocolo se podía hacer hasta las "+hasta+". Ya no se puede marcar ni terminar." }));
+  if(fuera==="antes") list.appendChild(el("div", { cls:"lockmsg", text:"Este protocolo se puede hacer desde las "+DESDE[state.protoKey]+". Todavía no se puede marcar ni terminar." }));
+  if(fuera==="despues") list.appendChild(el("div", { cls:"lockmsg", text:"Este protocolo se podía hacer hasta las "+HASTA[state.protoKey]+". Ya no se puede marcar ni terminar." }));
   CHK.forEach(function(row, i){
     var box = el("div", { cls:"box", style: row.done ? { background:accent, borderColor:accent } : {} },
       el("span",{html:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="display:block"><polyline points="20 6 9 17 4 12"/></svg>', style:{opacity: row.done?"1":"0", display:"block"}})
@@ -858,7 +891,7 @@ function enterConfig(){
 
 function setCfgTab(t){
   CFG_TAB = t; CFG_MSG = "";
-  if(t==="horarios"){ CFG_HORAS = { apertura:HASTA.apertura||"", cierre:HASTA.cierre||"" }; }
+  if(t==="horarios"){ CFG_HORAS = {}; PROTO_KEYS.forEach(function(k){ CFG_HORAS[k] = { desde:DESDE[k]||"", hasta:HASTA[k]||"" }; }); }
   render();
 }
 function cfgTabsBar(){
@@ -1031,22 +1064,28 @@ function renderConfig(wrap){
 }
 
 /* ---------- CONFIG · HISTORIAL ---------- */
-/* ---------- CONFIG → HORARIOS (hora límite de cada protocolo) ---------- */
+/* ---------- CONFIG → HORARIOS (desde / hasta de cada protocolo) ---------- */
 function renderConfigHoras(wrap){
   var head = el("div",{cls:"chead"},
     el("h2",{text:"Configuración"}),
     cfgTabsBar(),
-    el("div",{cls:"hint",text:"Hasta qué hora se puede hacer cada protocolo. Pasada esa hora, la lista del día queda cerrada (no se puede marcar ni terminar). Vacío = sin límite."})
+    el("div",{cls:"hint",text:"Desde y hasta qué hora se puede hacer cada protocolo. Fuera de ese horario la lista del día queda cerrada (no se puede marcar ni terminar). Vacío = sin límite."})
   );
   var body = el("div",{cls:"horas"});
   PROTO_KEYS.forEach(function(k){
-    var inp = el("input",{type:"time",value:CFG_HORAS[k]||""});
-    inp.addEventListener("input",function(){ CFG_HORAS[k] = inp.value; });
-    var clr = el("button",{cls:"hclr",text:"Sin límite",onClick:function(){ CFG_HORAS[k]=""; render(); }});
+    function campo(key, label){
+      var inp = el("input",{type:"time",value:CFG_HORAS[k][key]||""});
+      inp.addEventListener("input",function(){ CFG_HORAS[k][key] = inp.value; });
+      return el("label",{cls:"hcampo"}, el("span",{text:label}), inp);
+    }
+    var clr = el("button",{cls:"hclr",text:"Sin horario",onClick:function(){ CFG_HORAS[k] = { desde:"", hasta:"" }; render(); }});
     body.appendChild(el("div",{cls:"hora-row"},
-      el("span",{cls:"hdot",style:{ background:PROTOCOLOS[k].accent }}),
-      el("div",{cls:"hl",text:PROTO_LABEL[k]}, el("small",{text: CFG_HORAS[k] ? "hasta" : "sin límite"})),
-      inp, clr
+      el("div",{cls:"hhd"},
+        el("span",{cls:"hdot",style:{ background:PROTOCOLOS[k].accent }}),
+        el("div",{cls:"hl",text:PROTO_LABEL[k]}),
+        clr
+      ),
+      el("div",{cls:"hin"}, campo("desde","Desde"), campo("hasta","Hasta"))
     ));
   });
   if(!sb) body.appendChild(el("div",{cls:"hempty",text:"Sin conexión: los horarios se guardan en la base, acá no se pueden guardar."}));
@@ -1057,9 +1096,15 @@ function renderConfigHoras(wrap){
   cancel.addEventListener("click",function(){ state.screen="home"; render(); });
   save.addEventListener("click", async function(){
     if(!sb){ CFG_MSG = "Sin conexión: no se pudo guardar."; render(); return; }
+    var mal = PROTO_KEYS.filter(function(k){ var h = CFG_HORAS[k]; return h.desde && h.hasta && h.desde >= h.hasta; });
+    if(mal.length){ CFG_MSG = PROTO_LABEL[mal[0]] + ": la hora de inicio tiene que ser antes que la de fin."; render(); return; }
     save.disabled = true; save.textContent = "Guardando…";
-    try{ await saveHoras(CFG_HORAS); state.screen="home"; render(); }
-    catch(e){ CFG_MSG = "No se pudo guardar. ¿Ya se corrió la migración 004 en Supabase?"; render(); }
+    try{
+      var aviso = await saveHoras(CFG_HORAS);
+      if(aviso){ CFG_MSG = aviso; render(); }
+      else { state.screen="home"; render(); }
+    }
+    catch(e){ CFG_MSG = "No se pudo guardar. ¿Ya se corrieron las migraciones 004 y 005 en Supabase?"; render(); }
   });
   wrap.append(head, body, el("div",{cls:"cfoot"}, cancel, save));
 }
