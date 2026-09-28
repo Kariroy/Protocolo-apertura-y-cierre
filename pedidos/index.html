@@ -204,7 +204,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:620px}
 /* con el teclado abierto (escribiendo en Hacer stock) se ocultan Cancelar/Guardar para no comer pantalla */
 #count.typing .cfg-foot{display:none}
 .grid th{position:sticky;top:0;background:#EFE9DB;z-index:2;text-align:left;font-size:12px;color:#6B6250;font-weight:800;padding:8px 8px;border-right:1px solid #D8CFBB;border-bottom:1px solid #C9BFA8;white-space:nowrap}
-.grid th .thh{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.grid th .thh, table.stock th .thh{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .grid th.rownum{left:0;z-index:3;width:38px;min-width:38px;text-align:center;padding:8px 0}
 .fbtn{border:1px solid #CBBE9E;background:#F7F2E6;color:#8A7F66;width:22px;height:22px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
 .fbtn.on{background:#1a73e8;color:#fff;border-color:#1a73e8}
@@ -357,10 +357,6 @@ table.stock th, .grid th{ background:var(--kraft-2); color:var(--ink-soft); font
 
   <!-- COUNT (tabla editable) -->
   <main class="config hidden" id="count">
-    <div class="count-toolbar">
-      <select id="ct-cat"></select>
-      <input id="ct-search" placeholder="Buscar ítem…" autocomplete="off">
-    </div>
     <div class="cfg-scroll">
       <div class="tbl-wrap"><table class="grid" id="count-table"></table></div>
     </div>
@@ -391,10 +387,6 @@ table.stock th, .grid th{ background:var(--kraft-2); color:var(--ink-soft); font
       <button class="tab" id="tab-ped" data-tab="ped">Pedidos</button>
     </div>
     <div class="pane" id="pane-stock">
-      <div class="filters">
-        <select id="f-cat"></select>
-        <select id="f-prov"></select>
-      </div>
       <div class="exportrow">
         <button id="copy-sheets">&#9783;&nbsp; Copiar para Sheets</button>
         <button id="dl-csv">&#8681;&nbsp; Descargar CSV</button>
@@ -737,22 +729,15 @@ async function startCount(){
   $("count-cancel").textContent = reg ? "Volver" : "Cancelar";
   show("count");
   $("phase").textContent="Hacer stock";
-  buildCountFilter();
-  $("ct-search").value="";
+  COUNT_FILTERS={};
   renderCountTable();
 }
-function buildCountFilter(){
-  const cats=["(todas las categorías)", ...uniqInOrder(count.rows.map(r=>r.categoria), true)];
-  fillSelect($("ct-cat"), cats);
-}
-function countVisible(){
-  const fc=$("ct-cat").value, q=($("ct-search").value||"").toLowerCase().trim();
-  return count.rows.filter(r=>{
-    if(fc && fc.indexOf("(todas")<0 && r.categoria!==fc) return false;
-    if(q && (r.item||"").toLowerCase().indexOf(q)<0) return false;
-    return true;
-  });
-}
+const COUNT_COLS=[
+  { key:"item", label:"Ítem", get:r=>r.item||"" },
+  { key:"paquete", label:"Paquete", get:r=>r.paquete||"" },
+  { key:"actual", label:"Actual", num:true, get:r=>r._seen?fmt(r.cantidad_actual):SIN_ANOTAR }];
+let COUNT_FILTERS={};
+function countVisible(){ return count.rows.filter(r=>passesFilters(r,COUNT_COLS,COUNT_FILTERS)); }
 function updateCountCounter(){
   const seen=count.rows.filter(r=>r._seen).length;
   const aPedir=count.rows.filter(r=>pedirOf(r)>0).length;
@@ -760,9 +745,7 @@ function updateCountCounter(){
 }
 function renderCountTable(){
   const host=$("count-table"); host.innerHTML="";
-  const head=el("tr",{},
-    el("th",{text:"Ítem"}), el("th",{text:"Paquete"}),
-    el("th",{cls:"num",text:"Actual"}));
+  const head=el("tr",{}, ...COUNT_COLS.map(c=>thFilter(c,COUNT_FILTERS,count.rows,renderCountTable)));
   host.appendChild(el("thead",{},head));
   const tb=el("tbody",{});
   const vis=countVisible();
@@ -784,7 +767,7 @@ function renderCountTable(){
   host.appendChild(tb);
   const wrap=host.closest(".tbl-wrap");
   let nr=wrap.querySelector(".norows"); if(nr) nr.remove();
-  if(!vis.length) wrap.appendChild(el("div",{cls:"norows",text: count.rows.length?"Ningún ítem coincide con el filtro/búsqueda.":"No hay ítems. Revisá Configuración."}));
+  if(!vis.length) wrap.appendChild(el("div",{cls:"norows",text: count.rows.length?"Ningún ítem coincide con el filtro.":"No hay ítems. Revisá Configuración."}));
   updateCountCounter();
 }
 /* ---------- planilla del día compartida en vivo ----------
@@ -909,7 +892,7 @@ async function openRegistro(reg){
   $("stock-table").innerHTML='<tr><td class="center-msg" style="display:block">Cargando…</td></tr>';
   curRegItems = await loadRegistroItems(reg);
   setTab("stock");
-  buildFilters(); renderStockTable();
+  REG_FILTERS={}; renderStockTable();
 }
 function setTab(tab){
   curTab=tab;
@@ -918,11 +901,6 @@ function setTab(tab){
   $("pane-stock").classList.toggle("hidden",tab!=="stock");
   $("pane-ped").classList.toggle("hidden",tab!=="ped");
   if(tab==="ped") renderPedidos();
-}
-function buildFilters(){
-  const cats=["(todas las categorías)",...uniqInOrder(curRegItems.map(r=>r.categoria),true)];
-  const provs=["(todos los proveedores)",...uniqInOrder(curRegItems.map(r=>r.proveedor),false)];
-  fillSelect($("f-cat"),cats); fillSelect($("f-prov"),provs);
 }
 function uniqInOrder(arr,byCat){
   const u=[...new Set(arr.filter(x=>x!==null&&x!==undefined&&x!==""))];
@@ -934,25 +912,29 @@ function fillSelect(sel,opts,keep){
   sel.innerHTML=""; opts.forEach(o=>{ const op=document.createElement("option"); op.value=o; op.textContent=o; sel.appendChild(op); });
   if(prev!=null && opts.indexOf(prev)>=0) sel.value=prev;
 }
-function filteredStock(){
-  const fc=$("f-cat").value, fp=$("f-prov").value;
-  return curRegItems.filter(r=>{
-    if(fc && fc.indexOf("(todas")<0 && r.categoria!==fc) return false;
-    if(fp && fp.indexOf("(todos")<0 && r.proveedor!==fp) return false;
-    return true;
-  });
-}
+const REG_COLS=[
+  { key:"categoria", label:"Categoría", get:r=>r.categoria||"" },
+  { key:"proveedor", label:"Proveedor", get:r=>r.proveedor||"" },
+  { key:"item", label:"Ítem", get:r=>r.item||"" },
+  { key:"min", label:"Mín", num:true, get:r=>fmt(r.cantidad_minima) },
+  { key:"ideal", label:"Ideal", num:true, get:r=>fmt(r.ideal) },
+  { key:"actual", label:"Actual", num:true, get:r=>sinAnotar(r)?SIN_ANOTAR:fmt(r.cantidad_actual) },
+  { key:"pedir", label:"Pedir", num:true, get:r=>{ const p=pedirOf(r); return p>0?fmt(p):"—"; } }];
+let REG_FILTERS={};
+function filteredStock(){ return curRegItems.filter(r=>passesFilters(r,REG_COLS,REG_FILTERS)); }
 function renderStockTable(){
   const rows=filteredStock();
   const t=$("stock-table");
-  let h="<tr><th>Categoría</th><th>Proveedor</th><th>Ítem</th><th class=num>Mín</th><th class=num>Ideal</th><th class=num>Actual</th><th class=num>Pedir</th></tr>";
+  t.innerHTML="";
+  t.appendChild(el("thead",{}, el("tr",{}, ...REG_COLS.map(c=>thFilter(c,REG_FILTERS,curRegItems,renderStockTable)))));
+  let h="";
   rows.forEach(r=>{
     const p=pedirOf(r);
     h+="<tr><td>"+esc(r.categoria)+"</td><td>"+esc(r.proveedor)+"</td><td>"+esc(r.item)+"</td>"+
        "<td class=num>"+fmt(r.cantidad_minima)+"</td><td class=num>"+fmt(r.ideal)+"</td><td class=num>"+(sinAnotar(r)?"<span style='color:var(--ink-soft)'>sin anotar</span>":fmt(r.cantidad_actual))+"</td>"+
        "<td class='num pedir"+(p>0?"":" ok")+"'>"+(p>0?("<b>"+fmt(p)+"</b>"):"—")+"</td></tr>";
   });
-  t.innerHTML=h;
+  const tb=document.createElement("tbody"); tb.innerHTML=h; t.appendChild(tb);
   const totPed=rows.filter(r=>pedirOf(r)>0).length;
   const sa=rows.filter(sinAnotar).length;
   $("stock-note").textContent = rows.length+" ítems · "+totPed+" para pedir"+(sa?(" · "+sa+" sin anotar"):"");
@@ -1131,10 +1113,29 @@ function renderCfg(){
     setTimeout(()=>{ const n=host.querySelector('input[data-idx="'+idx+'"][data-key="'+key+'"]'); if(n){ try{n.focus()}catch(e){} } },30); }
 }
 
-/* filtro estilo Sheets */
+/* filtro estilo Sheets (config, conteo y registro) */
+const SIN_ANOTAR="(sin anotar)";
 function openFilter(key, anchor){
-  const values=uniqueValues(key);
-  const temp=new Set(CFG_FILTERS[key]?[...CFG_FILTERS[key]]:values);
+  openFilterPop(uniqueValues(key), CFG_FILTERS[key], sel=>{ if(sel) CFG_FILTERS[key]=sel; else delete CFG_FILTERS[key]; renderCfg(); }, anchor);
+}
+function colValues(rows, get){
+  return [...new Set(rows.map(get))].sort((a,b)=>{ if(a===b) return 0;
+    if(a===SIN_ANOTAR||a==="") return -1; if(b===SIN_ANOTAR||b==="") return 1;
+    const na=Number(a), nb=Number(b); if(!isNaN(na)&&!isNaN(nb)) return na-nb;
+    return a.localeCompare(b,"es"); });
+}
+function passesFilters(r, cols, filters){ return cols.every(c=>{ const f=filters[c.key]; return !f || f.has(c.get(r)); }); }
+function thFilter(c, filters, rows, rerender){
+  const th=el("th",{cls:c.num?"num":""}, el("div",{cls:"thh"}, el("span",{text:c.label}),
+    el("span",{cls:"fbtn"+(filters[c.key]?" on":""),text:"▾","aria-label":"Filtrar "+c.label})));
+  th.style.cursor="pointer";
+  th.addEventListener("click",()=>openFilterPop(colValues(rows,c.get), filters[c.key],
+    sel=>{ if(sel) filters[c.key]=sel; else delete filters[c.key]; rerender(); }, th));
+  return th;
+}
+// values: lista de valores posibles; current: Set elegido (o nada = todos); apply(Set|null)
+function openFilterPop(values, current, apply, anchor){
+  const temp=new Set(current?[...current]:values);
   const search=el("input",{type:"text",placeholder:"Buscar…"}); noBubble(search);
   const listBox=el("div",{cls:"plist"});
   function paintList(){ listBox.innerHTML=""; const q=search.value.trim().toLowerCase();
@@ -1147,8 +1148,7 @@ function openFilter(key, anchor){
   const clr=el("button",{text:"Borrar",onClick:()=>{ temp.clear(); paintList(); }});
   const cancelB=el("button",{text:"Cancelar",onClick:closePopovers});
   const okB=el("button",{cls:"ok",text:"Aceptar",onClick:()=>{
-    if(temp.size===values.length) delete CFG_FILTERS[key]; else CFG_FILTERS[key]=new Set(temp);
-    closePopovers(); renderCfg(); }});
+    closePopovers(); apply(values.every(v=>temp.has(v)) ? null : new Set(temp)); }});
   const inner=el("div",{}, el("div",{cls:"psearch"},search), el("div",{cls:"pact"},selAll,clr), listBox, el("div",{cls:"pfoot"},cancelB,okB));
   paintList(); popoverAt(anchor,inner); setTimeout(()=>{ try{search.focus()}catch(e){} },30);
 }
@@ -1201,8 +1201,6 @@ function goBack(){
 
 /* ---------- eventos ---------- */
 $("go-count").addEventListener("click",startCount);
-$("ct-cat").addEventListener("change",renderCountTable);
-$("ct-search").addEventListener("input",renderCountTable);
 $("count-cancel").addEventListener("click",()=>{ count=null; show("home"); });
 $("count-save").addEventListener("click",goSave);
 $("count").addEventListener("focusin",e=>{ if(e.target.tagName==="INPUT") $("count").classList.add("typing"); });
@@ -1215,8 +1213,6 @@ $("do-save").addEventListener("click",doSave);
 $("save-back").addEventListener("click",()=>{ show("count"); renderCountTable(); });
 $("tab-stock").addEventListener("click",()=>setTab("stock"));
 $("tab-ped").addEventListener("click",()=>setTab("ped"));
-$("f-cat").addEventListener("change",renderStockTable);
-$("f-prov").addEventListener("change",renderStockTable);
 $("copy-sheets").addEventListener("click",()=>copyText(toTSV(stockMatrix()),ok=>toast(ok?"Copiado — pegalo en Sheets":"No se pudo copiar")));
 $("dl-csv").addEventListener("click",downloadCSV);
 $("copyall").addEventListener("click",copyAllPedidos);
