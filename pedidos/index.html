@@ -652,12 +652,38 @@ async function saveConfig(rows){
     saved.sort((a,b)=>a.position-b.position); items=saved;
   } else { items=[]; }
 }
+/* un solo registro por día: si ya hay uno de hoy, se reemplazan sus ítems en vez de crear otro */
+async function todayRegistro(){
+  const fecha=todayISO();
+  if(!SB_ON) return localRegistros.find(r=>r.fecha===fecha)||null;
+  const regs = await sb("GET","stock_registros",{query:"fecha=eq."+fecha+"&order=created_at.desc&limit=1"});
+  return (regs&&regs[0])||null;
+}
 async function saveRegistro(rows){
   const fecha = todayISO();
   const snap = rows.map((r,i)=>({ categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item,
     paquete:r.paquete||"", por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), cantidad_actual:num(r.cantidad_actual), position:i }));
-  if(!SB_ON){ const reg={ id:"loc"+Date.now(), fecha, created_at:new Date().toISOString(), _items:snap };
+  const now = new Date().toISOString();
+  const prev = await todayRegistro();
+  if(!SB_ON){
+    if(prev){ prev._items=snap; prev.created_at=now; return prev; }
+    const reg={ id:"loc"+Date.now(), fecha, created_at:now, _items:snap };
     localRegistros.unshift(reg); return reg; }
+  if(prev){
+    const rid=prev.id;
+    const old = (await sb("GET","stock_registro_items",{query:"registro_id=eq."+rid+"&order=position.asc"}))||[];
+    await sb("DELETE","stock_registro_items",{query:"registro_id=eq."+rid});
+    try{ await sb("POST","stock_registro_items",{ body:snap.map(x=>({ ...x, registro_id:rid })) }); }
+    catch(e){ // si falla, se vuelve a poner lo que había para no perder el conteo anterior
+      if(old.length) await sb("POST","stock_registro_items",{ body:old.map(o=>({ categoria:o.categoria, proveedor:o.proveedor, item:o.item,
+        paquete:o.paquete, por_paquete:o.por_paquete, cantidad_minima:o.cantidad_minima, ideal:o.ideal, cantidad_actual:o.cantidad_actual,
+        position:o.position, registro_id:rid })) }).catch(()=>{});
+      throw e; }
+    let reg=prev;
+    try{ const up=await sb("PATCH","stock_registros",{ query:"id=eq."+rid, body:{created_at:now}, prefer:"return=representation" });
+      if(up&&up[0]) reg=up[0]; }catch(e){}
+    return reg;
+  }
   const reg = await sb("POST","stock_registros",{ body:[{fecha}], prefer:"return=representation" });
   const rid = reg[0].id;
   const payload = snap.map(s=>({ ...s, registro_id:rid }));
@@ -685,13 +711,20 @@ function show(scr){ closePopovers(); SCREENS.forEach(s=>$(s).classList.add("hidd
 
 /* ---------- conteo (tabla editable estilo Sheets) ---------- */
 let count=null; // { rows:[{...item, cantidad_actual, _seen}] }
-function startCount(){
+async function startCount(){
   if(!items.length){ toast("No hay ítems cargados. Revisá Configuración."); return; }
+  // si ya se guardó stock hoy, la planilla arranca con esas cantidades (las de días anteriores no)
+  let prevQty=new Map();
+  try{ const reg=await todayRegistro();
+    if(reg){ const its=await loadRegistroItems(reg);
+      its.forEach(x=>{ if(num(x.cantidad_actual)>0) prevQty.set((x.item||"").trim().toLowerCase(), num(x.cantidad_actual)); }); }
+  }catch(e){ toast("No se pudo leer el stock de hoy"); }
   const rows = items.slice()
     .sort((a,b)=>(catIdx(a.categoria)-catIdx(b.categoria))||(a.position-b.position))
     .map(it=>({ categoria:it.categoria, proveedor:it.proveedor, item:it.item, paquete:it.paquete,
       por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal),
       cantidad_actual:0, _seen:false }));
+  rows.forEach(r=>{ const k=(r.item||"").trim().toLowerCase(); if(prevQty.has(k)){ r.cantidad_actual=prevQty.get(k); r._seen=true; } });
   count={ rows };
   show("count");
   $("phase").textContent="Hacer stock";
