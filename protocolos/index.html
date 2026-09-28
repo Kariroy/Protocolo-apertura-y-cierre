@@ -262,6 +262,27 @@
   .notas textarea:focus{ border-color:var(--accent); }
   .finish{ border-radius:1.5mm; font:700 10.5pt/1.1 'IBM Plex Mono',monospace; letter-spacing:.05em; text-transform:uppercase; padding:18px; }
   .synced{ font-family:'IBM Plex Mono',monospace; letter-spacing:.03em; }
+
+  /* registro + hora límite */
+  .hbtns{ display:flex; gap:8px; }
+  .plim{ font:700 8pt/1.2 'IBM Plex Mono',monospace; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-top:6px; }
+  .plim.off{ color:var(--amber); }
+  .lockmsg{ margin:10px 0 4px; padding:11px 13px; border:1px solid #e6c9b3; background:#fbf1e8; color:var(--amber);
+    border-radius:1.5mm; font-size:14px; font-weight:600; line-height:1.4; }
+  .item.locked{ cursor:default; opacity:.55; }
+  .finish:disabled{ background:#b9b0a2 !important; cursor:default; transform:none; }
+  .hdate .d2.late{ color:#b3261e; }
+  .horas{ flex:1; overflow-y:auto; padding:16px; }
+  .hora-row{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:1.5mm;
+    padding:14px; margin-bottom:10px; }
+  .hora-row .hl{ flex:1; min-width:0; font-weight:700; font-size:16px; }
+  .hora-row .hl small{ display:block; font:600 8pt/1.3 'IBM Plex Mono',monospace; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+  .hora-row input[type=time]{ font:600 16px 'IBM Plex Mono',monospace; padding:9px 10px; border:1px solid var(--line); border-radius:1mm;
+    background:var(--cream); color:var(--ink); flex:none; }
+  .hora-row input[type=time]:focus{ outline:none; border-color:var(--accent); }
+  .hora-row .hclr{ border:none; background:transparent; color:var(--muted); font:700 8pt/1 'IBM Plex Mono',monospace;
+    letter-spacing:.04em; text-transform:uppercase; cursor:pointer; padding:6px; text-decoration:underline; white-space:nowrap; }
+  .horas .msg{ margin-top:8px; }
 </style>
 
 <div id="app"></div>
@@ -279,6 +300,7 @@ var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 var ITEMS_TABLE   = "protocolos_items";      // ítems editables (panel de config)
 var DIA_TABLE     = "protocolos_dia";        // un registro por protocolo por día (checklist + notas + historial)
 var ADMIN_PIN     = "1234";                  // PIN para abrir Configuración
+var HORAS_TABLE   = "protocolos_config";     // hora límite de cada protocolo (Configuración → Horarios)
 
 /* ---- DEFINICIÓN DE COLUMNAS (panel de config) ---- */
 var COLUMNS = [
@@ -534,6 +556,22 @@ async function pushNota(){
   }
 }
 
+/* ---- hora límite: cada protocolo se puede hacer hasta HASTA[k] ("HH:MM"; null = sin límite) ---- */
+var HASTA = { apertura:null, cierre:null };
+async function fetchHoras(){
+  var res = await sb.from(HORAS_TABLE).select("proto,hasta");
+  if(res.error) throw res.error;
+  (res.data||[]).forEach(function(r){ HASTA[normProto(r.proto)] = r.hasta ? String(r.hasta).slice(0,5) : null; });
+}
+async function saveHoras(h){
+  var rows = PROTO_KEYS.map(function(k){ return { proto:k, hasta:(h[k]||null), updated_at:new Date().toISOString() }; });
+  var res = await sb.from(HORAS_TABLE).upsert(rows, { onConflict:"proto" });
+  if(res.error) throw res.error;
+  PROTO_KEYS.forEach(function(k){ HASTA[k] = h[k] || null; });
+}
+function nowHM(){ var d = new Date(); return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); }
+function vencido(k){ return !!HASTA[k] && nowHM() > HASTA[k]; }
+
 /* ---- realtime: escucha la fila de hoy de este protocolo ---- */
 var channel = null;
 function stopRealtime(){ if(sb && channel){ try{ sb.removeChannel(channel); }catch(e){} } channel = null; }
@@ -572,7 +610,15 @@ async function init(){
     if(items.length) setItemsFromRows(items);
     if(state.screen === "home") render();
   }catch(e){ /* respaldo: items por defecto */ }
+  try{ await fetchHoras(); if(state.screen==="home" || state.screen==="check") render(); }catch(e){ /* sin tabla: sin límite */ }
+  var lastLock = lockKey();
+  setInterval(function(){
+    var k = lockKey();
+    if(k !== lastLock && !_notaFocus && (state.screen==="home" || state.screen==="check")) render();
+    lastLock = k;
+  }, 30000);
 }
+function lockKey(){ return PROTO_KEYS.map(function(k){ return vencido(k) ? 1 : 0; }).join(""); }
 
 function goHome(){ stopRealtime(); state.screen="home"; state.protoKey=null; CHK=[]; NOTA=""; DIA_ID=null; render(); }
 
@@ -592,6 +638,7 @@ async function openProto(key){
 }
 
 function toggleItem(row){
+  if(vencido(state.protoKey)){ render(); return; }
   row.done = !row.done;
   render();
   buzz(row.done ? 16 : 10);
@@ -600,6 +647,7 @@ function toggleItem(row){
 
 function finishProto(){
   var proto = state.protoKey;
+  if(vencido(proto)){ render(); return; }
   var faltan = CHK.filter(function(r){ return !r.done; }).length;
   var msg = faltan>0
     ? "Quedan "+faltan+" ítem"+(faltan>1?"s":"")+" sin marcar. ¿Marcar el protocolo de hoy como terminado igual? Queda guardado el registro del día."
@@ -609,7 +657,12 @@ function finishProto(){
     sparkleBurst(window.innerWidth/2, window.innerHeight*0.42, accent);
     buzz(28);
     if(sb && DIA_ID != null){
-      try{ await sb.from(DIA_TABLE).update({ items:CHK, notas:(NOTA||null), terminado:true, updated_at:new Date().toISOString() }).eq("id", DIA_ID); }catch(e){}
+      var now = new Date().toISOString();
+      var upd = { items:CHK, notas:(NOTA||null), terminado:true, updated_at:now, terminado_at:now };
+      try{
+        var r = await sb.from(DIA_TABLE).update(upd).eq("id", DIA_ID);
+        if(r.error){ delete upd.terminado_at; await sb.from(DIA_TABLE).update(upd).eq("id", DIA_ID); }  // base sin la columna (004)
+      }catch(e){}
     }
     goHome();
   }, "Sí, terminar", PROTOCOLOS[proto].accent);
@@ -629,6 +682,7 @@ function render(){
   else if(state.screen === "check") renderCheck(wrap);
   else if(state.screen === "pin") renderPin(wrap);
   else if(state.screen === "config") renderConfig(wrap);
+  else if(state.screen === "registro") renderRegistro(wrap);
   app.appendChild(wrap);
   _renderedScreen = state.screen;
   if(prevScreen === state.screen){
@@ -648,7 +702,10 @@ function renderHome(wrap){
   wrap.style.overflow = "hidden";
   wrap.appendChild(el("div", { cls:"hbar" },
     el("a",{cls:"home-link",href:"../",text:"← Inicio"}),
-    el("button",{cls:"gear","aria-label":"Configuración",text:"⚙",onClick:openPin})
+    el("div",{cls:"hbtns"},
+      el("button",{cls:"gear","aria-label":"Registro",title:"Registro de protocolos",text:"📋",onClick:function(){ openPin("registro"); }}),
+      el("button",{cls:"gear","aria-label":"Configuración",text:"⚙",onClick:function(){ openPin("config"); }})
+    )
   ));
   wrap.appendChild(el("header", { cls:"top" },
     el("h1", { text:"Protocolos" }),
@@ -667,7 +724,8 @@ function renderHome(wrap){
     },
       iconBox,
       el("div", { style:{ flex:"1" } },
-        el("div", { style:{ fontSize:"21px", fontWeight:"700", color:p.ink, lineHeight:"1.2", letterSpacing:"-.01em" }, text:p.nombre })
+        el("div", { style:{ fontSize:"21px", fontWeight:"700", color:p.ink, lineHeight:"1.2", letterSpacing:"-.01em" }, text:p.nombre }),
+        HASTA[k] ? el("div", { cls:"plim"+(vencido(k)?" off":""), text: vencido(k) ? ("Cerrado · era hasta las "+HASTA[k]) : ("Hasta las "+HASTA[k]) }) : null
       ),
       icon("chevron", 24, p.accent)
     );
@@ -690,6 +748,8 @@ function renderCheck(wrap){
   var total = CHK.length;
   var done = CHK.filter(function(r){ return r.done; }).length;
   var esCierre = state.protoKey === "cierre";
+  var hasta = HASTA[state.protoKey];
+  var locked = vencido(state.protoKey);
 
   wrap.className = "wrap chk";
 
@@ -700,7 +760,7 @@ function renderCheck(wrap){
       back,
       el("div", { style:{ flex:"1" } },
         el("div", { cls:"ct", style:{ color:proto.ink }, text:proto.corto }),
-        el("div", { cls:"cs", text: done + " de " + total + " marcados" })
+        el("div", { cls:"cs", text: done + " de " + total + " marcados" + (hasta ? " · hasta las " + hasta : "") })
       )
     ),
     el("div", { cls:"prog" },
@@ -710,11 +770,12 @@ function renderCheck(wrap){
 
   /* lista */
   var list = el("div", { cls:"list" });
+  if(locked) list.appendChild(el("div", { cls:"lockmsg", text:"Este protocolo se podía hacer hasta las "+hasta+". Ya no se puede marcar ni terminar." }));
   CHK.forEach(function(row, i){
     var box = el("div", { cls:"box", style: row.done ? { background:accent, borderColor:accent } : {} },
       el("span",{html:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="display:block"><polyline points="20 6 9 17 4 12"/></svg>', style:{opacity: row.done?"1":"0", display:"block"}})
     );
-    var item = el("div", { cls:"item"+(row.done?" on":""), onClick:function(){ toggleItem(row); } },
+    var item = el("div", { cls:"item"+(row.done?" on":"")+(locked?" locked":""), onClick:function(){ toggleItem(row); } },
       box,
       el("div", { cls:"lbl", text:row.txt })
     );
@@ -726,6 +787,7 @@ function renderCheck(wrap){
     var ta = el("textarea", { placeholder:"Comentarios u observaciones sobre el turno o cierre" });
     ta.value = NOTA;
     ta.id = "notasTurno";
+    if(locked) ta.readOnly = true;
     noBubble(ta);
     ta.addEventListener("focus", function(){ _notaFocus = true; });
     ta.addEventListener("input", function(){ NOTA = ta.value; });
@@ -740,7 +802,8 @@ function renderCheck(wrap){
   /* footer: marcar como terminado */
   var syncTxt = sb ? "Lista compartida en vivo" : "Sin conexión — modo local (no se comparte)";
   var fin = el("button", { cls:"finish", style:{ background:accent }, onClick:finishProto },
-    icon("checkCircle", 20, "#fff", 2.4), "Marcar como terminado");
+    icon("checkCircle", 20, "#fff", 2.4), locked ? "Fuera de horario" : "Marcar como terminado");
+  if(locked) fin.disabled = true;
   wrap.appendChild(el("div", { cls:"cfoot" },
     fin,
     el("div", { cls:"synced"+(sb?"":" off"), text:syncTxt })
@@ -748,7 +811,8 @@ function renderCheck(wrap){
 }
 
 /* ---------- PIN ---------- */
-function openPin(){ _pinErr=""; state.screen="pin"; render(); }
+var PIN_NEXT = "config";   // a dónde va después del PIN: "config" | "registro"
+function openPin(next){ _pinErr=""; PIN_NEXT = (next==="registro") ? "registro" : "config"; state.screen="pin"; render(); }
 function renderPin(wrap){
   wrap.className = "wrap full pin";
   var inp = el("input",{type:"password",inputmode:"numeric",autocomplete:"off",maxlength:"12",placeholder:"••••"});
@@ -756,15 +820,15 @@ function renderPin(wrap){
   var enter = el("button",{cls:"btn",text:"Entrar"});
   var back = el("button",{cls:"btn ghost",text:"Volver"});
   var tryIn = function(){
-    if(inp.value===ADMIN_PIN){ enterConfig(); }
+    if(inp.value===ADMIN_PIN){ if(PIN_NEXT==="registro") openRegistro(); else enterConfig(); }
     else { _pinErr="PIN incorrecto"; render(); }
   };
   enter.addEventListener("click",tryIn);
   inp.addEventListener("keydown",function(e){ if(e.key==="Enter") tryIn(); });
   back.addEventListener("click",function(){ state.screen="home"; render(); });
   wrap.append(
-    el("h2",{text:"Configuración"}),
-    el("p",{text:"Ingresá el PIN para editar los ítems"}),
+    el("h2",{text: PIN_NEXT==="registro" ? "Registro" : "Configuración"}),
+    el("p",{text: PIN_NEXT==="registro" ? "Ingresá el PIN para ver el registro" : "Ingresá el PIN para editar los ítems"}),
     inp, err,
     el("div",{cls:"row"}, back, enter)
   );
@@ -778,37 +842,32 @@ var CFG_ROWS = [];
 var CFG_FILTERS = {};
 var CFG_MSG = "";
 var _pendingFocus = null;
-var CFG_TAB = "items";        // "items" | "historial"
-var HIST_ROWS = null;         // filas de protocolos_historial (null = sin cargar)
-var HIST_OPEN = {};           // ids desplegados en el historial
+var CFG_TAB = "items";        // "items" | "horarios"
+var CFG_HORAS = {};           // horas en edición (Configuración → Horarios)
+var HIST_ROWS = null;         // filas de protocolos_dia para el Registro (null = sin cargar)
+var HIST_OPEN = {};           // ids desplegados en el Registro
 
 function enterConfig(){
   CFG_ROWS = [];
   PROTO_KEYS.forEach(function(k){
     PROTOCOLOS[k].items.forEach(function(txt){ CFG_ROWS.push({ proto:PROTO_LABEL[k], txt:txt }); });
   });
-  CFG_FILTERS = {}; CFG_MSG = ""; CFG_TAB = "items"; HIST_ROWS = null; HIST_OPEN = {};
+  CFG_FILTERS = {}; CFG_MSG = ""; CFG_TAB = "items";
   state.screen = "config"; render();
 }
 
 function setCfgTab(t){
-  CFG_TAB = t; render();
-  if(t==="historial" && sb && HIST_ROWS===null) loadHistorial();
-}
-async function loadHistorial(){
-  try{
-    var res = await sb.from(DIA_TABLE).select("*").order("dia",{ascending:false}).limit(180);
-    if(res.error) throw res.error;
-    HIST_ROWS = res.data || [];
-  }catch(e){ HIST_ROWS = []; }
-  if(state.screen==="config" && CFG_TAB==="historial") render();
+  CFG_TAB = t; CFG_MSG = "";
+  if(t==="horarios"){ CFG_HORAS = { apertura:HASTA.apertura||"", cierre:HASTA.cierre||"" }; }
+  render();
 }
 function cfgTabsBar(){
   function tb(key,label){
     return el("button",{cls:"segbtn"+(CFG_TAB===key?" on":""),text:label,onClick:function(){ if(CFG_TAB!==key) setCfgTab(key); }});
   }
-  return el("div",{cls:"seg"}, tb("items","Ítems"), tb("historial","Historial"));
+  return el("div",{cls:"seg"}, tb("items","Ítems"), tb("horarios","Horarios"));
 }
+
 function cfgVal(r,key){ return (r[key]==null?"":String(r[key])).trim(); }
 function uniqueValues(key){
   var set = new Map();
@@ -866,7 +925,7 @@ function cfgDragStart(e, tr){
 }
 function renderConfig(wrap){
   wrap.className = "wrap full cfg";
-  if(CFG_TAB==="historial"){ renderConfigHist(wrap); return; }
+  if(CFG_TAB==="horarios"){ renderConfigHoras(wrap); return; }
 
   var head = el("div",{cls:"chead"},
     el("h2",{text:"Configuración"}),
@@ -972,20 +1031,65 @@ function renderConfig(wrap){
 }
 
 /* ---------- CONFIG · HISTORIAL ---------- */
-function renderConfigHist(wrap){
+/* ---------- CONFIG → HORARIOS (hora límite de cada protocolo) ---------- */
+function renderConfigHoras(wrap){
   var head = el("div",{cls:"chead"},
     el("h2",{text:"Configuración"}),
     cfgTabsBar(),
+    el("div",{cls:"hint",text:"Hasta qué hora se puede hacer cada protocolo. Pasada esa hora, la lista del día queda cerrada (no se puede marcar ni terminar). Vacío = sin límite."})
+  );
+  var body = el("div",{cls:"horas"});
+  PROTO_KEYS.forEach(function(k){
+    var inp = el("input",{type:"time",value:CFG_HORAS[k]||""});
+    inp.addEventListener("input",function(){ CFG_HORAS[k] = inp.value; });
+    var clr = el("button",{cls:"hclr",text:"Sin límite",onClick:function(){ CFG_HORAS[k]=""; render(); }});
+    body.appendChild(el("div",{cls:"hora-row"},
+      el("span",{cls:"hdot",style:{ background:PROTOCOLOS[k].accent }}),
+      el("div",{cls:"hl",text:PROTO_LABEL[k]}, el("small",{text: CFG_HORAS[k] ? "hasta" : "sin límite"})),
+      inp, clr
+    ));
+  });
+  if(!sb) body.appendChild(el("div",{cls:"hempty",text:"Sin conexión: los horarios se guardan en la base, acá no se pueden guardar."}));
+  body.appendChild(el("div",{cls:"msg",text:CFG_MSG}));
+
+  var cancel = el("button",{cls:"btn ghost",text:"Cancelar"});
+  var save = el("button",{cls:"btn",text:"Guardar horarios"});
+  cancel.addEventListener("click",function(){ state.screen="home"; render(); });
+  save.addEventListener("click", async function(){
+    if(!sb){ CFG_MSG = "Sin conexión: no se pudo guardar."; render(); return; }
+    save.disabled = true; save.textContent = "Guardando…";
+    try{ await saveHoras(CFG_HORAS); state.screen="home"; render(); }
+    catch(e){ CFG_MSG = "No se pudo guardar. ¿Ya se corrió la migración 004 en Supabase?"; render(); }
+  });
+  wrap.append(head, body, el("div",{cls:"cfoot"}, cancel, save));
+}
+
+/* ---------- REGISTRO (una fila por protocolo y día, sale de protocolos_dia) ---------- */
+function openRegistro(){ HIST_ROWS = null; HIST_OPEN = {}; state.screen = "registro"; render(); if(sb) loadRegistro(); }
+async function loadRegistro(){
+  try{
+    var res = await sb.from(DIA_TABLE).select("*").order("dia",{ascending:false}).limit(180);
+    if(res.error) throw res.error;
+    HIST_ROWS = (res.data || []).sort(function(a,b){
+      return a.dia===b.dia ? PROTO_KEYS.indexOf(normProto(a.proto)) - PROTO_KEYS.indexOf(normProto(b.proto)) : (a.dia < b.dia ? 1 : -1);
+    });
+  }catch(e){ HIST_ROWS = []; }
+  if(state.screen==="registro") render();
+}
+function renderRegistro(wrap){
+  wrap.className = "wrap full cfg";
+  var head = el("div",{cls:"chead"},
+    el("h2",{text:"Registro"}),
     el("div",{cls:"hint",text:"Un registro por día de cada protocolo. Tocá una fila para ver el desglose."})
   );
 
   var body = el("div",{cls:"hist"});
   if(!sb){
-    body.appendChild(el("div",{cls:"hempty",text:"El historial se guarda cuando marcás un protocolo como terminado. Necesita conexión (versión de Netlify); en la vista previa no se guarda."}));
+    body.appendChild(el("div",{cls:"hempty",text:"El registro se guarda en la base. Sin conexión no se puede ver."}));
   } else if(HIST_ROWS===null){
     body.appendChild(el("div",{cls:"hempty",text:"Cargando…"}));
   } else if(HIST_ROWS.length===0){
-    body.appendChild(el("div",{cls:"hempty",text:"Todavía no hay protocolos guardados. Cuando marques uno como terminado, aparece acá."}));
+    body.appendChild(el("div",{cls:"hempty",text:"Todavía no hay protocolos registrados. Cuando alguien abra uno, aparece acá."}));
   } else {
     HIST_ROWS.forEach(function(r){ body.appendChild(histRow(r)); });
   }
@@ -993,6 +1097,11 @@ function renderConfigHist(wrap){
   var back = el("button",{cls:"btn ghost",text:"Volver",onClick:function(){ state.screen="home"; render(); }});
   var foot = el("div",{cls:"cfoot"}, back);
   wrap.append(head, body, foot);
+}
+function horaDe(ts){
+  if(!ts) return "";
+  var d = new Date(ts);
+  return isNaN(d) ? "" : String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
 }
 
 function histRow(r){
@@ -1005,7 +1114,11 @@ function histRow(r){
   var accent = PROTOCOLOS[pk] ? PROTOCOLOS[pk].accent : "#8A7F66";
   var d = new Date((r.dia || "") + "T00:00:00");
   var d1 = isNaN(d) ? (r.dia||"") : cap(d.toLocaleDateString("es-UY",{ weekday:"long", day:"2-digit", month:"2-digit", year:"2-digit" }));
-  var estado = r.terminado ? (done + "/" + total + " marcados") : ("En curso · " + done + "/" + total);
+  var noTerminado = !r.terminado && ((r.dia||"") < todayStr() || (r.dia===todayStr() && vencido(pk)));
+  var hTerm = horaDe(r.terminado_at || r.updated_at);
+  var estado = r.terminado ? ("Terminado" + (hTerm ? " " + hTerm : "") + " · " + done + "/" + total)
+             : noTerminado ? ("No terminado · " + done + "/" + total)
+             : ("En curso · " + done + "/" + total);
   var open = !!HIST_OPEN[r.id];
 
   var pill = el("span",{cls:"hpct",text:pct+"%", style:{
@@ -1017,7 +1130,7 @@ function histRow(r){
     el("span",{cls:"hdot", style:{ background:accent }}),
     el("div",{cls:"hdate"},
       el("div",{cls:"d1", text:PROTO_LABEL[pk] + " · " + d1}),
-      el("div",{cls:"d2", text:estado})
+      el("div",{cls:"d2"+(noTerminado?" late":""), text:estado})
     ),
     pill,
     el("span",{cls:"hcar", text: open ? "▲" : "▼"})
