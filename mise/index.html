@@ -295,6 +295,8 @@
 
   /* lista a producir */
   .done .head{ border-bottom:1mm solid var(--accent); }
+  .done .topbar{ padding:calc(env(safe-area-inset-top) + 22px) 24px 0; }
+  .done .topbar .hbar{ margin-bottom:0; }
   .done h2, .empty h2, .pin h2, .cfg h2{ font:700 22pt/1 Archivo,sans-serif; letter-spacing:-.015em; }
   .done .date, .done .bar .n{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
   .done .bar .p{ height:4px; border-radius:0; } .done .bar .p i{ border-radius:0; }
@@ -472,6 +474,9 @@ let _pinErr = "";
 async function init(){
   state="home"; pos=0; hist=[]; SHARED=null;
   setDeck(buildDeckFromData(DATA));
+  // si había una lista abierta (ej. se fue al Inicio y volvió), mostrarla ya
+  const cached = sb ? readCachedList() : null;
+  if(cached){ SHARED = cached; state="done"; }
   render();
   if(!sb) return;
   try{
@@ -480,9 +485,22 @@ async function init(){
     if(items.length) setDeck(buildDeckFromRows(items));
     const rows = await fetchList();
     if(rows.length){ SHARED = rows.sort((a,b)=>a.position-b.position); state="done"; }
+    else if(state==="done"){ SHARED = null; state="home"; }   // la lista se reinició mientras no estaba
     startRealtime();
     render();
-  }catch(e){ /* respaldo, en home */ }
+  }catch(e){ /* respaldo: queda la lista guardada o home */ }
+}
+
+/* copia local de la lista compartida, para volver a ella al instante */
+const LIST_KEY = "mise:lista";
+function readCachedList(){
+  try{ const v = JSON.parse(localStorage.getItem(LIST_KEY)); return Array.isArray(v) && v.length ? v : null; }catch(e){ return null; }
+}
+function cacheList(){
+  try{
+    if(Array.isArray(SHARED) && SHARED.length) localStorage.setItem(LIST_KEY, JSON.stringify(SHARED));
+    else if(state!=="pin" && state!=="config") localStorage.removeItem(LIST_KEY);
+  }catch(e){}
 }
 
 function reset(){ state="home"; pos=0; hist=[]; SHARED=null; LOCAL_EXTRA=[]; DECK.forEach(d=>{d.status=null;d.comment=null;}); render(); }
@@ -720,6 +738,7 @@ function render(){
   app.appendChild(w);
   const newList = app.querySelector(".list");
   if(newList) newList.scrollTop = sc;
+  cacheList();
 }
 
 /* ---------- HOME ---------- */
@@ -1239,6 +1258,7 @@ function mix(a,b,t){
 
 /* ---------- DONE ---------- */
 function done(w){ if(Array.isArray(SHARED)) doneShared(w); else doneLocal(w); }
+function homeBar(){ return el("div",{cls:"hbar"}, el("a",{cls:"home-link",href:"../",text:"← Inicio"})); }
 
 function taskRow(t, isOn, onToggle){
   const row=el("div",{cls:"task"+(isOn?" on":"")},
@@ -1282,6 +1302,7 @@ function doneShared(w){
   w.className="wrap done";
   const tareas = SHARED;
   if(tareas.length===0){
+    w.appendChild(el("div",{cls:"topbar"}, homeBar()));
     w.appendChild(el("div",{cls:"empty"},
       el("div",{cls:"big",text:"✅"}), el("h2",{text:"¡Todo listo!"}),
       el("p",{text:"No quedó nada para producir hoy."})));
@@ -1290,7 +1311,7 @@ function doneShared(w){
   }
   const fecha=new Date().toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long"});
   const bar=el("div",{cls:"bar"}, el("div",{cls:"p"},el("i",{})), el("div",{cls:"n"}));
-  const head=el("div",{cls:"head"},
+  const head=el("div",{cls:"head"}, homeBar(),
     el("div",{cls:"eyebrow",text:"Lista de producción"}),
     el("h2",{text:"A producir"}),
     el("div",{cls:"date",text:fecha.charAt(0).toUpperCase()+fecha.slice(1)}), bar);
@@ -1316,6 +1337,7 @@ function doneLocal(w){
   w.className="wrap done";
   const tareas=DECK.filter(d=>d.status==="producir").concat(LOCAL_EXTRA);
   if(tareas.length===0){
+    w.appendChild(el("div",{cls:"topbar"}, homeBar()));
     w.appendChild(el("div",{cls:"empty"},
       el("div",{cls:"big",text:"✅"}), el("h2",{text:"¡Todo listo!"}),
       el("p",{text:"No quedó nada para producir hoy."})));
@@ -1324,7 +1346,7 @@ function doneLocal(w){
   }
   const fecha=new Date().toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long"});
   const bar=el("div",{cls:"bar"}, el("div",{cls:"p"},el("i",{})), el("div",{cls:"n"}));
-  const head=el("div",{cls:"head"},
+  const head=el("div",{cls:"head"}, homeBar(),
     el("div",{cls:"eyebrow",text:"Lista de producción"}),
     el("h2",{text:"A producir"}),
     el("div",{cls:"date",text:fecha.charAt(0).toUpperCase()+fecha.slice(1)}), bar);
