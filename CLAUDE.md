@@ -31,14 +31,16 @@ guias/index.html        Guías (recetas y guías de cocina)
 
 ## Apps
 
-- **Protocolos** (`protocolos/`): checklists de apertura (azul) y cierre (azul oscuro) compartidas en vivo (Supabase Realtime). "Marcar como terminado" guarda en historial y reinicia la lista. Notas del turno en cierre. Config ⚙ + PIN (Protocolo · Ítem). Tablas: `protocolos_items`, `protocolos_estado`, `protocolos_notas`, `protocolos_historial`.
-- **Mise and Please** (`mise/`): swipe (derecha = listo, izquierda = producir), lista de producción compartida en vivo. Config ⚙ + PIN (Categoría · Ítem).
+- **Protocolos** (`protocolos/`): checklists de apertura (azul) y cierre (azul oscuro) compartidas en vivo (Supabase Realtime). "Marcar como terminado" guarda en historial y reinicia la lista. Notas del turno en cierre. Config ⚙ + PIN (Protocolo · Ítem). Tablas: `protocolos_items` (ítems editables) y `protocolos_dia` (una fila por protocolo y día: ítems marcados en jsonb, notas, terminado; el historial sale de acá).
+- **Mise and Please** (`mise/`): swipe (derecha = listo, izquierda = producir), lista de producción compartida en vivo. Config ⚙ + PIN (Categoría · Ítem) y "Tareas del día". Tablas: `mise_items`, `mise_lista`, `mise_tareas`.
 - **Stock y Pedidos** (`pedidos/`): toma de stock por tarjetas, registro con fecha. Pestañas Stock (pedir = mín − actual; TSV/CSV) y Pedidos por proveedor (formato `- 4 caja (1L) de Muzzarella`). Config ⚙ + PIN (categoría · proveedor · ítem · paquete · cantidad mínima). Tablas: `stock_items`, `stock_registros`, `stock_registro_items`.
 - **Guías** (`guias/`): recetas y guías de cocina (fichas con buscador, filtro por categoría y detalle en la misma pantalla con "Volver"). Los datos van embebidos en un JSON dentro del HTML (`recipes-data`), algunas fichas con foto en base64. Sin Supabase.
 
 ## Backend
 
 - Supabase (plan gratuito), un solo proyecto compartido por todas las apps.
+- **La estructura de la base está en `supabase/`**: `001_esquema_actual.sql` es el punto de partida (no se vuelve a correr) y cada cambio va en un archivo nuevo numerado (`002_…`, `003_…`). Flujo: escribir el SQL, mostrárselo a Aurelio, guardarlo en git con su "subilo", y él lo corre en Supabase → SQL Editor. Claude no se conecta a Supabase directamente. Si una app necesita una tabla o columna nueva, agregar la migración en el mismo cambio.
+- Hay una tabla `notas_prueba` que ninguna app usa (se puede borrar).
 - Cada app tiene un bloque CONFIGURACIÓN con `SUPABASE_URL`, `SUPABASE_ANON`, `ADMIN_PIN`. Mantenerlo idéntico entre apps.
 - La anon key puede ser pública; lo que protege es RLS. Hoy RLS está abierta (`using (true)`) y el PIN es solo del lado del cliente. Plan: Supabase Auth con roles Empleado/Admin (y "local" para una futura app de horas), después de terminar la funcionalidad. Mientras tanto, separar en el código acciones de empleado y de admin.
 
