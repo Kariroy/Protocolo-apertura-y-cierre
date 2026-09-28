@@ -83,12 +83,10 @@
   .delrow{ -webkit-appearance:none; appearance:none; display:flex; align-items:center; justify-content:center; width:100%;
     height:34px; border:none; border-radius:0; background:transparent; color:#D64545; font-size:17px; font-weight:400; cursor:pointer; padding:0; line-height:1; }
   .delrow:active{ background:#F7E4E1; }
-  .grid td.movecol{ width:56px; min-width:56px; padding:0; }
-  .movebox{ display:flex; height:34px; }
-  .moverow{ -webkit-appearance:none; appearance:none; flex:1; display:flex; align-items:center; justify-content:center;
-    border:none; border-radius:0; background:transparent; color:var(--accent,#1f4e96); font-size:12px; cursor:pointer; padding:0; line-height:1; }
-  .moverow:active{ background:var(--chip,#f1ebe0); }
-  .moverow:disabled{ color:#d4ccbc; cursor:default; background:transparent; }
+  .grid td.rownum.grip{ cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .grid td.rownum.grip .gi{ display:block; font-size:9px; line-height:1; color:#b8ae99; letter-spacing:-1px; margin-bottom:2px; }
+  .grid tr.dragging td{ background:#e8eef8 !important; }
+  .grid tr.dragging td.rownum{ cursor:grabbing; }
   .norows{ padding:26px; text-align:center; color:var(--muted); font-size:14px; font-weight:600; }
   .addrow{ margin-top:10px; border:1.5px dashed var(--line); background:transparent; color:var(--muted); border-radius:12px;
     padding:13px; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; width:100%; }
@@ -825,21 +823,46 @@ function rowVisible(r){
   });
 }
 
-/* Orden: sube/baja un ítem dentro de su protocolo (saltea filas ocultas por filtro).
-   Al guardar, position = orden de CFG_ROWS. */
-function cfgNeighbor(idx, dir){
-  var p = normProto(CFG_ROWS[idx].proto);
-  for(var j=idx+dir; j>=0 && j<CFG_ROWS.length; j+=dir){
-    if(rowVisible(CFG_ROWS[j]) && normProto(CFG_ROWS[j].proto)===p) return j;
+/* Orden: se agarra el ítem desde el # y se arrastra (mouse o dedo).
+   Solo se mueve dentro de su protocolo. Al guardar, position = orden de CFG_ROWS. */
+function cfgDragStart(e, tr){
+  if(e.button!=null && e.button!==0) return;
+  e.preventDefault();
+  var tbody = tr.parentNode;
+  var proto = normProto(CFG_ROWS[+tr.getAttribute("data-idx")].proto);
+  tr.classList.add("dragging");
+  function onMove(ev){
+    ev.preventDefault();
+    var y = ev.clientY;
+    var rows = Array.prototype.slice.call(tbody.children);
+    for(var i=0;i<rows.length;i++){
+      var o = rows[i]; if(o===tr) continue;
+      if(normProto(CFG_ROWS[+o.getAttribute("data-idx")].proto)!==proto) continue;
+      var b = o.getBoundingClientRect(), mid = b.top + b.height/2;
+      var before = tr.compareDocumentPosition(o) & Node.DOCUMENT_POSITION_PRECEDING;
+      if(before && y < mid){ tbody.insertBefore(tr, o); break; }
+      if(!before && y > mid){ tbody.insertBefore(tr, o.nextSibling); }
+    }
+    var w = tbody.closest(".tbl-wrap") || document.scrollingElement;
+    var wb = w.getBoundingClientRect ? w.getBoundingClientRect() : {top:0,bottom:innerHeight};
+    if(y < Math.max(wb.top,0)+30) window.scrollBy(0,-12);
+    else if(y > Math.min(wb.bottom,innerHeight)-30) window.scrollBy(0,12);
   }
-  return -1;
-}
-function cfgMove(idx, dir){
-  var j = cfgNeighbor(idx, dir);
-  if(j<0) return;
-  var r = CFG_ROWS.splice(idx,1)[0];
-  CFG_ROWS.splice(j,0,r);
-  render();
+  function onUp(){
+    window.removeEventListener("pointermove",onMove);
+    window.removeEventListener("pointerup",onUp);
+    window.removeEventListener("pointercancel",onUp);
+    tr.classList.remove("dragging");
+    // reordenar CFG_ROWS según el nuevo orden de las filas visibles
+    var order = Array.prototype.map.call(tbody.children,function(o){ return +o.getAttribute("data-idx"); });
+    var slots = order.slice().sort(function(a,b){ return a-b; });
+    var moved = order.map(function(k){ return CFG_ROWS[k]; });
+    slots.forEach(function(k,i){ CFG_ROWS[k] = moved[i]; });
+    render();
+  }
+  window.addEventListener("pointermove",onMove,{passive:false});
+  window.addEventListener("pointerup",onUp);
+  window.addEventListener("pointercancel",onUp);
 }
 function renderConfig(wrap){
   wrap.className = "wrap full cfg";
@@ -848,7 +871,7 @@ function renderConfig(wrap){
   var head = el("div",{cls:"chead"},
     el("h2",{text:"Configuración"}),
     cfgTabsBar(),
-    el("div",{cls:"hint",html:'Editá cada celda. El <b>embudo</b> de cada columna filtra como en Sheets. Elegí el protocolo (Apertura / Cierre) en su columna. Con <b>▲ ▼</b> cambiás el orden.'})
+    el("div",{cls:"hint",html:'Editá cada celda. El <b>embudo</b> de cada columna filtra como en Sheets. Elegí el protocolo (Apertura / Cierre) en su columna. Para cambiar el orden, agarrá el ítem desde el <b>#</b> y arrastralo.'})
   );
 
   var table = el("table",{cls:"grid"});
@@ -862,7 +885,6 @@ function renderConfig(wrap){
     th.addEventListener("click",function(){ openFilter(c.key, th); });
     htr.appendChild(th);
   });
-  htr.appendChild(el("th",{text:"Orden"}));
   htr.appendChild(el("th",{}));
   thead.appendChild(htr); table.appendChild(thead);
 
@@ -872,7 +894,10 @@ function renderConfig(wrap){
     if(!rowVisible(r)) return;
     shown++;
     var tr = el("tr");
-    tr.appendChild(el("td",{cls:"rownum",text:String(shown)}));
+    tr.setAttribute("data-idx", idx);
+    var num = el("td",{cls:"rownum grip",title:"Arrastrá para mover"}, el("span",{cls:"gi",text:"⋮⋮"}), el("span",{text:String(shown)}));
+    num.addEventListener("pointerdown",function(e){ cfgDragStart(e, tr); });
+    tr.appendChild(num);
     COLUMNS.forEach(function(c){
       if(c.type==="select"){
         var v = r[c.key]||"";
@@ -889,13 +914,6 @@ function renderConfig(wrap){
         tr.appendChild(el("td",{}, inp));
       }
     });
-    var up = el("button",{cls:"moverow",text:"▲","aria-label":"Subir"});
-    var down = el("button",{cls:"moverow",text:"▼","aria-label":"Bajar"});
-    if(cfgNeighbor(idx,-1)<0) up.disabled = true;
-    if(cfgNeighbor(idx,1)<0) down.disabled = true;
-    up.addEventListener("click",function(){ cfgMove(idx,-1); });
-    down.addEventListener("click",function(){ cfgMove(idx,1); });
-    tr.appendChild(el("td",{cls:"movecol"}, el("div",{cls:"movebox"}, up, down)));
     var del = el("button",{cls:"delrow",text:"✕","aria-label":"Borrar fila"});
     del.addEventListener("click",function(){ CFG_ROWS.splice(idx,1); render(); });
     tr.appendChild(el("td",{cls:"delcol"}, del));
