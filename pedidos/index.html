@@ -536,7 +536,10 @@ function fmt(n){ if(n===null||n===undefined||n==="") return ""; const x=Math.rou
 /* Modelo min-máx: se pide cuando actual <= mínimo, y se repone hasta el ideal.
    pedirRaw = faltante crudo (en unidades de stock); pedirOf = redondeado a paquetes
    enteros si hay unidades por paquete (por_paquete). */
+// celda vacía = "sin anotar" (no es 0): no se calcula ni se pide. 0 solo si alguien lo cargó.
+function sinAnotar(it){ return it._seen===false || it.contado===false; }
 function pedirRaw(it){
+  if(sinAnotar(it)) return 0;
   const min=num(it.cantidad_minima), id=num(it.ideal);
   const eff = id>0 ? Math.max(id,min) : min;      // si no hay ideal, el objetivo es el mínimo
   const act=num(it.cantidad_actual);
@@ -662,7 +665,7 @@ async function todayRegistro(){
 async function saveRegistro(rows){
   const fecha = todayISO();
   const snap = rows.map((r,i)=>({ categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item,
-    paquete:r.paquete||"", por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), cantidad_actual:num(r.cantidad_actual), position:i }));
+    paquete:r.paquete||"", por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), cantidad_actual:num(r.cantidad_actual), contado:!!r._seen, position:i }));
   const now = new Date().toISOString();
   const prev = await todayRegistro();
   if(!SB_ON){
@@ -677,7 +680,7 @@ async function saveRegistro(rows){
     catch(e){ // si falla, se vuelve a poner lo que había para no perder el conteo anterior
       if(old.length) await sb("POST","stock_registro_items",{ body:old.map(o=>({ categoria:o.categoria, proveedor:o.proveedor, item:o.item,
         paquete:o.paquete, por_paquete:o.por_paquete, cantidad_minima:o.cantidad_minima, ideal:o.ideal, cantidad_actual:o.cantidad_actual,
-        position:o.position, registro_id:rid })) }).catch(()=>{});
+        position:o.position, contado:o.contado, registro_id:rid })) }).catch(()=>{});
       throw e; }
     let reg=prev;
     try{ const up=await sb("PATCH","stock_registros",{ query:"id=eq."+rid, body:{created_at:now}, prefer:"return=representation" });
@@ -765,7 +768,7 @@ function renderCountTable(){
   const vis=countVisible();
   vis.forEach(r=>{
     const inp=el("input",{cls:"cell",type:"text",inputmode:"decimal",autocomplete:"off",
-      value: r._seen?fmt(r.cantidad_actual):"", placeholder:"0"});
+      value: r._seen?fmt(r.cantidad_actual):"", placeholder:"—"});
     r._inp=inp;
     inp.addEventListener("input",()=>{
       let v=inp.value.replace(/[^0-9.,]/g,""); const k=v.search(/[.,]/);
@@ -865,7 +868,7 @@ function goSave(){
   $("save-title").textContent="Guardar stock";
   $("save-sub").innerHTML = "Fecha: <b>"+fechaLarga(todayISO())+"</b><br>"+
     count.rows.length+" ítems · "+seen+" con cantidad · "+aPedir+" para pedir"+
-    (faltan>0 ? ("<br><span style='color:var(--amber)'>"+faltan+" quedaron en 0 (sin contar)</span>") : "");
+    (faltan>0 ? ("<br><span style='color:var(--amber)'>"+faltan+" sin anotar (no se piden)</span>") : "");
 }
 async function doSave(){
   $("do-save").disabled=true; $("do-save").textContent="Guardando…";
@@ -946,19 +949,20 @@ function renderStockTable(){
   rows.forEach(r=>{
     const p=pedirOf(r);
     h+="<tr><td>"+esc(r.categoria)+"</td><td>"+esc(r.proveedor)+"</td><td>"+esc(r.item)+"</td>"+
-       "<td class=num>"+fmt(r.cantidad_minima)+"</td><td class=num>"+fmt(r.ideal)+"</td><td class=num>"+fmt(r.cantidad_actual)+"</td>"+
+       "<td class=num>"+fmt(r.cantidad_minima)+"</td><td class=num>"+fmt(r.ideal)+"</td><td class=num>"+(sinAnotar(r)?"<span style='color:var(--ink-soft)'>sin anotar</span>":fmt(r.cantidad_actual))+"</td>"+
        "<td class='num pedir"+(p>0?"":" ok")+"'>"+(p>0?("<b>"+fmt(p)+"</b>"):"—")+"</td></tr>";
   });
   t.innerHTML=h;
   const totPed=rows.filter(r=>pedirOf(r)>0).length;
-  $("stock-note").textContent = rows.length+" ítems · "+totPed+" para pedir";
+  const sa=rows.filter(sinAnotar).length;
+  $("stock-note").textContent = rows.length+" ítems · "+totPed+" para pedir"+(sa?(" · "+sa+" sin anotar"):"");
 }
 
 /* export */
 function stockMatrix(){
   const rows=filteredStock();
   const head=["Categoría","Proveedor","Ítem","Mínima","Ideal","Actual","Pedir"];
-  const body=rows.map(r=>[r.categoria,r.proveedor,r.item,fmt(r.cantidad_minima),fmt(r.ideal),fmt(r.cantidad_actual),fmt(pedirOf(r))]);
+  const body=rows.map(r=>[r.categoria,r.proveedor,r.item,fmt(r.cantidad_minima),fmt(r.ideal),sinAnotar(r)?"":fmt(r.cantidad_actual),sinAnotar(r)?"":fmt(pedirOf(r))]);
   return [head,...body];
 }
 function toTSV(m){ return m.map(row=>row.map(c=>(""+(c==null?"":c)).replace(/\t/g," ").replace(/\r?\n/g," ")).join("\t")).join("\n"); }
