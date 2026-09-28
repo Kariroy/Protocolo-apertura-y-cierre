@@ -9,7 +9,7 @@ Un solo repo → un solo proyecto de Cloudflare Pages (sin build, output directo
 ```
 index.html              hub: botones a cada app (lista APPS al final del archivo)
 NOVEDADES.md            bitácora entre chats (leer arriba antes de cada cambio)
-supabase/               estructura de la base: 001 = estado inicial, 002+ = cambios
+supabase/               base de datos: esquema.sql = foto completa actual; 00X_… = historial de cambios
 protocolos/index.html   Protocolo Apertura y Cierre
 mise/index.html         Mise and Please
 pedidos/index.html      Stock y Pedidos
@@ -45,8 +45,9 @@ panel/index.html        Panel de control (solo lectura, con PIN): registros de P
 ## Backend
 
 - Supabase (plan gratuito), un solo proyecto compartido por todas las apps.
-- **La estructura de la base está en `supabase/`**: `001_esquema_actual.sql` es el punto de partida (no se vuelve a correr) y cada cambio va en un archivo nuevo numerado (`002_…`, `003_…`). Flujo: escribir el SQL, mostrárselo a Aurelio, guardarlo en git con su "subilo", y él lo corre en Supabase → SQL Editor. Claude no se conecta a Supabase directamente. Si una app necesita una tabla o columna nueva, agregar la migración en el mismo cambio.
+- **La estructura de la base está en `supabase/esquema.sql`**: la foto completa de cómo está hoy (tablas, columnas, reglas, trigger). Para saber qué existe, leer solo la parte de tu app en ese archivo. Los archivos numerados (`001_…` a `006_…`, ya corridos) son el historial; cada cambio nuevo va en el siguiente número libre (mirar `ls supabase/` justo antes, porque otro chat puede haber usado el número). Después de que Aurelio corre una migración nueva, actualizar `esquema.sql` en el mismo cambio. Flujo: escribir el SQL, mostrárselo a Aurelio, guardarlo en git con su "subilo", y él lo corre en Supabase → SQL Editor. Claude no se conecta a Supabase directamente. Si una app necesita una tabla o columna nueva, agregar la migración en el mismo cambio.
 - Hay una tabla `notas_prueba` que ninguna app usa (se puede borrar).
+- Casi todos los `id` son `generated always as identity`: al insertar no mandar `id` (error 428C9); `mise_tareas` es `by default`.
 - Cada app tiene un bloque CONFIGURACIÓN con `SUPABASE_URL`, `SUPABASE_ANON`, `ADMIN_PIN`. Mantenerlo idéntico entre apps.
 - La anon key puede ser pública; lo que protege es RLS. Hoy RLS está abierta (`using (true)`) y el PIN es solo del lado del cliente. Plan: Supabase Auth con roles Empleado/Admin (y "local" para una futura app de horas), después de terminar la funcionalidad. Mientras tanto, separar en el código acciones de empleado y de admin.
 
