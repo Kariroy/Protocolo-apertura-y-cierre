@@ -6,6 +6,7 @@ No es un changelog de todo: solo lo que afecta a otra app, al hub, a la base o a
 
 ---
 
+- **28-sep-2026 · Protocolos** · Base: `004_protocolos_hora_limite.sql` (correr en Supabase): tabla nueva `protocolos_config` (hora límite por protocolo) y columna `protocolos_dia.terminado_at`. El Historial de Protocolos pasó a "Registro" (📋 con PIN).
 - **28-sep-2026 · Stock y Pedidos** · Ojo base: en Supabase los `id` son `GENERATED ALWAYS` (el `001` dice "by default"). No mandar `id` al insertar ni hacer upsert por `id` (da error 428C9); para actualizar, PATCH con `id=eq.X`.
 - **28-sep-2026 · Stock y Pedidos** · Base: `003_stock_un_registro_por_dia.sql` (ya corrida): `stock_registros.fecha` es única (un registro por día) y `stock_registro_items` tiene la columna `contado`. "Hacer stock" es una planilla del día compartida en vivo (se sincroniza cada ~4 s).
 - **28-sep-2026 · Inicio y seguridad** · Nueva regla: antes de cada cambio, `git pull` y releer `CLAUDE.md` + las novedades de arriba de este archivo. Después de subir algo que afecte a otros, anotarlo acá.
