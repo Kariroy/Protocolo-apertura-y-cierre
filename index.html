@@ -2,7 +2,6 @@
 <style>
   :root{
     --cream:#F6F1E9;
-    --bg:#D32F2F;
     --card:#ffffff;
     --ink:#2A241D;
     --muted:#A69B8C;
@@ -11,7 +10,7 @@
     --amber:#E1902B;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg);
+  html, body { margin: 0; padding: 0; height: 100%; background: #F6F1E9;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overscroll-behavior: none; }
   button { font-family: inherit; }
   #app { min-height: 100vh; min-height: 100dvh; display: flex; justify-content: center; align-items: stretch; }
@@ -148,7 +147,7 @@
 
   /* ---------- CHECKLIST ---------- */
   .chk{ display:flex; flex-direction:column; height:100vh; height:100dvh; }
-  .chtop{ flex-shrink:0; background:var(--bg); padding:calc(env(safe-area-inset-top) + 12px) 16px 8px; }
+  .chtop{ flex-shrink:0; background:var(--cream); padding:calc(env(safe-area-inset-top) + 12px) 16px 8px; }
   .chk .chead{ display:flex; align-items:center; gap:12px; }
   .iconbtn{ width:40px; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--card);
     display:grid; place-items:center; cursor:pointer; flex:none; }
@@ -171,7 +170,7 @@
     padding:13px; font-family:inherit; font-size:16px; line-height:1.4; background:var(--card); color:var(--ink);
     -webkit-user-select:text; user-select:text; }
   .notas textarea:focus{ outline:none; border-color:var(--amber); }
-  .chk .cfoot{ flex-shrink:0; background:var(--bg); padding:12px 16px calc(env(safe-area-inset-bottom) + 12px); border-top:1px solid var(--line); }
+  .chk .cfoot{ flex-shrink:0; background:var(--cream); padding:12px 16px calc(env(safe-area-inset-bottom) + 12px); border-top:1px solid var(--line); }
   .finish{ width:100%; border:none; border-radius:16px; padding:17px; font-family:inherit; font-size:17px; font-weight:800;
     color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px; }
   .finish:active{ transform:scale(.98); }
