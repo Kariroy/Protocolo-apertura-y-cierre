@@ -83,6 +83,12 @@
   .delrow{ -webkit-appearance:none; appearance:none; display:flex; align-items:center; justify-content:center; width:100%;
     height:34px; border:none; border-radius:0; background:transparent; color:#D64545; font-size:17px; font-weight:400; cursor:pointer; padding:0; line-height:1; }
   .delrow:active{ background:#F7E4E1; }
+  .grid td.movecol{ width:56px; min-width:56px; padding:0; }
+  .movebox{ display:flex; height:34px; }
+  .moverow{ -webkit-appearance:none; appearance:none; flex:1; display:flex; align-items:center; justify-content:center;
+    border:none; border-radius:0; background:transparent; color:var(--accent,#1f4e96); font-size:12px; cursor:pointer; padding:0; line-height:1; }
+  .moverow:active{ background:var(--chip,#f1ebe0); }
+  .moverow:disabled{ color:#d4ccbc; cursor:default; background:transparent; }
   .norows{ padding:26px; text-align:center; color:var(--muted); font-size:14px; font-weight:600; }
   .addrow{ margin-top:10px; border:1.5px dashed var(--line); background:transparent; color:var(--muted); border-radius:12px;
     padding:13px; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; width:100%; }
@@ -819,6 +825,22 @@ function rowVisible(r){
   });
 }
 
+/* Orden: sube/baja un ítem dentro de su protocolo (saltea filas ocultas por filtro).
+   Al guardar, position = orden de CFG_ROWS. */
+function cfgNeighbor(idx, dir){
+  var p = normProto(CFG_ROWS[idx].proto);
+  for(var j=idx+dir; j>=0 && j<CFG_ROWS.length; j+=dir){
+    if(rowVisible(CFG_ROWS[j]) && normProto(CFG_ROWS[j].proto)===p) return j;
+  }
+  return -1;
+}
+function cfgMove(idx, dir){
+  var j = cfgNeighbor(idx, dir);
+  if(j<0) return;
+  var r = CFG_ROWS.splice(idx,1)[0];
+  CFG_ROWS.splice(j,0,r);
+  render();
+}
 function renderConfig(wrap){
   wrap.className = "wrap full cfg";
   if(CFG_TAB==="historial"){ renderConfigHist(wrap); return; }
@@ -826,7 +848,7 @@ function renderConfig(wrap){
   var head = el("div",{cls:"chead"},
     el("h2",{text:"Configuración"}),
     cfgTabsBar(),
-    el("div",{cls:"hint",html:'Editá cada celda. El <b>embudo</b> de cada columna filtra como en Sheets. Elegí el protocolo (Apertura / Cierre) en su columna.'})
+    el("div",{cls:"hint",html:'Editá cada celda. El <b>embudo</b> de cada columna filtra como en Sheets. Elegí el protocolo (Apertura / Cierre) en su columna. Con <b>▲ ▼</b> cambiás el orden.'})
   );
 
   var table = el("table",{cls:"grid"});
@@ -840,6 +862,7 @@ function renderConfig(wrap){
     th.addEventListener("click",function(){ openFilter(c.key, th); });
     htr.appendChild(th);
   });
+  htr.appendChild(el("th",{text:"Orden"}));
   htr.appendChild(el("th",{}));
   thead.appendChild(htr); table.appendChild(thead);
 
@@ -866,6 +889,13 @@ function renderConfig(wrap){
         tr.appendChild(el("td",{}, inp));
       }
     });
+    var up = el("button",{cls:"moverow",text:"▲","aria-label":"Subir"});
+    var down = el("button",{cls:"moverow",text:"▼","aria-label":"Bajar"});
+    if(cfgNeighbor(idx,-1)<0) up.disabled = true;
+    if(cfgNeighbor(idx,1)<0) down.disabled = true;
+    up.addEventListener("click",function(){ cfgMove(idx,-1); });
+    down.addEventListener("click",function(){ cfgMove(idx,1); });
+    tr.appendChild(el("td",{cls:"movecol"}, el("div",{cls:"movebox"}, up, down)));
     var del = el("button",{cls:"delrow",text:"✕","aria-label":"Borrar fila"});
     del.addEventListener("click",function(){ CFG_ROWS.splice(idx,1); render(); });
     tr.appendChild(el("td",{cls:"delcol"}, del));
