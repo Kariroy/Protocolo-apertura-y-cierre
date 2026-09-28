@@ -18,6 +18,7 @@ guias/index.html        Guías (recetas y guías de cocina)
 
 - **Una app por chat.** Al empezar, el usuario dice en qué app se trabaja. Tocar SOLO la carpeta de esa app. El `index.html` de la raíz (hub) y este `CLAUDE.md` se tocan solo cuando se pide explícitamente (excepción: al migrar/crear una app, pasar su entrada en `APPS` del hub a `ok:true`).
 - **Chat "Inicio y seguridad":** es el único que trabaja el hub, este `CLAUDE.md` y la seguridad (login, roles, reglas de Supabase). Como la seguridad cruza todas las apps, ese chat sí puede tocar el bloque de CONFIGURACIÓN/login de cada app, sin cambiar nada más de ellas.
+- **Ahorrar tokens: leer solo lo necesario.** No abrir ni leer archivos de otras apps ni el hub (este `CLAUDE.md` ya tiene el contexto). Dentro del archivo de la app, no leerlo entero: buscar con grep la parte que se va a cambiar y leer solo esas líneas. `guias/index.html` pesa ~1 MB porque la línea del JSON `recipes-data` tiene fotos en base64: nunca leer esa línea completa; para ver o editar fichas, procesarla con un script que muestre solo lo necesario.
 - **Nada llega a producción sin autorización.** Hacer los cambios, mostrar una captura de cómo quedan, y hacer push a `main` recién cuando Aurelio lo autoriza. Cloudflare publica `main` automáticamente.
 - Antes de hacer push: `git pull --rebase origin main` (puede haber otro chat trabajando en otra carpeta).
 - Cada app = un solo `index.html` autocontenido (HTML + CSS + JS embebido, sin build). Excepción aceptada: la librería de Supabase desde CDN jsdelivr.
