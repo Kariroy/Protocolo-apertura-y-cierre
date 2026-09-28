@@ -198,6 +198,9 @@ table.stock td.pedir.ok{color:var(--ink-soft)}
 .cfg-scroll{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .tbl-wrap{flex:1;overflow:auto;border:1px solid #D8CFBB;border-radius:10px;background:#fff;-webkit-overflow-scrolling:touch}
 table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:620px}
+#count-table{min-width:0}
+#count-table td.ro{white-space:normal}
+#count-table td.numtd{width:90px}
 .grid th{position:sticky;top:0;background:#EFE9DB;z-index:2;text-align:left;font-size:12px;color:#6B6250;font-weight:800;padding:8px 8px;border-right:1px solid #D8CFBB;border-bottom:1px solid #C9BFA8;white-space:nowrap}
 .grid th .thh{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .grid th.rownum{left:0;z-index:3;width:38px;min-width:38px;text-align:center;padding:8px 0}
@@ -715,29 +718,22 @@ function renderCountTable(){
   const host=$("count-table"); host.innerHTML="";
   const head=el("tr",{},
     el("th",{text:"Ítem"}), el("th",{text:"Paquete"}),
-    el("th",{cls:"num",text:"Mín"}), el("th",{cls:"num",text:"Ideal"}),
-    el("th",{cls:"num",text:"Actual"}), el("th",{cls:"num",text:"Pedir"}));
+    el("th",{cls:"num",text:"Actual"}));
   host.appendChild(el("thead",{},head));
   const tb=el("tbody",{});
   const vis=countVisible();
   vis.forEach(r=>{
-    const pedCell=el("td",{cls:"pedir"});
-    function paintPed(){ const p=pedirOf(r); pedCell.innerHTML = p>0?("<b>"+esc(fmt(p))+"</b>"):"—"; pedCell.classList.toggle("ok",!(p>0)); }
     const inp=el("input",{cls:"cell",type:"text",inputmode:"decimal",autocomplete:"off",
       value: r._seen?fmt(r.cantidad_actual):"", placeholder:"0"});
     inp.addEventListener("input",()=>{
       let v=inp.value.replace(/[^0-9.,]/g,""); const k=v.search(/[.,]/);
       if(k!==-1) v=v.slice(0,k+1)+v.slice(k+1).replace(/[.,]/g,""); inp.value=v;
-      r.cantidad_actual=num(v); r._seen=(v!==""); paintPed(); updateCountCounter();
+      r.cantidad_actual=num(v); r._seen=(v!==""); updateCountCounter();
     });
     const tr=el("tr",{},
       el("td",{cls:"ro",text:r.item}),
       el("td",{cls:"ro soft",text:r.paquete||""}),
-      el("td",{cls:"ro soft num",text:fmt(r.cantidad_minima)}),
-      el("td",{cls:"ro soft num",text:fmt(r.ideal)}),
-      el("td",{cls:"numtd"}, inp),
-      pedCell);
-    paintPed();
+      el("td",{cls:"numtd"}, inp));
     tb.appendChild(tr);
   });
   host.appendChild(tb);
