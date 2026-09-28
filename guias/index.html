@@ -168,6 +168,13 @@
 
   [hidden]{display:none !important}
 
+  .home-link{
+    display:inline-flex;align-items:center;gap:1.6mm;margin-bottom:4mm;
+    font:700 8.5pt/1.1 'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--muted);text-decoration:none;
+  }
+  .home-link:hover{color:var(--accent)}
+
   @media (max-width:480px){
     body{padding-inline:14px}
     table.recipes thead th.yield,
@@ -182,6 +189,7 @@
 <div class="wrap">
 
   <section id="view-list">
+    <a class="home-link" href="../">← Inicio</a>
     <header class="top">
       <h1>Guías del Local</h1>
       <span class="sub" id="count-label">1 guía</span>

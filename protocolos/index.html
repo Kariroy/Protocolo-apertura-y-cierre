@@ -22,6 +22,11 @@
     border:1px solid var(--line); background:var(--card); color:var(--muted); font-size:19px; cursor:pointer;
     z-index:4; display:flex; align-items:center; justify-content:center; }
   .gear:active{ transform:scale(.95); }
+  /* volver al hub (inicio de Demeter) */
+  .home-link{ position:absolute; top:16px; left:16px; width:40px; height:40px; border-radius:12px;
+    border:1px solid var(--line); background:var(--card); color:var(--muted); font-size:19px; text-decoration:none;
+    z-index:4; display:flex; align-items:center; justify-content:center; }
+  .home-link:active{ transform:scale(.95); }
 
   .btn{ display:block; width:100%; border:none; border-radius:18px; padding:19px; font-size:18px;
     font-weight:800; letter-spacing:.3px; background:var(--ink); color:#fff; font-family:inherit; cursor:pointer; }
@@ -593,6 +598,7 @@ function renderHome(wrap){
   wrap.appendChild(hint);
 
   wrap.appendChild(el("button",{cls:"gear","aria-label":"Configuración",text:"⚙",onClick:openPin}));
+  wrap.appendChild(el("a",{cls:"home-link",href:"../","aria-label":"Volver al inicio",text:"←"}));
 }
 
 /* ---------- CHECKLIST ---------- */

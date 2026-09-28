@@ -638,7 +638,6 @@ async function loadRegistroItems(reg){
 const SCREENS=["home","count","save","reglist","regview","config"];
 function show(scr){ closePopovers(); SCREENS.forEach(s=>$(s).classList.add("hidden")); $(scr).classList.remove("hidden");
   $("home-icons").style.display = (scr==="home")?"flex":"none";
-  $("back").classList.toggle("hidden", scr==="home");
   $("progbar").classList.add("hidden");
   document.querySelector(".app").classList.toggle("wide", scr==="config" || scr==="regview" || scr==="count");
 }
@@ -1047,7 +1046,7 @@ function goBack(){
   if(cur==="reglist"){ show("home"); return; }
   if(cur==="regview"){ showRegList(); return; }
   if(cur==="config"){ show("home"); return; }
-  show("home");
+  location.href="../";   // desde el inicio de la app: volver al hub
 }
 
 /* ---------- eventos ---------- */

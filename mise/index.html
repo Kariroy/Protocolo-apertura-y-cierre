@@ -60,6 +60,14 @@
     display:flex;align-items:center;justify-content:center;
   }
   .gear:active{transform:scale(.95)}
+  /* volver al hub (inicio de Demeter) */
+  .home-link{
+    position:absolute;top:calc(env(safe-area-inset-top) + 14px);left:16px;
+    width:40px;height:40px;border-radius:12px;border:1px solid var(--line);
+    background:var(--card);color:var(--muted);font-size:19px;text-decoration:none;z-index:4;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .home-link:active{transform:scale(.95)}
 
   /* ---------- SWIPE ---------- */
   .top{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 12px) 18px 10px}
@@ -659,6 +667,7 @@ function home(w){
   );
   w.append(top,legend,bottom);
   w.appendChild(el("button",{cls:"gear","aria-label":"Configuración",text:"⚙",onClick:openPin}));
+  w.appendChild(el("a",{cls:"home-link",href:"../","aria-label":"Volver al inicio",text:"←"}));
 }
 
 /* ---------- PIN ---------- */
