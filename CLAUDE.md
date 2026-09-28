@@ -23,13 +23,14 @@ guias/index.html        Guías del Local
 - Al actualizar, cambiar SOLO lo pedido; conservar lógica, diseño y estructura.
 - Normalizar datos antes de inyectarlos (el agrupado por proveedor depende de strings exactos).
 - Panel de configuración estándar entre apps: tabla editable estilo Excel con filtro por columna, protegido con ⚙ + PIN.
+- **Estilo único para todas las apps y el hub = el de Guías del Local, con acento azul.** Fondo `#faf7f2`, tarjetas `#ffffff`, tinta `#1c1a17`, gris `#6b6459`, líneas `#e2dbcd`, chip `#f1ebe0`, acento `#1f4e96` (hover `#173c74`). Tipografías: Archivo (textos y títulos) e IBM Plex Mono (etiquetas, botones y números, en mayúsculas con algo de espaciado), desde Google Fonts. Títulos con raya azul de 1mm debajo; bordes finos y esquinas chicas (1–2mm). Verde `#2e7d4f` = listo/ok y ámbar `#a8541d` = producir/atención quedan como colores de estado, no de marca. Cada app arranca con "← Inicio" que vuelve al hub (`../`). En Protocolos, Mise y Stock el estilo nuevo está en un bloque "ESTILO DEMETER" al final del CSS.
 - Todas las apps comparten el mismo origen, por lo tanto el mismo `localStorage`: cualquier clave guardada en el navegador debe llevar el prefijo de la app (ej. `mise:…`, `pedidos:…`).
 - Los links internos de cada app deben ser relativos a su carpeta (sin `/` inicial). Para volver al hub: `../`.
 
 ## Apps
 
 - **Protocolos** (`protocolos/`): checklists de apertura (naranja) y cierre (azul) compartidas en vivo (Supabase Realtime). "Marcar como terminado" guarda en historial y reinicia la lista. Notas del turno en cierre. Config ⚙ + PIN (Protocolo · Ítem). Tablas: `protocolos_items`, `protocolos_estado`, `protocolos_notas`, `protocolos_historial`.
-- **Mise and Please** (`mise/`): swipe (derecha = listo, izquierda = producir), lista de producción compartida en vivo. Config ⚙ + PIN (Categoría · Ítem). Estilo claro crema/verde/ámbar, serif (se descartaron rediseños oscuros).
+- **Mise and Please** (`mise/`): swipe (derecha = listo, izquierda = producir), lista de producción compartida en vivo. Config ⚙ + PIN (Categoría · Ítem).
 - **Stock y Pedidos** (`pedidos/`): toma de stock por tarjetas, registro con fecha. Pestañas Stock (pedir = mín − actual; TSV/CSV) y Pedidos por proveedor (formato `- 4 caja (1L) de Muzzarella`). Config ⚙ + PIN (categoría · proveedor · ítem · paquete · cantidad mínima). Tablas: `stock_items`, `stock_registros`, `stock_registro_items`.
 - **Guías del Local** (`guias/`): buscador + tabla; la guía se abre en la misma pantalla con botón volver. Se cargan de a una, sin placeholders.
 

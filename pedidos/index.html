@@ -6,19 +6,21 @@
 <title>Stock y pedidos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --kraft:#E7DCC6; --kraft-2:#DFD2B8; --paper:#FBF9F3;
-  --ink:#251F17; --ink-soft:#7A6E59; --line:#D4C6AA;
-  --green:#46643E; --green-2:#3A5333; --green-soft:#EAF0E4; --green-line:#CBD9C1;
-  --amber:#B7842A; --amber-soft:#F3E8CC;
-  --red:#A5432F; --red-soft:#F3DDD6;
-  --shadow:0 1px 0 rgba(0,0,0,.04),0 14px 34px -20px rgba(60,45,20,.6);
+  /* Estilo Demeter (mismo lenguaje que Guías del Local): "green" es el color
+     principal de la app, ahora el azul; ámbar y rojo quedan como estados. */
+  --kraft:#faf7f2; --kraft-2:#f1ebe0; --paper:#ffffff;
+  --ink:#1c1a17; --ink-soft:#6b6459; --line:#e2dbcd;
+  --green:#1f4e96; --green-2:#173c74; --green-soft:#e8eef7; --green-line:#c9d6ea;
+  --amber:#a8541d; --amber-soft:#f5ead9;
+  --red:#b3402a; --red-soft:#f3ddd6;
+  --shadow:0 10px 26px -22px rgba(28,26,23,.45);
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--kraft);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;
+body{background:var(--kraft);color:var(--ink);font-family:Archivo,-apple-system,BlinkMacSystemFont,sans-serif;
   -webkit-font-smoothing:antialiased;display:flex;justify-content:center;overscroll-behavior:none}
 .app{width:100%;max-width:560px;min-height:100dvh;display:flex;flex-direction:column;
   padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px);transition:max-width .18s ease}
@@ -33,7 +35,7 @@ header{display:flex;align-items:center;gap:10px;padding:18px 2px 12px}
 .iconbtn.hidden{display:none}
 .title{flex:1;min-width:0}
 .title h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.title .sub{font-family:"Space Mono",monospace;font-size:12px;color:var(--ink-soft);margin-top:2px}
+.title .sub{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);margin-top:2px}
 .icons{display:flex;gap:8px}
 .bar{height:6px;border-radius:99px;background:var(--kraft-2);overflow:hidden;margin:2px 2px 0}
 .bar>i{display:block;height:100%;width:0;background:var(--green);border-radius:99px;transition:width .25s ease}
@@ -51,7 +53,7 @@ header{display:flex;align-items:center;gap:10px;padding:18px 2px 12px}
 .bigbtn .bs{font-size:13px;opacity:.9;font-weight:500}
 .bigbtn.ghost{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
 .bigbtn.ghost .bs{color:var(--ink-soft);opacity:1}
-.notice{margin:16px 2px 0;font-family:"Space Mono",monospace;font-size:11.5px;line-height:1.5;
+.notice{margin:16px 2px 0;font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.5;
   color:var(--ink-soft);background:var(--amber-soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 
 /* CATS */
@@ -63,7 +65,7 @@ header{display:flex;align-items:center;gap:10px;padding:18px 2px 12px}
   box-shadow:var(--shadow);transition:transform .08s ease}
 .catbtn:active{transform:scale(.99)}
 .catbtn .cn{flex:1;font-weight:600;font-size:16px;color:var(--ink)}
-.catbtn .cc{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);
+.catbtn .cc{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);
   border:1px solid var(--line);border-radius:99px;padding:2px 8px}
 
 /* COUNT */
@@ -73,19 +75,19 @@ header{display:flex;align-items:center;gap:10px;padding:18px 2px 12px}
   display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
 .card.enter{animation:enter .2s ease}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.prov{display:inline-flex;align-items:center;gap:7px;font-family:"Space Mono",monospace;font-size:12px;
+.prov{display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:12px;
   letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase}
 .prov .dot{width:8px;height:8px;border-radius:99px;background:var(--green)}
-.cat-chip{font-family:"Space Mono",monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+.cat-chip{font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
   color:var(--green-2);background:var(--green-soft);border:1px solid var(--green-line);border-radius:99px;padding:3px 10px;margin-bottom:12px}
 .nombre{font-size:26px;line-height:1.14;font-weight:700;margin:6px 0 6px;letter-spacing:-.01em}
 .desc{font-size:15px;color:var(--ink-soft);font-weight:500;line-height:1.35}
-.minline{font-family:"Space Mono",monospace;font-size:12.5px;color:var(--ink-soft);margin-top:10px}
+.minline{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);margin-top:10px}
 .minline b{color:var(--amber);font-weight:700}
 .qtywrap{margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:8px}
-.qtywrap>label{font-family:"Space Mono",monospace;font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+.qtywrap>label{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
 .qtyrow{display:flex;align-items:center;gap:12px}
-input.bignum{width:130px;font-family:"Space Mono",monospace;font-weight:700;font-size:40px;text-align:center;
+input.bignum{width:130px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:40px;text-align:center;
   color:var(--ink);background:transparent;border:none;border-bottom:2px solid var(--line);padding:2px 4px 8px;outline:none}
 input.bignum:focus{border-color:var(--green)}
 input.bignum::placeholder{color:#C9BCA1}
@@ -100,10 +102,10 @@ input.bignum::placeholder{color:#C9BCA1}
 .btn-ghost:active{background:var(--amber-soft)}
 .btn-green{background:var(--green);color:#F6F4EC}
 .btn-green:active{background:var(--green-2)}
-.meta{display:flex;justify-content:space-between;align-items:center;font-family:"Space Mono",monospace;font-size:11.5px;
+.meta{display:flex;justify-content:space-between;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:11.5px;
   color:var(--ink-soft);padding:14px 4px 2px}
 .meta b{color:var(--ink);font-weight:700}
-.linkbtn{background:none;border:none;color:var(--amber);font-family:"Space Mono",monospace;font-size:11.5px;
+.linkbtn{background:none;border:none;color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:11.5px;
   cursor:pointer;text-decoration:underline;padding:2px}
 
 /* SAVE */
@@ -112,7 +114,7 @@ input.bignum::placeholder{color:#C9BCA1}
   padding:28px 22px;text-align:center}
 .save-card .big{font-size:44px}
 .save-card h3{font-size:20px;margin:12px 0 6px;font-weight:700}
-.save-card p{font-family:"Space Mono",monospace;font-size:12.5px;color:var(--ink-soft);margin:0 0 20px;line-height:1.5}
+.save-card p{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);margin:0 0 20px;line-height:1.5}
 
 /* REGISTRO LIST */
 .reglist{flex:1;padding:6px 2px 0;overflow-y:auto;min-height:0}
@@ -121,7 +123,7 @@ input.bignum::placeholder{color:#C9BCA1}
 .reg-row:active{transform:scale(.99)}
 .reg-row .rd{flex:1}
 .reg-row .rd .rf{font-weight:700;font-size:16px}
-.reg-row .rd .rt{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);margin-top:2px}
+.reg-row .rd .rt{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);margin-top:2px}
 .reg-row .chev{color:var(--ink-soft);font-size:20px}
 
 /* REGISTRO VIEW */
@@ -142,13 +144,13 @@ input.bignum::placeholder{color:#C9BCA1}
 .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:var(--shadow)}
 table.stock{border-collapse:collapse;width:100%;font-size:13px}
 table.stock th,table.stock td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-table.stock th{font-family:"Space Mono",monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
+table.stock th{font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
   color:var(--ink-soft);background:var(--kraft-2);position:sticky;top:0}
-table.stock td.num,table.stock th.num{text-align:right;font-family:"Space Mono",monospace}
+table.stock td.num,table.stock th.num{text-align:right;font-family:'IBM Plex Mono',monospace}
 table.stock tr:last-child td{border-bottom:none}
 table.stock td.pedir b{color:var(--red);font-weight:700}
 table.stock td.pedir.ok{color:var(--ink-soft)}
-.count-note{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);margin:8px 2px 0}
+.count-note{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);margin:8px 2px 0}
 /* tabla de conteo */
 .count-toolbar{display:flex;gap:8px;margin:2px 2px 10px;flex-wrap:wrap}
 .count-toolbar select,.count-toolbar input{font-family:inherit;font-size:14px;color:var(--ink);
@@ -158,8 +160,8 @@ table.stock td.pedir.ok{color:var(--ink-soft)}
 .count-toolbar select:focus,.count-toolbar input:focus{border-color:var(--green)}
 .grid td.ro{padding:8px 10px;font-size:14px;color:var(--ink);white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}
 .grid td.ro.soft{color:var(--ink-soft)}
-.grid td.ro.num{text-align:right;font-family:"Space Mono",monospace}
-.grid td.pedir{padding:8px 10px;text-align:right;font-family:"Space Mono",monospace;white-space:nowrap}
+.grid td.ro.num{text-align:right;font-family:'IBM Plex Mono',monospace}
+.grid td.pedir{padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
 .grid td.pedir b{color:var(--red);font-weight:700}
 .grid td.pedir.ok{color:var(--ink-soft)}
 
@@ -172,17 +174,17 @@ table.stock td.pedir.ok{color:var(--ink-soft)}
   margin-bottom:12px;box-shadow:var(--shadow)}
 .ticket .t-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .ticket .t-head .p{flex:1;font-weight:700;font-size:16px;letter-spacing:-.01em}
-.ticket .t-head .c{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);
+.ticket .t-head .c{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);
   border:1px solid var(--line);border-radius:99px;padding:2px 8px}
 .copybtn{width:38px;height:38px;flex:0 0 38px;border-radius:10px;border:1px solid var(--line);background:#fff;
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .08s ease,background .15s ease}
 .copybtn:active{transform:scale(.92)}
 .copybtn.ok{background:var(--green-soft);border-color:var(--green-line)}
-.lines{list-style:none;margin:0;padding:0;font-family:"Space Mono",monospace;font-size:13.5px;line-height:1.55}
+.lines{list-style:none;margin:0;padding:0;font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.55}
 .lines li{border-bottom:1px dashed var(--line);padding:5px 0;text-align:left}
 .lines li:last-child{border-bottom:none}
 .lines b{font-weight:700;color:var(--ink)}
-.empty{text-align:center;color:var(--ink-soft);font-family:"Space Mono",monospace;font-size:13px;padding:40px 10px;line-height:1.6}
+.empty{text-align:center;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:40px 10px;line-height:1.6}
 
 /* ============================================================
    CONFIG — GRILLA EDITABLE REUTILIZABLE (estilo Sheets)
@@ -261,7 +263,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:620px}
 /* PIN */
 .pinpad{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:0 2px}
 .pinpad h3{font-size:18px;margin:0;font-weight:700}
-.pinpad input{width:160px;font-family:"Space Mono",monospace;font-weight:700;font-size:32px;text-align:center;letter-spacing:8px;
+.pinpad input{width:160px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:32px;text-align:center;letter-spacing:8px;
   color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px;outline:none}
 .pinpad input:focus{border-color:var(--green)}
 .pinpad .go{background:var(--green);color:#F6F4EC;border:none;border-radius:12px;padding:13px 28px;font-family:inherit;font-weight:600;font-size:15px;cursor:pointer}
@@ -280,11 +282,45 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:620px}
 .restart:active{background:var(--kraft-2)}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);
   color:var(--paper);font-size:13px;font-weight:500;padding:10px 18px;border-radius:99px;opacity:0;
-  pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:50;font-family:"Space Mono",monospace;max-width:88%;text-align:center}
+  pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:50;font-family:'IBM Plex Mono',monospace;max-width:88%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .hidden{display:none !important}
 .center-msg{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
-  color:var(--ink-soft);font-family:"Space Mono",monospace;font-size:13px;padding:40px 20px;line-height:1.6}
+  color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:40px 20px;line-height:1.6}
+
+/* ============================================================
+   ESTILO DEMETER — formas y tipografía como Guías del Local.
+   Va al final para pisar lo anterior sin tocar la lógica.
+   ============================================================ */
+header{ border-bottom:1mm solid var(--green); padding-bottom:3mm; margin-bottom:4mm; }
+.title h1{ font:700 18pt/1.05 Archivo,sans-serif; letter-spacing:-.015em; }
+.title .sub{ text-transform:uppercase; letter-spacing:.04em; font-size:11px; margin-top:4px; }
+.iconbtn, .copybtn{ border-radius:1.5mm; }
+.home h2, .cats-head h2{ font:700 20pt/1.05 Archivo,sans-serif; letter-spacing:-.015em; }
+.bigbtn{ border-radius:2mm; }
+.bigbtn .bt{ font:700 19px/1.2 Archivo,sans-serif; }
+.notice{ border-radius:1.5mm; border-style:dashed; }
+.catbtn, .reg-row, .ticket, .save-card, .card{ border-radius:2mm; }
+.cat-chip, .catbtn .cc, .ticket .t-head .c{ border-radius:1mm; }
+.btn, .send, .restart, .copiar-todo, .exportrow button, .tab, .cfgbtn, .pinpad .go, .pinpad input,
+.filters select, .count-toolbar select, .count-toolbar input{ border-radius:1.5mm; }
+.tab, .cfgbtn, .pinpad .go, .copiar-todo, .restart, .exportrow button, .btn{
+  font-family:'IBM Plex Mono',monospace; font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-size:12px; }
+.bar{ height:4px; border-radius:0; } .bar>i{ border-radius:0; }
+.tablewrap, .tbl-wrap{ border-radius:1.5mm; border-color:var(--line); }
+table.stock th, .grid th{ background:var(--kraft-2); color:var(--ink-soft); font:700 7.5pt/1.4 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
+.fbtn{ border-radius:1mm; border-color:var(--line); background:var(--paper); color:var(--ink-soft); }
+.fbtn.on{ background:var(--green); border-color:var(--green); }
+.grid input.cell:focus{ border-color:var(--green); }
+.grid td.rownum{ font-family:'IBM Plex Mono',monospace; color:var(--green); background:var(--kraft-2); }
+.grid tbody tr:nth-child(even) td.rownum{ background:#ebe4d6; }
+.addrow{ border-radius:1.5mm; border:1px dashed #d8d0c2; font:700 8.5pt/1.1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; padding:14px; }
+.cfg-restore{ font-family:'IBM Plex Mono',monospace; font-size:12px; }
+.pop{ border-radius:1.5mm; }
+.pop .psearch input, .pop .newrow input, .pop .pfoot button{ border-radius:1mm; }
+.opt .oedit{ border-color:var(--green); }
+.modal{ border-radius:2mm; } .modal .mrow button{ border-radius:1.5mm; }
+.toast{ border-radius:1.5mm; }
 </style>
 </head>
 <body>
