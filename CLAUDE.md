@@ -17,6 +17,7 @@ guias/index.html        Guías (recetas y guías de cocina)
 ## Reglas de trabajo (no romper)
 
 - **Una app por chat.** Al empezar, el usuario dice en qué app se trabaja. Tocar SOLO la carpeta de esa app. El `index.html` de la raíz (hub) y este `CLAUDE.md` se tocan solo cuando se pide explícitamente (excepción: al migrar/crear una app, pasar su entrada en `APPS` del hub a `ok:true`).
+- **Chat "Inicio y seguridad":** es el único que trabaja el hub, este `CLAUDE.md` y la seguridad (login, roles, reglas de Supabase). Como la seguridad cruza todas las apps, ese chat sí puede tocar el bloque de CONFIGURACIÓN/login de cada app, sin cambiar nada más de ellas.
 - **Nada llega a producción sin autorización.** Hacer los cambios, mostrar una captura de cómo quedan, y hacer push a `main` recién cuando Aurelio lo autoriza. Cloudflare publica `main` automáticamente.
 - Antes de hacer push: `git pull --rebase origin main` (puede haber otro chat trabajando en otra carpeta).
 - Cada app = un solo `index.html` autocontenido (HTML + CSS + JS embebido, sin build). Excepción aceptada: la librería de Supabase desde CDN jsdelivr.
@@ -29,7 +30,7 @@ guias/index.html        Guías (recetas y guías de cocina)
 
 ## Apps
 
-- **Protocolos** (`protocolos/`): checklists de apertura (naranja) y cierre (azul) compartidas en vivo (Supabase Realtime). "Marcar como terminado" guarda en historial y reinicia la lista. Notas del turno en cierre. Config ⚙ + PIN (Protocolo · Ítem). Tablas: `protocolos_items`, `protocolos_estado`, `protocolos_notas`, `protocolos_historial`.
+- **Protocolos** (`protocolos/`): checklists de apertura (azul) y cierre (azul oscuro) compartidas en vivo (Supabase Realtime). "Marcar como terminado" guarda en historial y reinicia la lista. Notas del turno en cierre. Config ⚙ + PIN (Protocolo · Ítem). Tablas: `protocolos_items`, `protocolos_estado`, `protocolos_notas`, `protocolos_historial`.
 - **Mise and Please** (`mise/`): swipe (derecha = listo, izquierda = producir), lista de producción compartida en vivo. Config ⚙ + PIN (Categoría · Ítem).
 - **Stock y Pedidos** (`pedidos/`): toma de stock por tarjetas, registro con fecha. Pestañas Stock (pedir = mín − actual; TSV/CSV) y Pedidos por proveedor (formato `- 4 caja (1L) de Muzzarella`). Config ⚙ + PIN (categoría · proveedor · ítem · paquete · cantidad mínima). Tablas: `stock_items`, `stock_registros`, `stock_registro_items`.
 - **Guías** (`guias/`): recetas y guías de cocina (fichas con buscador, filtro por categoría y detalle en la misma pantalla con "Volver"). Los datos van embebidos en un JSON dentro del HTML (`recipes-data`), algunas fichas con foto en base64. Sin Supabase.
