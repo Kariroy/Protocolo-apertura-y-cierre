@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<title>Mise and Please</title>
+<style>
+  :root{
+    --cream:#F5F0E6;
+    --card:#FCFAF5;
+    --ink:#2A241D;
+    --muted:#A2977F;
+    --line:#E7DFCF;
+    --green:#2F9E6B;
+    --green-soft:#E4F2E9;
+    --amber:#C96A2B;
+    --amber-soft:#F6E7D7;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    overflow:hidden;
+    height:100dvh;
+    -webkit-user-select:none;user-select:none;
+  }
+  #app{position:relative;height:100dvh;width:100%;overflow:hidden}
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column}
+
+  /* ---------- HOME ---------- */
+  .home{padding:calc(env(safe-area-inset-top) + 8vh) 26px 40px;text-align:center;justify-content:space-between;height:100%}
+  .eyebrow{font-size:12px;letter-spacing:3.5px;color:var(--muted);font-weight:800;text-transform:uppercase}
+  .home h1{font-family:Georgia,"Times New Roman",serif;font-size:44px;line-height:1.02;margin:10px 0 0;font-weight:800}
+  .home h1 em{font-style:italic;font-weight:500}
+  .legend{display:flex;flex-direction:column;gap:12px;margin:6vh 0}
+  .lg{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;text-align:left}
+  .lg .arrow{font-size:26px;font-weight:900;width:34px;text-align:center}
+  .lg .t{font-family:Georgia,serif;font-size:19px;font-weight:700}
+  .lg .s{font-size:13px;color:var(--muted);margin-top:1px}
+  .lg.right{border-color:#CDE7D8}.lg.right .arrow{color:var(--green)}
+  .lg.left{border-color:#EAD6C1}.lg.left .arrow{color:var(--amber)}
+  .count{font-size:14px;color:var(--muted);margin-bottom:18px}
+  .count b{color:var(--ink);font-weight:800}
+  .btn{
+    display:block;width:100%;border:none;border-radius:18px;padding:19px;
+    font-size:18px;font-weight:800;letter-spacing:.3px;background:var(--ink);color:#fff;
+    font-family:inherit;cursor:pointer;
+  }
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:.5}
+  .btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+
+  /* engranaje de configuración */
+  .gear{
+    position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:16px;
+    width:40px;height:40px;border-radius:12px;border:1px solid var(--line);
+    background:var(--card);color:var(--muted);font-size:19px;cursor:pointer;z-index:4;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .gear:active{transform:scale(.95)}
+
+  /* ---------- SWIPE ---------- */
+  .top{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 12px) 18px 10px}
+  .prog{flex:1;height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--ink);border-radius:99px;transition:width .25s ease}
+  .cnt{font-size:13px;font-weight:800;color:var(--muted);min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+
+  .stage{position:relative;flex:1;margin:6px 16px 0}
+  .card{
+    position:absolute;inset:0;background:var(--card);border:1px solid var(--line);
+    border-top:5px solid var(--cat,#C96A2B);
+    border-radius:26px;box-shadow:0 18px 40px -22px rgba(60,45,20,.5);
+    display:flex;flex-direction:column;justify-content:center;padding:34px 30px;
+    will-change:transform;touch-action:none;overflow:hidden;
+  }
+  @supports (background: color-mix(in srgb, red, blue)){
+    .card{ background:color-mix(in srgb, var(--cat,#C96A2B) 6%, var(--card)); }
+  }
+  .cathead{display:flex;align-items:center;margin-bottom:6px}
+  .cdot{width:9px;height:9px;border-radius:50%;background:var(--cat,#C96A2B);display:inline-block;margin-right:9px;flex:none}
+  .cname{color:var(--cat,#C96A2B);font-weight:800;font-size:18px;letter-spacing:.3px;line-height:1.15}
+  .card .txt{font-family:Georgia,serif;font-size:36px;line-height:1.08;font-weight:700;margin-top:4px}
+  .card .ctx{margin-top:12px;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);align-self:flex-start;background:var(--cream);border:1px solid var(--line);padding:5px 11px;border-radius:99px}
+  .card .tag{position:absolute;top:26px;font-size:15px;font-weight:900;letter-spacing:1px;padding:8px 14px;border-radius:12px;opacity:0;text-transform:uppercase;z-index:2}
+  .card .tag.listo{left:24px;color:var(--green);border:2.5px solid var(--green);transform:rotate(-10deg)}
+  .card .tag.prod{right:24px;color:var(--amber);border:2.5px solid var(--amber);transform:rotate(10deg)}
+
+  /* comentario en la tarjeta */
+  .cwrap{margin-top:22px}
+  .cbtn{border:1.5px dashed var(--line);background:transparent;color:var(--muted);border-radius:12px;padding:10px 14px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  .cbtn:active{transform:scale(.97)}
+  .cchip{display:inline-flex;align-items:center;gap:8px;background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;max-width:100%}
+  .cchip .ci{font-size:13px;opacity:.8}
+  .cinput{width:100%;border:1.5px solid var(--cat,#C96A2B);border-radius:12px;padding:11px 13px;font-family:inherit;font-size:16px;background:var(--card);color:var(--ink);-webkit-user-select:text;user-select:text}
+
+  .actions{display:flex;gap:12px;padding:16px 16px calc(env(safe-area-inset-bottom) + 18px)}
+  .act{flex:1;border-radius:18px;padding:16px 8px;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;border:2px solid;background:var(--card)}
+  .act.prod{color:var(--amber);border-color:var(--amber)}
+  .act.listo{color:var(--green);border-color:var(--green)}
+  .act:active{transform:scale(.96)}
+  .act small{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:3px}
+  .act.back{flex:0 0 66px;color:var(--muted);border-color:var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:20px;padding:12px 4px}
+  .act.back small{font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--muted);margin:0}
+  .act.back:disabled{opacity:.35}
+
+  /* ---------- DONE ---------- */
+  .done{height:100%;display:flex;flex-direction:column}
+  .done .head{padding:calc(env(safe-area-inset-top) + 22px) 24px 16px;border-bottom:1px solid var(--line)}
+  .done .head .eyebrow{margin-bottom:4px}
+  .done h2{font-family:Georgia,serif;font-size:30px;margin:0;font-weight:800}
+  .done .date{font-size:13px;color:var(--muted);margin-top:6px;font-weight:600}
+  .done .bar{display:flex;align-items:center;gap:10px;margin-top:14px}
+  .done .bar .p{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+  .done .bar .p i{display:block;height:100%;background:var(--green);width:0;transition:width .3s ease}
+  .done .bar .n{font-size:13px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+  .list{flex:1;overflow-y:auto;padding:8px 20px 20px;-webkit-overflow-scrolling:touch}
+  .grp{margin-top:18px}
+  .grp .gt{font-size:12px;letter-spacing:2.5px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+  .task{display:flex;align-items:flex-start;gap:14px;padding:15px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  .task .box{width:26px;height:26px;border-radius:9px;border:2.5px solid var(--muted);flex:none;display:flex;align-items:center;justify-content:center;transition:all .15s ease;margin-top:1px}
+  .task .box svg{width:15px;height:15px;stroke:#fff;stroke-width:3.4;fill:none;opacity:0}
+  .task .lbl{font-size:18px;font-weight:600;line-height:1.25}
+  .task .sub{font-size:13px;color:var(--muted);font-weight:700;margin-top:2px}
+  .task.on .box{background:var(--green);border-color:var(--green)}
+  .task.on .box svg{opacity:1}
+  .task.on .lbl{color:var(--muted);text-decoration:line-through}
+  .cmt{margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cmt .ct{font-size:14px;color:var(--amber);font-weight:700}
+  .cmt .pen{border:none;background:transparent;color:var(--muted);font-size:15px;cursor:pointer;padding:2px 4px}
+  .cmt .addc{border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:2px 0;opacity:.85}
+  .cmt .cinput{width:100%}
+  .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
+  .empty .big{font-size:66px}
+  .empty h2{font-family:Georgia,serif;font-size:30px;margin:12px 0 6px}
+  .empty p{color:var(--muted);margin:0}
+  .foot{padding:14px 20px calc(env(safe-area-inset-bottom) + 16px);border-top:1px solid var(--line)}
+  .restart{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:16px;padding:15px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer}
+  .addtask{margin-bottom:10px}
+  .addtask-btn{width:100%;border:1.5px dashed var(--line);background:transparent;color:var(--muted);border-radius:16px;padding:14px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer}
+  .addtask-btn:active{transform:scale(.99)}
+  .addtask-row{display:flex;gap:8px}
+  .addtask-input{flex:1;border:1.5px solid var(--green);border-radius:14px;padding:13px;font-family:inherit;font-size:16px;background:var(--card);color:var(--ink);-webkit-user-select:text;user-select:text}
+  .addtask-ok{border:none;background:var(--green);color:#fff;border-radius:14px;padding:0 20px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer}
+
+  /* ---------- PIN ---------- */
+  .pin{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 26px;gap:14px}
+  .pin h2{font-family:Georgia,serif;font-size:30px;margin:0;font-weight:800}
+  .pin p{color:var(--muted);margin:0 0 6px}
+  .pin input{width:200px;max-width:70vw;text-align:center;font-size:26px;letter-spacing:8px;padding:14px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-family:inherit;font-weight:800;-webkit-user-select:text;user-select:text}
+  .pin .err{color:var(--amber);font-size:14px;font-weight:700;min-height:18px}
+  .pin .row{display:flex;gap:12px;width:100%;max-width:320px}
+  .pin .row .btn{flex:1;padding:16px}
+
+  /* ============================================================
+     CONFIG  — TABLA EDITABLE REUTILIZABLE (grilla tipo Sheets)
+     Este bloque (CSS + JS marcado como REUSABLE) se puede
+     copiar tal cual a las otras apps; solo cambia COLUMNS.
+     ============================================================ */
+  .cfg{height:100%;display:flex;flex-direction:column}
+  .cfg .head{padding:calc(env(safe-area-inset-top) + 22px) 24px 12px;border-bottom:1px solid var(--line)}
+  .cfg h2{font-family:Georgia,serif;font-size:26px;margin:0;font-weight:800}
+  .cfg-tabs{display:flex;gap:8px;margin-top:12px}
+  .cfg-tab{flex:1;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:12px;padding:11px 8px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer}
+  .cfg-tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .cfg-tab:active{transform:scale(.98)}
+  .cfg .hint{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+  .cfg .body{flex:1;padding:12px 14px 0;display:flex;flex-direction:column;overflow:hidden}
+  .tbl-wrap{flex:1;overflow:auto;border:1px solid #D8CFBB;border-radius:10px;background:#fff;-webkit-overflow-scrolling:touch}
+  table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:560px}
+  /* encabezado tipo Sheets */
+  .grid th{position:sticky;top:0;background:#EFE9DB;z-index:2;text-align:left;font-size:12px;color:#6B6250;font-weight:800;padding:8px 8px;border-right:1px solid #D8CFBB;border-bottom:1px solid #C9BFA8;white-space:nowrap}
+  .grid th .thh{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .grid th.rownum{left:0;z-index:3;width:38px;min-width:38px;text-align:center;padding:8px 0}
+  .fbtn{border:1px solid #CBBE9E;background:#F7F2E6;color:#8A7F66;width:22px;height:22px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+  .fbtn.on{background:#1a73e8;color:#fff;border-color:#1a73e8}
+  .grid td{padding:0;border-right:1px solid #E7DFCF;border-bottom:1px solid #E7DFCF;vertical-align:middle;background:#fff}
+  .grid tbody tr:nth-child(even) td{background:#FBF8F1}
+  .grid td.rownum{position:sticky;left:0;z-index:1;width:38px;min-width:38px;text-align:center;color:#A2977F;font-size:12px;font-weight:700;background:#F3EEE1;font-variant-numeric:tabular-nums}
+  .grid tbody tr:nth-child(even) td.rownum{background:#EEE8D8}
+  .grid input.cell{display:block;width:100%;min-width:130px;height:34px;border:2px solid transparent;padding:0 8px;font-family:inherit;font-size:14px;line-height:1.2;background:transparent;color:var(--ink);-webkit-user-select:text;user-select:text}
+  .grid input.cell:focus{outline:none;border:2px solid #1a73e8;background:#fff}
+  /* celda desplegable — mismo alto fijo que el input */
+  .selcell{width:100%;min-width:130px;height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:2px solid transparent;background:transparent;font-family:inherit;font-size:14px;line-height:1.2;color:var(--ink);padding:0 8px;cursor:pointer;text-align:left}
+  .selcell:active{background:#fff}
+  .selcell .cv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .selcell .cv.empty{color:#B4A98F;font-style:italic}
+  .selcell .car{color:#A2977F;font-size:10px;flex:none}
+  .grid td.delcol{width:34px;min-width:34px;text-align:center;padding:0}
+  .delrow{-webkit-appearance:none;appearance:none;display:flex;align-items:center;justify-content:center;width:100%;height:34px;border:none;border-radius:0;background:transparent;color:#D64545;font-size:17px;font-weight:400;cursor:pointer;padding:0;line-height:1}
+  .delrow:active{background:#F7E4E1}
+  .norows{padding:26px;text-align:center;color:var(--muted);font-size:14px;font-weight:600}
+  .addrow{margin-top:10px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);border-radius:12px;padding:13px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;width:100%}
+  .addrow:active{transform:scale(.99)}
+  .cfg .restore{background:none;border:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;padding:8px 2px;align-self:flex-start}
+  .cfg .msg{font-size:13px;font-weight:700;color:var(--amber);min-height:18px;margin:4px 2px}
+  .cfg .foot{padding:6px 16px calc(env(safe-area-inset-bottom) + 14px);display:flex;gap:12px}
+  .cfg .foot .btn{flex:1;padding:16px}
+
+  /* popover de filtro (estilo Sheets) */
+  .scrim{position:fixed;inset:0;background:rgba(30,22,10,.14);z-index:20}
+  .pop{position:fixed;z-index:21;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 22px 55px -18px rgba(60,45,20,.6);width:268px;max-width:84vw;display:flex;flex-direction:column;overflow:hidden}
+  .pop .psearch{padding:10px}
+  .pop .psearch input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;font-family:inherit;font-size:14px;background:var(--cream);color:var(--ink);-webkit-user-select:text;user-select:text}
+  .pop .pact{display:flex;gap:14px;padding:2px 12px 8px;font-size:12px;border-bottom:1px solid var(--line)}
+  .pop .pact button{border:none;background:transparent;color:var(--green);font-weight:800;font-family:inherit;font-size:12px;cursor:pointer;padding:2px 0}
+  .pop .plist{max-height:220px;overflow:auto;padding:6px 12px}
+  .pop .pitem{display:flex;align-items:center;gap:10px;padding:8px 2px;font-size:14px;cursor:pointer;color:var(--ink)}
+  .pop .pitem input{width:17px;height:17px;flex:none}
+  .pop .pitem .pv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pop .pitem .pv.empty{color:var(--muted);font-style:italic}
+  .pop .pfoot{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+  .pop .pfoot button{flex:1;border-radius:10px;padding:11px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+  .pop .pfoot button.ok{background:var(--green);color:#fff;border-color:var(--green)}
+  /* menú de opciones (desplegable editable) */
+  .pop .ptitle{padding:11px 12px 8px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:800;border-bottom:1px solid var(--line)}
+  .pop .olist{max-height:230px;overflow:auto;padding:4px 0}
+  .opt{display:flex;align-items:center;gap:6px;padding:4px 8px 4px 12px}
+  .opt .ov{flex:1;font-size:15px;color:var(--ink);cursor:pointer;padding:8px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .opt .ov.cur{font-weight:800;color:var(--green)}
+  .opt .ov.none{color:var(--muted);font-style:italic}
+  .opt .oi{border:none;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;padding:8px 6px;border-radius:7px;flex:none}
+  .opt .oi.del{color:#D64545}
+  .opt .oi.ok{color:var(--green);font-weight:800}
+  .opt .oi:active{background:var(--cream)}
+  .opt.editing{gap:8px}
+  .opt .oedit{flex:1;border:2px solid #1a73e8;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:15px;background:#fff;color:var(--ink);-webkit-user-select:text;user-select:text}
+  .pop .newrow{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+  .pop .newrow input{flex:1;border:1px solid var(--line);border-radius:9px;padding:10px;font-family:inherit;font-size:14px;background:var(--cream);color:var(--ink);-webkit-user-select:text;user-select:text}
+  .pop .newrow button{border:none;background:var(--green);color:#fff;border-radius:9px;padding:0 14px;font-family:inherit;font-weight:800;font-size:18px;cursor:pointer}
+
+  /* cartel de confirmación propio (no depende de confirm() del navegador) */
+  .modal-scrim{position:fixed;inset:0;background:rgba(30,22,10,.38);z-index:40;display:flex;align-items:center;justify-content:center;padding:26px}
+  .modal{background:var(--card);border:1px solid var(--line);border-radius:20px;max-width:360px;width:100%;padding:24px;box-shadow:0 30px 70px -20px rgba(60,45,20,.6);text-align:center}
+  .modal p{font-size:16px;line-height:1.5;color:var(--ink);margin:0 0 20px;font-weight:600}
+  .modal .mrow{display:flex;gap:12px}
+  .modal .mrow button{flex:1;border-radius:14px;padding:15px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+  .modal .mrow button.danger{background:#D64545;color:#fff;border-color:#D64545}
+  .modal .mrow button:active{transform:scale(.97)}
+
+  .flash{position:absolute;inset:0;background:var(--green);opacity:0;pointer-events:none;z-index:5}
+  .dot{position:absolute;width:9px;height:9px;border-radius:99px;pointer-events:none;z-index:6}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Cliente oficial de Supabase (única dependencia, para la lista compartida en vivo) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN  ← pegá acá tus datos
+   (los mismos dos valores que ya tenías en la versión anterior)
+   ============================================================ */
+const SUPABASE_URL  = "https://mohfvdagkqpkeutcbauu.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vaGZ2ZGFna3Fwa2V1dGNiYXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NTU5NzMsImV4cCI6MjEwNTQzMTk3M30.KKfVxaBjPfvg7XVfqZlIQW0coXj_kWyKxfUomlN7VWg";
+
+const TABLE       = "mise_lista";   // lista compartida (checklist del momento)
+const ITEMS_TABLE = "mise_items";   // ítems editables del swipe
+const ADMIN_PIN   = "1234";         // PIN para abrir Configuración
+
+/* ---- DEFINICIÓN DE COLUMNAS (lo único que cambia entre apps) ----
+   key      = nombre de la columna en la tabla de Supabase
+   label    = título que ve el usuario
+   required = si está vacío, la fila se descarta al guardar
+   emptyDefault = valor si queda vacío (para columnas no requeridas) */
+const COLUMNS = [
+  { key:"cat", label:"Categoría", type:"select", emptyDefault:"Sin categoría" },
+  { key:"txt", label:"Ítem",      type:"text",   required:true }
+];
+
+const TAREAS_TABLE = "mise_tareas";   // tareas del día (limpieza, semanales, etc.)
+const DIAS = ["Todos los días","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+const COLUMNS_TAREAS = [
+  { key:"cat", label:"Categoría", type:"select", emptyDefault:"Sin categoría" },
+  { key:"txt", label:"Tarea",     type:"text",   required:true },
+  { key:"dia", label:"Día",       type:"select", options:DIAS, emptyDefault:"Todos los días" }
+];
+/* ============================================================ */
+
+/* ================= DATOS POR DEFECTO =================
+   Se usan como valor inicial (se cargan solos a Supabase la
+   primera vez) y como respaldo si no hay conexión.
+   Las cantidades ya NO van en el nombre: se ponen como
+   comentario en la tarjeta durante el checklist. */
+const DATA = [
+  { cat:"Reponer frascos y tuppers", items:[
+    "Rocklers","Oreos","Chips negros","Orégano","Maní","Oreos molida","Cacao",
+    "Café descafeinado","Café","Salero sal","Salero canela","Salero cacao",
+    "Aceitunas","Almíbar","Dulce de leche"
+  ]},
+  { cat:"Mise and please", items:[
+    "Jamón cortado","Tomate a mano","Frutillas cortadas",
+    "Medialunas XL rellenas con queso","Waffles descongelados",
+    "Medialunas chicas","Cookies clásicas","Cookies red velvet",
+    "Cookies oreo","Roll de canela"
+  ]},
+  { cat:"Reponer", items:["Leche entera","Leche descremada","Leche vegetal"] },
+  { cat:"Reponer descartables", items:[
+    "Rollos de POS","Rollo de comandera","Sobre azúcar PDY","Edulcorante PDY / Local",
+    "Revolvedores grandes PDY / Local","Sorbetes","Separadores 1/2","Separadores",
+    "Cápsulas sifón","Rollo bolsas grande","Rollo de bolsas chico","Portavasos",
+    "Vaso 6oz","Vaso 8oz","Vaso 12oz","Vaso 500ml (licuado)",
+    "Tapa 6oz","Tapa 8oz","Tapa frappe (domo)","Tapa licuado para sorbete","Tapa licuado sellado",
+    "Caja waffle grande","Caja waffle chico","Caja pizza","Separadores 1/4 local y PDY"
+  ]}
+];
+
+/* Tareas del día por defecto (se siembran en Supabase la primera vez; editables desde ⚙) */
+const TAREAS_DEFAULT = [
+  { cat:"Limpieza", txt:"Limpiar máquina de café", dia:"Todos los días" },
+  { cat:"Limpieza", txt:"Limpiar mostrador y vitrina", dia:"Todos los días" },
+  { cat:"Limpieza", txt:"Limpiar baño", dia:"Todos los días" },
+  { cat:"Limpieza", txt:"Limpiar heladera", dia:"Lunes" },
+  { cat:"Limpieza", txt:"Limpieza profunda de piso", dia:"Miércoles" },
+  { cat:"Mantenimiento", txt:"Descalcificar cafetera", dia:"Viernes" },
+  { cat:"Depósito", txt:"Ordenar y revisar depósito", dia:"Sábado" }
+];
+/* ==================================================== */
+
+/* ---- color por categoría (para teñir la tarjeta) ---- */
+const CAT_PALETTE = ["#C96A2B","#2F9E6B","#A6683F","#6E8E5E","#C79A3A","#9C5C4E","#5E8A8C"];
+let _catColors = {};
+function rebuildColors(){
+  _catColors={}; let i=0;
+  DECK.forEach(d=>{ if(!(d.cat in _catColors)){ _catColors[d.cat]=CAT_PALETTE[i%CAT_PALETTE.length]; i++; } });
+}
+function catColor(cat){ return _catColors[cat] || CAT_PALETTE[0]; }
+
+/* ---- orden: categoría (según aparición) y dentro, ítem alfabético ---- */
+function sortGrouped(rows){
+  const order={}; let n=0;
+  rows.forEach(r=>{ const c=(r.cat||""); if(!(c in order)) order[c]=n++; });
+  return rows.slice().sort((a,b)=>{
+    const ca=order[a.cat||""], cb=order[b.cat||""];
+    if(ca!==cb) return ca-cb;
+    return String(a.txt||"").localeCompare(String(b.txt||""),"es",{sensitivity:"base"});
+  });
+}
+
+/* ---- mazo (se reconstruye cuando cargan/cambian los ítems) ---- */
+let DECK = [];
+function buildDeckFromData(data){
+  let uid=0; const deck=[];
+  data.forEach(c => c.items.forEach(it => {
+    if (typeof it === "string") deck.push({ id:uid++, cat:c.cat, ctx:null, txt:it, comment:null });
+    else it.items.forEach(s => deck.push({ id:uid++, cat:c.cat, ctx:it.group, txt:s, comment:null }));
+  }));
+  return deck;
+}
+function buildDeckFromRows(rows){
+  let uid=0;
+  const ordered = sortGrouped(rows.slice().sort((a,b)=>(a.position||0)-(b.position||0)));
+  return ordered.map(r => ({ id:uid++, cat:r.cat, ctx:r.ctx||null, txt:r.txt, comment:null }));
+}
+function dataToRows(data){
+  const rows=[]; let p=0;
+  data.forEach(c => c.items.forEach(it => {
+    if (typeof it === "string") rows.push({ cat:c.cat, ctx:null, txt:it, position:p++ });
+    else it.items.forEach(s => rows.push({ cat:c.cat, ctx:it.group, txt:s, position:p++ }));
+  }));
+  return rows;
+}
+function setDeck(deck){ DECK = deck; rebuildColors(); }
+
+/* ---- Supabase (con respaldo local si no está configurado / sin red) ---- */
+let sb = null;
+try{
+  if(window.supabase && SUPABASE_URL.indexOf("http")===0 && SUPABASE_ANON.indexOf("PEGAR")===-1){
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  }
+}catch(e){ sb = null; }
+
+let channel = null;
+let SHARED = null;
+let LOCAL_EXTRA = [];   // tareas manuales en modo local (sin Supabase)
+let _lx = 0;
+
+const app = document.getElementById("app");
+let state, pos, hist;
+let _pinErr = "";
+
+/* ---- arranque ---- */
+async function init(){
+  state="home"; pos=0; hist=[]; SHARED=null;
+  setDeck(buildDeckFromData(DATA));
+  render();
+  if(!sb) return;
+  try{
+    let items = await fetchItems();
+    if(items.length===0){ await seedItems(); items = await fetchItems(); }
+    if(items.length) setDeck(buildDeckFromRows(items));
+    const rows = await fetchList();
+    if(rows.length){ SHARED = rows.sort((a,b)=>a.position-b.position); state="done"; }
+    startRealtime();
+    render();
+  }catch(e){ /* respaldo, en home */ }
+}
+
+function reset(){ state="home"; pos=0; hist=[]; SHARED=null; LOCAL_EXTRA=[]; DECK.forEach(d=>{d.status=null;d.comment=null;}); render(); }
+
+function restart(){
+  confirmDialog("¿Seguro que querés volver a empezar? Se borra la lista actual y todos vuelven al inicio.", async ()=>{
+    if(sb){ try{ await sb.from(TABLE).delete().gte("id", 0); }catch(e){} }
+    reset();
+  }, "Sí, reiniciar");
+}
+
+/* ---- Supabase: lista compartida ---- */
+async function fetchList(){
+  const { data, error } = await sb.from(TABLE).select("*").order("position",{ascending:true});
+  if(error) throw error;
+  return data || [];
+}
+async function publishList(){
+  const prod = DECK.filter(d=>d.status==="producir");
+  if(!sb){ SHARED = null; return; }   // modo local: lo maneja doneLocal
+  try{
+    let rows = await fetchList();
+    if(rows.length===0){
+      const prodRows = prod.map((t,i)=>({ cat:t.cat, txt:t.txt, comment:t.comment||null, done:false, position:i }));
+      // tareas del día de hoy (o "Todos los días"), al final
+      let dailyRows=[];
+      try{
+        const today=todayName();
+        const dt=await loadTareas();
+        dailyRows = dt.filter(t=> t.dia==="Todos los días" || t.dia===today)
+                      .map((t,i)=>({ cat:t.cat||"Tareas del día", txt:t.txt, comment:null, done:false, position:prodRows.length+i }));
+      }catch(e){}
+      const payload = prodRows.concat(dailyRows);
+      if(payload.length===0){ SHARED = null; return; }
+      const { data, error } = await sb.from(TABLE).insert(payload).select();
+      if(error) throw error;
+      rows = data;
+    }
+    SHARED = rows.sort((a,b)=>a.position-b.position);
+    startRealtime();
+  }catch(e){ SHARED = null; }
+}
+async function toggleRow(row){
+  row.done = !row.done;
+  render();
+  if(sb){ try{ await sb.from(TABLE).update({done:row.done}).eq("id",row.id); }catch(e){} }
+}
+async function updateComment(row, val){
+  row.comment = (val||"").trim() || null;
+  render();
+  if(sb && row.id!=null){ try{ await sb.from(TABLE).update({comment:row.comment}).eq("id",row.id); }catch(e){} }
+}
+
+/* ---- Supabase: ítems editables ---- */
+async function fetchItems(){
+  const { data, error } = await sb.from(ITEMS_TABLE).select("*").order("position",{ascending:true});
+  if(error) throw error;
+  return data || [];
+}
+async function seedItems(){
+  const rows = dataToRows(DATA);
+  const { error } = await sb.from(ITEMS_TABLE).insert(rows);
+  if(error) throw error;
+}
+async function restoreDefaults(){
+  if(sb){
+    try{
+      await sb.from(ITEMS_TABLE).delete().gte("id", 0);
+      await seedItems();
+      const items = await fetchItems();
+      setDeck(buildDeckFromRows(items));
+    }catch(e){ return { ok:false, msg:"No se pudo restaurar." }; }
+  } else {
+    setDeck(buildDeckFromData(DATA));
+  }
+  return { ok:true };
+}
+
+/* ---- Supabase: tareas del día ---- */
+let LOCAL_TAREAS = [];   // respaldo local (sin Supabase)
+async function fetchTable(table){
+  const { data, error } = await sb.from(table).select("*").order("position",{ascending:true});
+  if(error) throw error;
+  return data || [];
+}
+function tareasDefaultRows(){ return TAREAS_DEFAULT.map((t,i)=>({ cat:t.cat, txt:t.txt, dia:t.dia, position:i })); }
+async function seedTareas(){ const { error } = await sb.from(TAREAS_TABLE).insert(tareasDefaultRows()); if(error) throw error; }
+async function loadTareas(){
+  if(sb){
+    try{
+      let t = await fetchTable(TAREAS_TABLE);
+      if(t.length===0){ await seedTareas(); t = await fetchTable(TAREAS_TABLE); }
+      return t;
+    }catch(e){ return tareasDefaultRows(); }
+  }
+  return LOCAL_TAREAS.length ? LOCAL_TAREAS : tareasDefaultRows();
+}
+function todayName(){ return ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][new Date().getDay()]; }
+
+/* guarda un dataset (según las columnas de la pestaña) en su tabla */
+async function saveDataset(tab, rows){
+  const cols=tab.columns;
+  const clean = rows.map(r=>{
+    const o={};
+    cols.forEach(c=>{
+      let v=(r[c.key]==null?"":String(r[c.key])).trim();
+      if(!v) v = c.required ? "" : (c.emptyDefault!==undefined ? c.emptyDefault : null);
+      o[c.key]=v;
+    });
+    return o;
+  }).filter(r => cols.filter(c=>c.required).every(c => r[c.key]));
+  if(clean.length===0) return { ok:false, msg:"La lista quedó vacía." };
+  const ordered = tab.id==="items" ? sortGrouped(clean) : clean;  // ítems: categoría + alfabético
+  ordered.forEach((r,i)=> r.position=i);
+  const cleanSorted = ordered;
+  if(sb){
+    try{
+      await sb.from(tab.table).delete().gte("id", 0);
+      const { error } = await sb.from(tab.table).insert(cleanSorted);
+      if(error) throw error;
+      if(tab.id==="items"){ const items = await fetchItems(); setDeck(buildDeckFromRows(items)); }
+    }catch(e){ return { ok:false, msg:"No se pudo guardar en Supabase." }; }
+  } else {
+    if(tab.id==="items") setDeck(buildDeckFromRows(cleanSorted));
+    else LOCAL_TAREAS = cleanSorted.slice();
+  }
+  return { ok:true };
+}
+async function restoreDataset(tab){
+  if(tab.id==="items") return await restoreDefaults();
+  if(sb){
+    try{ await sb.from(TAREAS_TABLE).delete().gte("id", 0); await seedTareas(); }
+    catch(e){ return { ok:false, msg:"No se pudo restaurar." }; }
+  } else { LOCAL_TAREAS = tareasDefaultRows(); }
+  return { ok:true };
+}
+
+/* ---- realtime ---- */
+function startRealtime(){
+  if(!sb || channel) return;
+  channel = sb.channel("mise-rt")
+    .on("postgres_changes",{event:"*",schema:"public",table:TABLE}, async ()=>{
+      try{
+        const rows = await fetchList();
+        if(rows.length){
+          SHARED = rows.sort((a,b)=>a.position-b.position);
+          if(state==="home"){ state="done"; render(); }
+          else if(state==="done"){ render(); }
+        } else {
+          if(state==="done"){ reset(); }
+        }
+      }catch(e){}
+    })
+    .subscribe();
+}
+
+/* ---- helpers ---- */
+function el(tag, props={}, ...kids){
+  const n=document.createElement(tag);
+  for(const k in props){
+    if(k==="cls") n.className=props[k];
+    else if(k==="html") n.innerHTML=props[k];
+    else if(k==="text") n.textContent=props[k];
+    else if(k.startsWith("on")) n.addEventListener(k.slice(2).toLowerCase(), props[k]);
+    else if(typeof props[k]==="boolean"){ if(props[k]) n.setAttribute(k, ""); }  // disabled sólo cuando es true
+    else n.setAttribute(k, props[k]);
+  }
+  kids.flat().forEach(c=>c&&n.appendChild(typeof c==="string"?document.createTextNode(c):c));
+  return n;
+}
+function buzz(ms){ if(navigator.vibrate) try{navigator.vibrate(ms)}catch(e){} }
+function noBubble(node){
+  ["pointerdown","pointermove","pointerup","touchstart","touchmove","mousedown","click"].forEach(ev=>
+    node.addEventListener(ev, e=>e.stopPropagation()));
+}
+/* cartel de confirmación propio (reemplaza a confirm(), que en móvil suele venir bloqueado) */
+function confirmDialog(msg, onYes, yesLabel){
+  const scrim=el("div",{cls:"modal-scrim"});
+  const close=()=>scrim.remove();
+  scrim.addEventListener("click",e=>{ if(e.target===scrim) close(); });
+  const no=el("button",{text:"Cancelar",onClick:close});
+  const yes=el("button",{cls:"danger",text:yesLabel||"Sí, continuar",onClick:()=>{ close(); onYes(); }});
+  scrim.appendChild(el("div",{cls:"modal"}, el("p",{text:msg}), el("div",{cls:"mrow"}, no, yes)));
+  app.appendChild(scrim);
+}
+
+/* agregar una tarea al checklist a mano (categoría "Agregados") */
+async function addManual(txt){
+  const t=(txt||"").trim(); if(!t) return;
+  if(sb){
+    try{
+      const base = Array.isArray(SHARED)? SHARED : [];
+      const maxPos = base.length? Math.max(...base.map(r=>r.position||0)) : -1;
+      const { error } = await sb.from(TABLE).insert([{ cat:"Agregados", txt:t, comment:null, done:false, position:maxPos+1 }]);
+      if(error) throw error;
+      const rows = await fetchList();
+      SHARED = rows.sort((a,b)=>a.position-b.position);
+      startRealtime();
+      state="done"; render();
+      return;
+    }catch(e){ /* si falla, cae a local */ }
+  }
+  LOCAL_EXTRA.push({ id:"x"+(_lx++), cat:"Agregados", txt:t, comment:null, status:"producir" });
+  render();
+}
+
+/* control "＋ Agregar tarea" (se despliega en un input) */
+function addTaskControl(onAdd){
+  const box=el("div",{cls:"addtask"});
+  function paintBtn(){ box.innerHTML=""; box.appendChild(el("button",{cls:"addtask-btn",text:"＋ Agregar tarea",onClick:openIn})); }
+  function openIn(){
+    box.innerHTML="";
+    const inp=el("input",{cls:"addtask-input",type:"text",placeholder:"Nueva tarea…"});
+    const ok=el("button",{cls:"addtask-ok",text:"Agregar"});
+    const doAdd=()=>{ const v=inp.value.trim(); if(v){ onAdd(v); } else { paintBtn(); } };
+    ok.addEventListener("click",doAdd);
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); doAdd(); } if(e.key==="Escape"){ paintBtn(); } });
+    box.appendChild(el("div",{cls:"addtask-row"}, inp, ok));
+    setTimeout(()=>{ try{inp.focus()}catch(e){} },30);
+  }
+  paintBtn();
+  return box;
+}
+
+function render(){
+  const prevList = app.querySelector(".list");
+  const sc = prevList ? prevList.scrollTop : 0;
+  app.innerHTML="";
+  const w=el("div",{cls:"wrap"});
+  if(state==="home") home(w);
+  else if(state==="swipe") swipe(w);
+  else if(state==="pin") pin(w);
+  else if(state==="config") config(w);
+  else done(w);
+  app.appendChild(w);
+  const newList = app.querySelector(".list");
+  if(newList) newList.scrollTop = sc;
+}
+
+/* ---------- HOME ---------- */
+function home(w){
+  w.className="wrap home";
+  const top=el("div",{},
+    el("div",{cls:"eyebrow",text:"Casa · Cafetería"}),
+    el("h1",{html:'Mise <em>and</em> Please'})
+  );
+  const legend=el("div",{cls:"legend"},
+    el("div",{cls:"lg right"},
+      el("div",{cls:"arrow",text:"←"}),
+      el("div",{},el("div",{cls:"t",text:"Está listo"}),el("div",{cls:"s",text:"Ya está repuesto / hecho"}))
+    ),
+    el("div",{cls:"lg left"},
+      el("div",{cls:"arrow",text:"→"}),
+      el("div",{},el("div",{cls:"t",text:"Producir"}),el("div",{cls:"s",text:"Va a la lista de tareas"}))
+    )
+  );
+  const bottom=el("div",{},
+    el("div",{cls:"count",html:`<b>${DECK.length}</b> ítems para revisar`}),
+    el("button",{cls:"btn",text:"Empezar",onClick:()=>{state="swipe";render()}})
+  );
+  w.append(top,legend,bottom);
+  w.appendChild(el("button",{cls:"gear","aria-label":"Configuración",text:"⚙",onClick:openPin}));
+}
+
+/* ---------- PIN ---------- */
+function openPin(){ _pinErr=""; state="pin"; render(); }
+function pin(w){
+  w.className="wrap pin";
+  const inp=el("input",{type:"password",inputmode:"numeric",autocomplete:"off",maxlength:"12",placeholder:"••••"});
+  const err=el("div",{cls:"err",text:_pinErr});
+  const enter=el("button",{cls:"btn",text:"Entrar"});
+  const back=el("button",{cls:"btn ghost",text:"Volver"});
+  const tryIn=()=>{
+    if(inp.value===ADMIN_PIN){ enterConfig(); }
+    else { _pinErr="PIN incorrecto"; render(); }
+  };
+  enter.addEventListener("click",tryIn);
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter") tryIn(); });
+  back.addEventListener("click",()=>{ state="home"; render(); });
+  w.append(
+    el("h2",{text:"Configuración"}),
+    el("p",{text:"Ingresá el PIN para editar los ítems"}),
+    inp, err,
+    el("div",{cls:"row"}, back, enter)
+  );
+  setTimeout(()=>{ try{inp.focus()}catch(e){} },60);
+}
+
+/* ============================================================
+   CONFIG — GRILLA EDITABLE CON FILTROS (REUSABLE)
+   Estado: CFG_ROWS (filas editables) + CFG_FILTERS (por columna).
+   ============================================================ */
+let CFG_ROWS = [];          // filas de la pestaña activa (referencia a CFG_ROWS_BY[CFG_TAB])
+let CFG_FILTERS = {};       // filtros de la pestaña activa
+let CFG_COLS = COLUMNS;     // columnas de la pestaña activa
+let CFG_MSG = "";
+let _pendingFocus = null;   // {idx,key} para enfocar tras re-render
+let CFG_TAB = "items";
+let CFG_ROWS_BY = { items:[], tareas:[] };
+let CFG_FILTERS_BY = { items:{}, tareas:{} };
+const CFG_TABS = [
+  { id:"items",  label:"Ítems del swipe", table:ITEMS_TABLE,  columns:COLUMNS },
+  { id:"tareas", label:"Tareas del día",  table:TAREAS_TABLE, columns:COLUMNS_TAREAS }
+];
+function tabDef(id){ return CFG_TABS.find(t=>t.id===id); }
+function useTab(id){
+  CFG_TAB=id;
+  CFG_ROWS = CFG_ROWS_BY[id];
+  CFG_FILTERS = CFG_FILTERS_BY[id];
+  CFG_COLS = tabDef(id).columns;
+}
+
+async function enterConfig(){
+  CFG_MSG="";
+  CFG_ROWS_BY = { items: DECK.map(d=>({ cat:d.cat||"", txt:d.txt||"" })), tareas: [] };
+  CFG_FILTERS_BY = { items:{}, tareas:{} };
+  useTab("items");
+  state="config"; render();
+  try{
+    const t = await loadTareas();
+    CFG_ROWS_BY.tareas = t.slice().sort((a,b)=>(a.position||0)-(b.position||0))
+      .map(r=>({ cat:r.cat||"", txt:r.txt||"", dia:r.dia||"Todos los días" }));
+    if(CFG_TAB==="tareas") CFG_ROWS = CFG_ROWS_BY.tareas;
+    if(state==="config") render();
+  }catch(e){}
+}
+
+function cfgVal(r,key){ return (r[key]==null?"":String(r[key])).trim(); }
+
+function uniqueValues(key){
+  const set=new Map();
+  CFG_ROWS.forEach(r=> set.set(cfgVal(r,key), true));
+  return [...set.keys()].sort((a,b)=> a===""? -1 : b===""? 1 : a.localeCompare(b,"es"));
+}
+function rowVisible(r){
+  return CFG_COLS.every(c=>{
+    const f=CFG_FILTERS[c.key];
+    if(!f) return true;
+    return f.has(cfgVal(r,c.key));
+  });
+}
+
+function config(w){
+  w.className="wrap cfg";
+  const tabsRow=el("div",{cls:"cfg-tabs"});
+  CFG_TABS.forEach(t=>{
+    const b=el("button",{cls:"cfg-tab"+(t.id===CFG_TAB?" on":""),text:t.label});
+    b.addEventListener("click",()=>{ if(CFG_TAB!==t.id){ useTab(t.id); CFG_MSG=""; render(); } });
+    tabsRow.appendChild(b);
+  });
+  const hint = CFG_TAB==="items"
+    ? 'Editá cada celda. El <b>embudo</b> filtra como en Sheets. Las cantidades van como comentario durante el checklist, no acá.'
+    : 'Asigná a cada tarea un <b>día</b> (o “Todos los días”). Aparecen al final del checklist el día que corresponde.';
+  const head=el("div",{cls:"head"},
+    el("h2",{text:"Configuración"}),
+    tabsRow,
+    el("div",{cls:"hint",html:hint})
+  );
+
+  // tabla
+  const table=el("table",{cls:"grid"});
+  const thead=el("thead"); const htr=el("tr");
+  htr.appendChild(el("th",{cls:"rownum",text:"#"}));
+  CFG_COLS.forEach(c=>{
+    const active = !!CFG_FILTERS[c.key];
+    const fb=el("span",{cls:"fbtn"+(active?" on":""),text:"▾","aria-label":"Filtrar "+c.label});
+    const th=el("th",{}, el("div",{cls:"thh"}, el("span",{text:c.label}), fb));
+    th.style.cursor="pointer";
+    th.addEventListener("click",()=>{ openFilter(c.key, th); });
+    htr.appendChild(th);
+  });
+  htr.appendChild(el("th",{})); // columna de borrar
+  thead.appendChild(htr); table.appendChild(thead);
+
+  const tbody=el("tbody");
+  let shown=0;
+  CFG_ROWS.forEach((r,idx)=>{
+    if(!rowVisible(r)) return;
+    shown++;
+    const tr=el("tr");
+    tr.appendChild(el("td",{cls:"rownum",text:String(shown)}));
+    CFG_COLS.forEach(c=>{
+      if(c.type==="select"){
+        const v=r[c.key]||"";
+        const cell=el("button",{cls:"selcell","data-idx":idx,"data-key":c.key},
+          el("span",{cls:"cv"+(v?"":" empty"),text: v || (c.allowEmpty?"(ninguno)":"Elegí…")}),
+          el("span",{cls:"car",text:"▾"})
+        );
+        cell.addEventListener("click",(e)=>{ e.stopPropagation(); openSelect(c, idx, cell); });
+        tr.appendChild(el("td",{}, cell));
+      } else {
+        const inp=el("input",{cls:"cell",type:"text",value:r[c.key]||"","data-idx":idx,"data-key":c.key,
+          placeholder: c.required?c.label:(c.label+" (opcional)")});
+        inp.addEventListener("input",()=>{ CFG_ROWS[idx][c.key]=inp.value; });
+        tr.appendChild(el("td",{}, inp));
+      }
+    });
+    const del=el("button",{cls:"delrow",text:"✕","aria-label":"Borrar fila"});
+    del.addEventListener("click",()=>{ CFG_ROWS.splice(idx,1); render(); });
+    tr.appendChild(el("td",{cls:"delcol"}, del));
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  const tblWrap=el("div",{cls:"tbl-wrap"}, table);
+  if(shown===0){
+    tblWrap.appendChild(el("div",{cls:"norows",text: CFG_ROWS.length? "Nada coincide con los filtros." : "No hay filas. Agregá la primera abajo."}));
+  }
+
+  const addLabel = CFG_TAB==="items" ? "＋ Agregar ítem" : "＋ Agregar tarea";
+  const add=el("button",{cls:"addrow",text:addLabel});
+  add.addEventListener("click",()=>{
+    CFG_FILTERS_BY[CFG_TAB]={}; CFG_FILTERS=CFG_FILTERS_BY[CFG_TAB]; // limpiar filtros para ver la fila nueva
+    const lastCat = CFG_ROWS.length? CFG_ROWS[CFG_ROWS.length-1].cat : "";
+    const nr={};
+    CFG_COLS.forEach(c=>{
+      nr[c.key] = c.key==="cat" ? lastCat : (c.options ? (c.emptyDefault||c.options[0]) : "");
+    });
+    CFG_ROWS.push(nr);
+    _pendingFocus = { idx: CFG_ROWS.length-1, key:"txt" };
+    render();
+  });
+
+  const msg=el("div",{cls:"msg",text:CFG_MSG});
+  const restore=el("button",{cls:"restore",text: CFG_TAB==="items" ? "Restaurar lista original" : "Restaurar tareas por defecto"});
+  restore.addEventListener("click",()=>{
+    confirmDialog("Esto reemplaza TODO por lo original y borra tus cambios sin guardar. ¿Seguir?", async ()=>{
+      CFG_MSG="Restaurando…"; render();
+      const res=await restoreDataset(tabDef(CFG_TAB));
+      if(res.ok){ await reloadCurTab(); CFG_MSG="Original cargado. Tocá Guardar para dejarlo así."; }
+      else CFG_MSG=res.msg;
+      render();
+    }, "Sí, restaurar");
+  });
+
+  const body=el("div",{cls:"body"}, tblWrap, add, restore, msg);
+
+  const cancel=el("button",{cls:"btn ghost",text:"Salir"});
+  const save=el("button",{cls:"btn",text:"Guardar cambios"});
+  cancel.addEventListener("click",()=>{ state="home"; render(); });
+  save.addEventListener("click",async ()=>{
+    save.disabled=true; save.textContent="Guardando…"; CFG_MSG="";
+    const res=await saveDataset(tabDef(CFG_TAB), CFG_ROWS);
+    if(res.ok){ await reloadCurTab(); CFG_FILTERS_BY[CFG_TAB]={}; CFG_FILTERS=CFG_FILTERS_BY[CFG_TAB]; CFG_MSG="Guardado ✓"; render(); }
+    else { CFG_MSG=res.msg; save.disabled=false; save.textContent="Guardar cambios"; render(); }
+  });
+  const foot=el("div",{cls:"foot"}, cancel, save);
+
+  w.append(head, body, foot);
+
+  if(_pendingFocus){
+    const {idx,key}=_pendingFocus; _pendingFocus=null;
+    setTimeout(()=>{ const n=app.querySelector(`input[data-idx="${idx}"][data-key="${key}"]`); if(n){ try{n.focus()}catch(e){} } },30);
+  }
+}
+
+/* recarga las filas de la pestaña activa desde su fuente (tras guardar/restaurar) */
+async function reloadCurTab(){
+  if(CFG_TAB==="items"){
+    CFG_ROWS_BY.items = DECK.map(d=>({ cat:d.cat||"", txt:d.txt||"" }));
+    CFG_ROWS = CFG_ROWS_BY.items;
+  } else {
+    try{
+      const t = await loadTareas();
+      CFG_ROWS_BY.tareas = t.slice().sort((a,b)=>(a.position||0)-(b.position||0))
+        .map(r=>({ cat:r.cat||"", txt:r.txt||"", dia:r.dia||"Todos los días" }));
+      CFG_ROWS = CFG_ROWS_BY.tareas;
+    }catch(e){}
+  }
+}
+
+/* popover genérico anclado a un elemento (compartido) */
+function closePopovers(){ app.querySelectorAll(".scrim,.pop").forEach(n=>n.remove()); }
+function popoverAt(anchor, inner){
+  closePopovers();
+  const scrim=el("div",{cls:"scrim"}); scrim.addEventListener("click",closePopovers);
+  const pop=el("div",{cls:"pop"}, inner); noBubble(pop);
+  app.append(scrim, pop);
+  const r=anchor.getBoundingClientRect();
+  const w=Math.min(268, window.innerWidth*0.84);
+  let left=Math.max(8, Math.min(r.left, window.innerWidth-w-8));
+  let top=r.bottom+6; const maxTop=window.innerHeight-300; if(top>maxTop) top=Math.max(8, maxTop);
+  pop.style.left=left+"px"; pop.style.top=top+"px";
+  return pop;
+}
+
+/* filtro estilo Sheets */
+function openFilter(key, anchor){
+  const values = uniqueValues(key);
+  const temp = new Set(CFG_FILTERS[key] ? [...CFG_FILTERS[key]] : values);
+  const search=el("input",{type:"text",placeholder:"Buscar…"}); noBubble(search);
+  const listBox=el("div",{cls:"plist"});
+  function paintList(){
+    listBox.innerHTML="";
+    const q=search.value.trim().toLowerCase();
+    values.filter(v=>((v===""?"(vacías)":v).toLowerCase().includes(q))).forEach(v=>{
+      const cb=el("input",{type:"checkbox"}); cb.checked=temp.has(v);
+      cb.addEventListener("change",()=>{ if(cb.checked) temp.add(v); else temp.delete(v); });
+      listBox.appendChild(el("label",{cls:"pitem"}, cb,
+        el("span",{cls:"pv"+(v===""?" empty":""),text: v===""? "(vacías)" : v})));
+    });
+  }
+  search.addEventListener("input",paintList);
+  const selAll=el("button",{text:"Seleccionar todo",onClick:()=>{ values.forEach(v=>temp.add(v)); paintList(); }});
+  const clr=el("button",{text:"Borrar",onClick:()=>{ temp.clear(); paintList(); }});
+  const cancelB=el("button",{text:"Cancelar",onClick:closePopovers});
+  const okB=el("button",{cls:"ok",text:"Aceptar",onClick:()=>{
+    if(temp.size===values.length) delete CFG_FILTERS[key];
+    else CFG_FILTERS[key]=new Set(temp);
+    closePopovers(); render();
+  }});
+  const inner=el("div",{},
+    el("div",{cls:"psearch"}, search),
+    el("div",{cls:"pact"}, selAll, clr),
+    listBox,
+    el("div",{cls:"pfoot"}, cancelB, okB)
+  );
+  paintList();
+  popoverAt(anchor, inner);
+  setTimeout(()=>{ try{search.focus()}catch(e){} },30);
+}
+
+/* desplegable editable de una celda (Categoría / Subgrupo) */
+function openSelect(col, idx, anchor){
+  const key=col.key;
+  const cur=cfgVal(CFG_ROWS[idx],key);
+
+  // opciones fijas (ej. Día): elegir de una lista cerrada, sin renombrar/quitar
+  if(col.options){
+    const list=el("div",{cls:"olist"});
+    col.options.forEach(v=>{
+      list.appendChild(el("div",{cls:"opt"},
+        el("span",{cls:"ov"+(v===cur?" cur":""),text:v,
+          onClick:()=>{ CFG_ROWS[idx][key]=v; closePopovers(); render(); }})));
+    });
+    popoverAt(anchor, el("div",{}, el("div",{cls:"ptitle",text:col.label}), list));
+    return;
+  }
+
+  let editing=null;   // valor que se está renombrando in-situ
+  const list=el("div",{cls:"olist"});
+
+  function renameTo(oldV, newV){
+    const t=(newV||"").trim();
+    if(t && t!==oldV){ CFG_ROWS.forEach(r=>{ if(cfgVal(r,key)===oldV) r[key]=t; }); }
+    editing=null; render();     // se refleja en toda la tabla
+    closePopovers();
+  }
+
+  function repaint(){
+    list.innerHTML="";
+    if(col.allowEmpty){
+      list.appendChild(el("div",{cls:"opt"},
+        el("span",{cls:"ov none"+((cur===""||cur==null)?" cur":""),text:"(ninguno)",
+          onClick:()=>{ CFG_ROWS[idx][key]=""; closePopovers(); render(); }})));
+    }
+    uniqueValues(key).filter(v=>v!=="").forEach(v=>{
+      if(editing===v){
+        // edición in-situ del nombre
+        const inp=el("input",{cls:"oedit",type:"text",value:v}); noBubble(inp);
+        inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); renameTo(v, inp.value); } if(e.key==="Escape"){ editing=null; repaint(); } });
+        const ok=el("button",{cls:"oi ok",text:"✓","aria-label":"Guardar",onClick:(e)=>{ e.stopPropagation(); renameTo(v, inp.value); }});
+        list.appendChild(el("div",{cls:"opt editing"}, inp, ok));
+        setTimeout(()=>{ try{inp.focus();inp.select();}catch(e){} },20);
+        return;
+      }
+      const opt=el("div",{cls:"opt"},
+        el("span",{cls:"ov"+(v===cur?" cur":""),text:v,
+          onClick:()=>{ CFG_ROWS[idx][key]=v; closePopovers(); render(); }}),
+        el("button",{cls:"oi",text:"✎","aria-label":"Renombrar",onClick:(e)=>{ e.stopPropagation(); editing=v; repaint(); }}),
+        el("button",{cls:"oi del",text:"✕","aria-label":"Quitar de la lista",onClick:(e)=>{
+          e.stopPropagation();
+          confirmDialog('¿Quitar «'+v+'» de la lista? Las filas que lo usan quedarán sin '+col.label.toLowerCase()+'.', ()=>{
+            CFG_ROWS.forEach(r=>{ if(cfgVal(r,key)===v) r[key]=""; }); closePopovers(); render();
+          }, "Sí, quitar");
+        }})
+      );
+      list.appendChild(opt);
+    });
+  }
+
+  const nin=el("input",{type:"text",placeholder:"Nueva "+col.label.toLowerCase()+"…"}); noBubble(nin);
+  const addOne=()=>{ const t=nin.value.trim(); if(t){ CFG_ROWS[idx][key]=t; closePopovers(); render(); } };
+  nin.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addOne(); } });
+  const addBtn=el("button",{text:"＋",onClick:addOne});
+  const inner=el("div",{},
+    el("div",{cls:"ptitle",text:col.label+" — tocá el nombre para elegir, ✎ para renombrar"}),
+    list,
+    el("div",{cls:"newrow"}, nin, addBtn)
+  );
+  repaint();
+  popoverAt(anchor, inner);
+}
+
+/* ---------- SWIPE ---------- */
+function swipe(w){
+  const done_n=pos;
+  const top=el("div",{cls:"top"},
+    el("div",{cls:"prog"}, el("i",{style:`width:${(done_n/DECK.length)*100}%`})),
+    el("div",{cls:"cnt",text:`${done_n} / ${DECK.length}`})
+  );
+  const stage=el("div",{cls:"stage"});
+  const flash=el("div",{cls:"flash"});
+  const upcoming=DECK.slice(pos, pos+2).reverse();
+  upcoming.forEach((item,i)=>{
+    const isTop = i===upcoming.length-1;
+    stage.appendChild(cardEl(item,isTop,flash,stage));
+  });
+  stage.appendChild(flash);
+
+  const actions=el("div",{cls:"actions"},
+    el("button",{cls:"act listo",onClick:()=>commitTop("listo",stage,flash),html:'<small>← IZQUIERDA</small>Está listo'}),
+    el("button",{cls:"act back",disabled:pos===0,onClick:goBack,html:'↶<small>VOLVER</small>'}),
+    el("button",{cls:"act prod",onClick:()=>commitTop("producir",stage,flash),html:'<small>DERECHA →</small>Producir'})
+  );
+  w.append(top,stage,actions);
+}
+
+function cardEl(item,isTop,flash,stage){
+  const c=el("div",{cls:"card"});
+  c.style.setProperty("--cat", catColor(item.cat));
+  c.appendChild(el("div",{cls:"tag prod",text:"Producir"}));
+  c.appendChild(el("div",{cls:"tag listo",text:"Listo"}));
+  c.appendChild(el("div",{cls:"cathead"}, el("span",{cls:"cdot"}), el("span",{cls:"cname",text:item.cat})));
+  c.appendChild(el("div",{cls:"txt",text:item.txt}));
+  if(!isTop){ c.style.transform="scale(.96) translateY(10px)"; c.style.opacity=".6"; return c; }
+  c.appendChild(commentAffordance(item));
+  c._item=item;
+  enableDrag(c,flash,stage);
+  return c;
+}
+
+function commentAffordance(item){
+  const wrap=el("div",{cls:"cwrap"});
+  noBubble(wrap);
+  function paint(){
+    wrap.innerHTML="";
+    if(item.comment){
+      wrap.appendChild(el("div",{cls:"cchip",onClick:edit},
+        el("span",{cls:"ci",text:"✎"}), el("span",{text:item.comment})));
+    } else {
+      wrap.appendChild(el("button",{cls:"cbtn",text:"＋ Comentario",onClick:edit}));
+    }
+  }
+  function edit(e){
+    if(e) e.stopPropagation();
+    wrap.innerHTML="";
+    const inp=el("input",{cls:"cinput",type:"text",value:item.comment||"",placeholder:"Ej: hacer 5"});
+    noBubble(inp);
+    const save=()=>{ item.comment=inp.value.trim()||null; paint(); };
+    inp.addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); inp.blur(); } });
+    inp.addEventListener("blur",save);
+    wrap.appendChild(inp);
+    setTimeout(()=>{ try{inp.focus()}catch(e){} },30);
+  }
+  paint();
+  return wrap;
+}
+
+function enableDrag(card,flash,stage){
+  let sx=0, dx=0, dragging=false;
+  const tagL=card.querySelector(".tag.listo"), tagP=card.querySelector(".tag.prod");
+  card.addEventListener("pointerdown",e=>{
+    dragging=true; sx=e.clientX; card.setPointerCapture(e.pointerId); card.style.transition="none";
+  });
+  card.addEventListener("pointermove",e=>{
+    if(!dragging) return;
+    dx=e.clientX-sx;
+    const rot=dx/22;
+    card.style.transform=`translateX(${dx}px) rotate(${rot}deg)`;
+    const k=Math.min(Math.abs(dx)/140,1);
+    if(dx>0){ tagP.style.opacity=k; tagL.style.opacity=0; card.style.borderColor=mix("#E7DFCF","#C96A2B",k); }
+    else if(dx<0){ tagL.style.opacity=k; tagP.style.opacity=0; card.style.borderColor=mix("#E7DFCF","#2F9E6B",k); }
+    else { tagL.style.opacity=0; tagP.style.opacity=0; }
+  });
+  const end=()=>{
+    if(!dragging) return; dragging=false;
+    card.style.transition="transform .28s ease, opacity .28s ease, border-color .2s";
+    if(Math.abs(dx)>110){
+      const dir = dx>0 ? "producir":"listo";
+      flyOff(card,dx>0?1:-1);
+      finish(card._item,dir,flash,stage);
+    } else {
+      card.style.transform=""; card.style.borderColor="";
+      tagL.style.opacity=0; tagP.style.opacity=0;
+    }
+    dx=0;
+  };
+  card.addEventListener("pointerup",end);
+  card.addEventListener("pointercancel",end);
+}
+
+function commitTop(dir,stage,flash){
+  const card=[...stage.querySelectorAll(".card")].find(c=>c._item);
+  if(!card) return;
+  card.style.transition="transform .28s ease, opacity .28s ease";
+  flyOff(card,dir==="producir"?1:-1);
+  finish(card._item,dir,flash,stage);
+}
+function flyOff(card,sign){
+  card.style.transform=`translateX(${sign*window.innerWidth*1.3}px) rotate(${sign*22}deg)`;
+  card.style.opacity="0";
+}
+function finish(item,dir,flash,stage){
+  item.status=dir;
+  hist.push(item.id);
+  if(dir==="listo"){
+    buzz(18); burst(stage);
+    flash.style.transition="none"; flash.style.opacity=".32";
+    requestAnimationFrame(()=>{ flash.style.transition="opacity .4s ease"; flash.style.opacity="0"; });
+  } else { buzz([12,40,12]); }
+  pos++;
+  setTimeout(async ()=>{
+    if(pos>=DECK.length){ await publishList(); state="done"; }
+    render();
+  }, 200);
+}
+function goBack(){
+  if(pos<=0 || !hist.length) return;
+  const id=hist.pop();
+  const it=DECK.find(d=>d.id===id); if(it) it.status=null;
+  pos=Math.max(0,pos-1);
+  render();
+}
+
+function burst(stage){
+  const cx=stage.clientWidth/2, cy=stage.clientHeight/2;
+  const cols=["#2F9E6B","#8FD3AF","#C96A2B","#F0C27B"];
+  for(let i=0;i<18;i++){
+    const d=el("div",{cls:"dot"});
+    d.style.background=cols[i%cols.length];
+    d.style.left=cx+"px"; d.style.top=cy+"px";
+    stage.appendChild(d);
+    const ang=Math.random()*Math.PI*2, dist=90+Math.random()*130;
+    const tx=Math.cos(ang)*dist, ty=Math.sin(ang)*dist;
+    d.animate(
+      [{transform:"translate(0,0) scale(1)",opacity:1},
+       {transform:`translate(${tx}px,${ty}px) scale(0)`,opacity:0}],
+      {duration:560+Math.random()*220,easing:"cubic-bezier(.2,.7,.3,1)"}
+    ).onfinish=()=>d.remove();
+  }
+}
+function mix(a,b,t){
+  const p=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  const A=p(a),B=p(b);
+  const r=Math.round(A[0]+(B[0]-A[0])*t),g=Math.round(A[1]+(B[1]-A[1])*t),bl=Math.round(A[2]+(B[2]-A[2])*t);
+  return `rgb(${r},${g},${bl})`;
+}
+
+/* ---------- DONE ---------- */
+function done(w){ if(Array.isArray(SHARED)) doneShared(w); else doneLocal(w); }
+
+function taskRow(t, isOn, onToggle){
+  const row=el("div",{cls:"task"+(isOn?" on":"")},
+    el("div",{cls:"box",html:'<svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 5"/></svg>'})
+  );
+  const info=el("div",{});
+  info.appendChild(el("div",{cls:"lbl",text:t.txt}));
+  info.appendChild(commentEditable(t));
+  row.appendChild(info);
+  row.addEventListener("click",onToggle);
+  return row;
+}
+function commentEditable(t){
+  const box=el("div",{cls:"cmt"});
+  noBubble(box);
+  function paint(){
+    box.innerHTML="";
+    if(t.comment){
+      box.appendChild(el("span",{cls:"ct",text:t.comment}));
+      box.appendChild(el("button",{cls:"pen",text:"✎",onClick:edit}));
+    } else {
+      box.appendChild(el("button",{cls:"addc",text:"＋ comentario",onClick:edit}));
+    }
+  }
+  function edit(e){
+    if(e) e.stopPropagation();
+    box.innerHTML="";
+    const inp=el("input",{cls:"cinput",type:"text",value:t.comment||"",placeholder:"Ej: hacer 8"});
+    noBubble(inp);
+    const save=()=>{ updateComment(t, inp.value); };
+    inp.addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); inp.blur(); } });
+    inp.addEventListener("blur",save);
+    box.appendChild(inp);
+    setTimeout(()=>{ try{inp.focus()}catch(e){} },30);
+  }
+  paint();
+  return box;
+}
+
+function doneShared(w){
+  w.className="wrap done";
+  const tareas = SHARED;
+  if(tareas.length===0){
+    w.appendChild(el("div",{cls:"empty"},
+      el("div",{cls:"big",text:"✅"}), el("h2",{text:"¡Todo listo!"}),
+      el("p",{text:"No quedó nada para producir hoy."})));
+    w.appendChild(el("div",{cls:"foot"}, addTaskControl(addManual), el("button",{cls:"restart",text:"Volver a empezar",onClick:restart})));
+    return;
+  }
+  const fecha=new Date().toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long"});
+  const bar=el("div",{cls:"bar"}, el("div",{cls:"p"},el("i",{})), el("div",{cls:"n"}));
+  const head=el("div",{cls:"head"},
+    el("div",{cls:"eyebrow",text:"Lista de producción"}),
+    el("h2",{text:"A producir"}),
+    el("div",{cls:"date",text:fecha.charAt(0).toUpperCase()+fecha.slice(1)}), bar);
+  const list=el("div",{cls:"list"});
+  const total=tareas.length;
+  function updateBar(){
+    const n=tareas.filter(t=>t.done).length;
+    bar.querySelector("i").style.width=(n/total*100)+"%";
+    bar.querySelector(".n").textContent=`${n} / ${total}`;
+  }
+  const groups=[];
+  sortGrouped(tareas).forEach(t=>{ let g=groups.find(x=>x.key===t.cat); if(!g){ g={key:t.cat,items:[]}; groups.push(g);} g.items.push(t); });
+  groups.forEach(g=>{
+    const gd=el("div",{cls:"grp"}, el("div",{cls:"gt",text:g.key}));
+    g.items.forEach(t=> gd.appendChild(taskRow(t, !!t.done, ()=>{ if(!t.done) buzz(12); toggleRow(t); })));
+    list.appendChild(gd);
+  });
+  const foot=el("div",{cls:"foot"}, addTaskControl(addManual), el("button",{cls:"restart",text:"Volver a empezar",onClick:restart}));
+  w.append(head,list,foot); updateBar();
+}
+
+function doneLocal(w){
+  w.className="wrap done";
+  const tareas=DECK.filter(d=>d.status==="producir").concat(LOCAL_EXTRA);
+  if(tareas.length===0){
+    w.appendChild(el("div",{cls:"empty"},
+      el("div",{cls:"big",text:"✅"}), el("h2",{text:"¡Todo listo!"}),
+      el("p",{text:"No quedó nada para producir hoy."})));
+    w.appendChild(el("div",{cls:"foot"}, addTaskControl(addManual), el("button",{cls:"restart",text:"Volver a empezar",onClick:restart})));
+    return;
+  }
+  const fecha=new Date().toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long"});
+  const bar=el("div",{cls:"bar"}, el("div",{cls:"p"},el("i",{})), el("div",{cls:"n"}));
+  const head=el("div",{cls:"head"},
+    el("div",{cls:"eyebrow",text:"Lista de producción"}),
+    el("h2",{text:"A producir"}),
+    el("div",{cls:"date",text:fecha.charAt(0).toUpperCase()+fecha.slice(1)}), bar);
+  const list=el("div",{cls:"list"});
+  const done_state={}; let total=tareas.length;
+  function updateBar(){
+    const n=Object.values(done_state).filter(Boolean).length;
+    bar.querySelector("i").style.width=(n/total*100)+"%";
+    bar.querySelector(".n").textContent=`${n} / ${total}`;
+  }
+  const groups=[];
+  sortGrouped(tareas).forEach(t=>{ let g=groups.find(x=>x.key===t.cat); if(!g){ g={key:t.cat,items:[]}; groups.push(g);} g.items.push(t); });
+  groups.forEach(g=>{
+    const gd=el("div",{cls:"grp"}, el("div",{cls:"gt",text:g.key}));
+    g.items.forEach(t=>{
+      const row=taskRow(t, !!done_state[t.id], ()=>{
+        done_state[t.id]=!done_state[t.id];
+        row.classList.toggle("on",done_state[t.id]);
+        if(done_state[t.id]) buzz(12);
+        updateBar();
+      });
+      gd.appendChild(row);
+    });
+    list.appendChild(gd);
+  });
+  const foot=el("div",{cls:"foot"}, addTaskControl(addManual), el("button",{cls:"restart",text:"Volver a empezar",onClick:restart}));
+  w.append(head,list,foot); updateBar();
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Stock y pedidos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --kraft:#E7DCC6; --kraft-2:#DFD2B8; --paper:#FBF9F3;
+  --ink:#251F17; --ink-soft:#7A6E59; --line:#D4C6AA;
+  --green:#46643E; --green-2:#3A5333; --green-soft:#EAF0E4; --green-line:#CBD9C1;
+  --amber:#B7842A; --amber-soft:#F3E8CC;
+  --red:#A5432F; --red-soft:#F3DDD6;
+  --shadow:0 1px 0 rgba(0,0,0,.04),0 14px 34px -20px rgba(60,45,20,.6);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--kraft);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;display:flex;justify-content:center;overscroll-behavior:none}
+.app{width:100%;max-width:560px;min-height:100dvh;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px);transition:max-width .18s ease}
+/* pantallas de tabla (config y registro) se ensanchan en compu; en celular quedan al 100% igual */
+.app.wide{max-width:1180px}
+header{display:flex;align-items:center;gap:10px;padding:18px 2px 12px}
+.iconbtn{width:40px;height:40px;flex:0 0 40px;border-radius:12px;border:1px solid var(--line);
+  background:var(--paper);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:transform .08s ease,opacity .15s ease}
+.iconbtn:active{transform:scale(.94)}
+.iconbtn:disabled{opacity:.35;cursor:default}
+.iconbtn.hidden{display:none}
+.title{flex:1;min-width:0}
+.title h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title .sub{font-family:"Space Mono",monospace;font-size:12px;color:var(--ink-soft);margin-top:2px}
+.icons{display:flex;gap:8px}
+.bar{height:6px;border-radius:99px;background:var(--kraft-2);overflow:hidden;margin:2px 2px 0}
+.bar>i{display:block;height:100%;width:0;background:var(--green);border-radius:99px;transition:width .25s ease}
+.bar.hidden{display:none}
+
+/* HOME */
+.home{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 2px 0}
+.home h2{font-size:22px;margin:0 2px 16px;font-weight:700}
+.home-inner{display:flex;flex-direction:column;gap:14px}
+.bigbtn{display:flex;flex-direction:column;gap:5px;align-items:flex-start;text-align:left;
+  background:var(--green);color:#F6F4EC;border:none;border-radius:18px;padding:22px 20px;cursor:pointer;
+  box-shadow:var(--shadow);transition:transform .08s ease,background .15s ease}
+.bigbtn:active{transform:scale(.99)}
+.bigbtn .bt{font-size:19px;font-weight:700}
+.bigbtn .bs{font-size:13px;opacity:.9;font-weight:500}
+.bigbtn.ghost{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+.bigbtn.ghost .bs{color:var(--ink-soft);opacity:1}
+.notice{margin:16px 2px 0;font-family:"Space Mono",monospace;font-size:11.5px;line-height:1.5;
+  color:var(--ink-soft);background:var(--amber-soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+
+/* CATS */
+.cats{flex:1;display:flex;flex-direction:column;padding:6px 2px 0;overflow-y:auto;min-height:0}
+.cats-head{display:flex;align-items:center;gap:10px;margin:2px 0 12px}
+.cats-head h2{font-size:20px;margin:0;font-weight:700}
+.catbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--paper);
+  border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;
+  box-shadow:var(--shadow);transition:transform .08s ease}
+.catbtn:active{transform:scale(.99)}
+.catbtn .cn{flex:1;font-weight:600;font-size:16px;color:var(--ink)}
+.catbtn .cc{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);
+  border:1px solid var(--line);border-radius:99px;padding:2px 8px}
+
+/* COUNT */
+.stage{flex:1;display:flex;flex-direction:column;justify-content:flex-start;padding:6px 2px 0;overflow-y:auto;min-height:0}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);
+  padding:26px 22px 28px;position:relative;min-height:52dvh;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.card.enter{animation:enter .2s ease}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.prov{display:inline-flex;align-items:center;gap:7px;font-family:"Space Mono",monospace;font-size:12px;
+  letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase}
+.prov .dot{width:8px;height:8px;border-radius:99px;background:var(--green)}
+.cat-chip{font-family:"Space Mono",monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--green-2);background:var(--green-soft);border:1px solid var(--green-line);border-radius:99px;padding:3px 10px;margin-bottom:12px}
+.nombre{font-size:26px;line-height:1.14;font-weight:700;margin:6px 0 6px;letter-spacing:-.01em}
+.desc{font-size:15px;color:var(--ink-soft);font-weight:500;line-height:1.35}
+.minline{font-family:"Space Mono",monospace;font-size:12.5px;color:var(--ink-soft);margin-top:10px}
+.minline b{color:var(--amber);font-weight:700}
+.qtywrap{margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.qtywrap>label{font-family:"Space Mono",monospace;font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+.qtyrow{display:flex;align-items:center;gap:12px}
+input.bignum{width:130px;font-family:"Space Mono",monospace;font-weight:700;font-size:40px;text-align:center;
+  color:var(--ink);background:transparent;border:none;border-bottom:2px solid var(--line);padding:2px 4px 8px;outline:none}
+input.bignum:focus{border-color:var(--green)}
+input.bignum::placeholder{color:#C9BCA1}
+.send{width:58px;height:58px;flex:0 0 58px;border-radius:14px;border:none;background:var(--green);color:#F6F4EC;
+  font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .08s ease,background .15s ease}
+.send:active{transform:scale(.94);background:var(--green-2)}
+.actions{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;border:none;border-radius:14px;padding:15px;font-family:inherit;font-size:15px;font-weight:600;
+  cursor:pointer;transition:transform .08s ease,filter .15s ease}
+.btn:active{transform:scale(.985)}
+.btn-ghost{background:transparent;color:var(--amber);border:1px solid var(--amber)}
+.btn-ghost:active{background:var(--amber-soft)}
+.btn-green{background:var(--green);color:#F6F4EC}
+.btn-green:active{background:var(--green-2)}
+.meta{display:flex;justify-content:space-between;align-items:center;font-family:"Space Mono",monospace;font-size:11.5px;
+  color:var(--ink-soft);padding:14px 4px 2px}
+.meta b{color:var(--ink);font-weight:700}
+.linkbtn{background:none;border:none;color:var(--amber);font-family:"Space Mono",monospace;font-size:11.5px;
+  cursor:pointer;text-decoration:underline;padding:2px}
+
+/* SAVE */
+.save-screen{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 2px 0}
+.save-card{background:var(--paper);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);
+  padding:28px 22px;text-align:center}
+.save-card .big{font-size:44px}
+.save-card h3{font-size:20px;margin:12px 0 6px;font-weight:700}
+.save-card p{font-family:"Space Mono",monospace;font-size:12.5px;color:var(--ink-soft);margin:0 0 20px;line-height:1.5}
+
+/* REGISTRO LIST */
+.reglist{flex:1;padding:6px 2px 0;overflow-y:auto;min-height:0}
+.reg-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--paper);
+  border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;box-shadow:var(--shadow)}
+.reg-row:active{transform:scale(.99)}
+.reg-row .rd{flex:1}
+.reg-row .rd .rf{font-weight:700;font-size:16px}
+.reg-row .rd .rt{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);margin-top:2px}
+.reg-row .chev{color:var(--ink-soft);font-size:20px}
+
+/* REGISTRO VIEW */
+.regview{flex:1;display:flex;flex-direction:column;padding:4px 0 0;min-height:0}
+.tabs{display:flex;gap:8px;padding:0 2px 10px}
+.tab{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);border-radius:12px;
+  padding:11px;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer}
+.tab.active{background:var(--green);color:#F6F4EC;border-color:var(--green)}
+.pane{flex:1;overflow-y:auto;min-height:0;padding:0 2px}
+.filters{display:flex;gap:8px;margin:2px 0 10px;flex-wrap:wrap}
+.filters select{font-family:inherit;font-size:13px;color:var(--ink);
+  background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;outline:none}
+.filters select:focus{border-color:var(--green)}
+.exportrow{display:flex;gap:8px;margin:0 0 12px}
+.exportrow button{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:12px;
+  padding:11px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.exportrow button:active{background:var(--kraft-2)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:var(--shadow)}
+table.stock{border-collapse:collapse;width:100%;font-size:13px}
+table.stock th,table.stock td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table.stock th{font-family:"Space Mono",monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-soft);background:var(--kraft-2);position:sticky;top:0}
+table.stock td.num,table.stock th.num{text-align:right;font-family:"Space Mono",monospace}
+table.stock tr:last-child td{border-bottom:none}
+table.stock td.pedir b{color:var(--red);font-weight:700}
+table.stock td.pedir.ok{color:var(--ink-soft)}
+.count-note{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);margin:8px 2px 0}
+/* tabla de conteo */
+.count-toolbar{display:flex;gap:8px;margin:2px 2px 10px;flex-wrap:wrap}
+.count-toolbar select,.count-toolbar input{font-family:inherit;font-size:14px;color:var(--ink);
+  background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+.count-toolbar select{flex:0 0 auto;max-width:60%}
+.count-toolbar input{flex:1;min-width:120px}
+.count-toolbar select:focus,.count-toolbar input:focus{border-color:var(--green)}
+.grid td.ro{padding:8px 10px;font-size:14px;color:var(--ink);white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+.grid td.ro.soft{color:var(--ink-soft)}
+.grid td.ro.num{text-align:right;font-family:"Space Mono",monospace}
+.grid td.pedir{padding:8px 10px;text-align:right;font-family:"Space Mono",monospace;white-space:nowrap}
+.grid td.pedir b{color:var(--red);font-weight:700}
+.grid td.pedir.ok{color:var(--ink-soft)}
+
+/* PEDIDOS (dentro de registro) */
+.copiar-todo{background:var(--green);color:#F6F4EC;border:none;border-radius:12px;padding:13px 14px;
+  font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;width:100%;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:center;gap:8px}
+.copiar-todo:active{background:var(--green-2)}
+.ticket{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;
+  margin-bottom:12px;box-shadow:var(--shadow)}
+.ticket .t-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ticket .t-head .p{flex:1;font-weight:700;font-size:16px;letter-spacing:-.01em}
+.ticket .t-head .c{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);
+  border:1px solid var(--line);border-radius:99px;padding:2px 8px}
+.copybtn{width:38px;height:38px;flex:0 0 38px;border-radius:10px;border:1px solid var(--line);background:#fff;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .08s ease,background .15s ease}
+.copybtn:active{transform:scale(.92)}
+.copybtn.ok{background:var(--green-soft);border-color:var(--green-line)}
+.lines{list-style:none;margin:0;padding:0;font-family:"Space Mono",monospace;font-size:13.5px;line-height:1.55}
+.lines li{border-bottom:1px dashed var(--line);padding:5px 0;text-align:left}
+.lines li:last-child{border-bottom:none}
+.lines b{font-weight:700;color:var(--ink)}
+.empty{text-align:center;color:var(--ink-soft);font-family:"Space Mono",monospace;font-size:13px;padding:40px 10px;line-height:1.6}
+
+/* ============================================================
+   CONFIG — GRILLA EDITABLE REUTILIZABLE (estilo Sheets)
+   Mismo componente que Mise and Please / Protocolos: solo
+   cambia CFG_COLUMNS. Filtro tocando todo el encabezado.
+   ============================================================ */
+.config{flex:1;display:flex;flex-direction:column;padding:4px 0 0;min-height:0}
+#cfg-body{flex:1;display:flex;flex-direction:column;min-height:0}
+.cfg-head{padding:2px 2px 10px}
+.cfg-hint{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+.cfg-scroll{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.tbl-wrap{flex:1;overflow:auto;border:1px solid #D8CFBB;border-radius:10px;background:#fff;-webkit-overflow-scrolling:touch}
+table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:620px}
+.grid th{position:sticky;top:0;background:#EFE9DB;z-index:2;text-align:left;font-size:12px;color:#6B6250;font-weight:800;padding:8px 8px;border-right:1px solid #D8CFBB;border-bottom:1px solid #C9BFA8;white-space:nowrap}
+.grid th .thh{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.grid th.rownum{left:0;z-index:3;width:38px;min-width:38px;text-align:center;padding:8px 0}
+.fbtn{border:1px solid #CBBE9E;background:#F7F2E6;color:#8A7F66;width:22px;height:22px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+.fbtn.on{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.grid td{padding:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);vertical-align:middle;background:#fff}
+.grid tbody tr:nth-child(even) td{background:#FBF8F1}
+.grid td.rownum{position:sticky;left:0;z-index:1;width:38px;min-width:38px;text-align:center;color:var(--ink-soft);font-size:12px;font-weight:700;background:#F3EEE1;font-variant-numeric:tabular-nums}
+.grid tbody tr:nth-child(even) td.rownum{background:#EEE8D8}
+.grid input.cell{display:block;width:100%;min-width:130px;height:34px;border:2px solid transparent;padding:0 8px;font-family:inherit;font-size:14px;line-height:1.2;background:transparent;color:var(--ink);-webkit-user-select:text;user-select:text}
+.grid td.numtd input.cell{min-width:66px;text-align:right}
+.grid input.cell:focus{outline:none;border:2px solid #1a73e8;background:#fff}
+.grid input.cell::placeholder{color:#C3B79B}
+.selcell{width:100%;min-width:130px;height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:2px solid transparent;background:transparent;font-family:inherit;font-size:14px;line-height:1.2;color:var(--ink);padding:0 8px;cursor:pointer;text-align:left}
+.selcell:active{background:#fff}
+.selcell .cv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.selcell .cv.empty{color:#B4A98F;font-style:italic}
+.selcell .car{color:var(--ink-soft);font-size:10px;flex:none}
+.grid td.delcol{width:34px;min-width:34px;text-align:center;padding:0}
+.delrow{-webkit-appearance:none;appearance:none;display:flex;align-items:center;justify-content:center;width:100%;height:34px;border:none;background:transparent;color:#D64545;font-size:17px;cursor:pointer;padding:0;line-height:1}
+.delrow:active{background:#F7E4E1}
+.norows{padding:26px;text-align:center;color:var(--ink-soft);font-size:14px;font-weight:600}
+.addrow{margin-top:10px;border:1.5px dashed var(--line);background:transparent;color:var(--ink-soft);border-radius:12px;padding:13px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;width:100%}
+.addrow:active{transform:scale(.99)}
+.cfg-restore{background:none;border:none;color:var(--ink-soft);font-family:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;padding:8px 2px;align-self:flex-start}
+.cfg-msg{font-size:13px;font-weight:700;color:var(--amber);min-height:18px;margin:4px 2px}
+.cfg-foot{padding:8px 2px calc(env(safe-area-inset-bottom) + 4px);display:flex;gap:12px}
+.cfgbtn{flex:1;border-radius:14px;padding:15px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.cfgbtn.save{background:var(--green);color:#F6F4EC;border-color:var(--green)}
+.cfgbtn:active{transform:scale(.98)}
+
+/* popover estilo Sheets (filtro + desplegable editable) */
+.scrim{position:fixed;inset:0;background:rgba(30,22,10,.14);z-index:20}
+.pop{position:fixed;z-index:21;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 22px 55px -18px rgba(60,45,20,.6);width:268px;max-width:84vw;display:flex;flex-direction:column;overflow:hidden}
+.pop .psearch{padding:10px}
+.pop .psearch input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;font-family:inherit;font-size:14px;background:var(--kraft);color:var(--ink);-webkit-user-select:text;user-select:text}
+.pop .pact{display:flex;gap:14px;padding:2px 12px 8px;font-size:12px;border-bottom:1px solid var(--line)}
+.pop .pact button{border:none;background:transparent;color:var(--green);font-weight:800;font-family:inherit;font-size:12px;cursor:pointer;padding:2px 0}
+.pop .plist{max-height:220px;overflow:auto;padding:6px 12px}
+.pop .pitem{display:flex;align-items:center;gap:10px;padding:8px 2px;font-size:14px;cursor:pointer;color:var(--ink)}
+.pop .pitem input{width:17px;height:17px;flex:none}
+.pop .pitem .pv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pop .pitem .pv.empty{color:var(--ink-soft);font-style:italic}
+.pop .pfoot{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+.pop .pfoot button{flex:1;border-radius:10px;padding:11px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.pop .pfoot button.ok{background:var(--green);color:#fff;border-color:var(--green)}
+.pop .ptitle{padding:11px 12px 8px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-soft);font-weight:800;border-bottom:1px solid var(--line)}
+.pop .olist{max-height:230px;overflow:auto;padding:4px 0}
+.opt{display:flex;align-items:center;gap:6px;padding:4px 8px 4px 12px}
+.opt .ov{flex:1;font-size:15px;color:var(--ink);cursor:pointer;padding:8px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opt .ov.cur{font-weight:800;color:var(--green)}
+.opt .ov.none{color:var(--ink-soft);font-style:italic}
+.opt .oi{border:none;background:transparent;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:8px 6px;border-radius:7px;flex:none}
+.opt .oi.del{color:#D64545}
+.opt .oi.ok{color:var(--green);font-weight:800}
+.opt .oi:active{background:var(--kraft)}
+.opt.editing{gap:8px}
+.opt .oedit{flex:1;border:2px solid #1a73e8;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:15px;background:#fff;color:var(--ink);-webkit-user-select:text;user-select:text}
+.pop .newrow{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+.pop .newrow input{flex:1;border:1px solid var(--line);border-radius:9px;padding:10px;font-family:inherit;font-size:14px;background:var(--kraft);color:var(--ink);-webkit-user-select:text;user-select:text}
+.pop .newrow button{border:none;background:var(--green);color:#fff;border-radius:9px;padding:0 14px;font-family:inherit;font-weight:800;font-size:18px;cursor:pointer}
+
+/* PIN */
+.pinpad{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:0 2px}
+.pinpad h3{font-size:18px;margin:0;font-weight:700}
+.pinpad input{width:160px;font-family:"Space Mono",monospace;font-weight:700;font-size:32px;text-align:center;letter-spacing:8px;
+  color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px;outline:none}
+.pinpad input:focus{border-color:var(--green)}
+.pinpad .go{background:var(--green);color:#F6F4EC;border:none;border-radius:12px;padding:13px 28px;font-family:inherit;font-weight:600;font-size:15px;cursor:pointer}
+
+/* modal de confirmación propio (no depende de confirm()) */
+.modal-scrim{position:fixed;inset:0;background:rgba(30,22,10,.38);z-index:40;display:flex;align-items:center;justify-content:center;padding:26px}
+.modal{background:var(--paper);border:1px solid var(--line);border-radius:20px;max-width:360px;width:100%;padding:24px;box-shadow:0 30px 70px -20px rgba(60,45,20,.6);text-align:center}
+.modal p{font-size:16px;line-height:1.5;color:var(--ink);margin:0 0 20px;font-weight:600}
+.modal .mrow{display:flex;gap:12px}
+.modal .mrow button{flex:1;border-radius:14px;padding:15px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.modal .mrow button.danger{background:#D64545;color:#fff;border-color:#D64545}
+.modal .mrow button:active{transform:scale(.97)}
+
+.restart{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:14px;
+  font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;width:100%;margin-top:10px}
+.restart:active{background:var(--kraft-2)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);
+  color:var(--paper);font-size:13px;font-weight:500;padding:10px 18px;border-radius:99px;opacity:0;
+  pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:50;font-family:"Space Mono",monospace;max-width:88%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none !important}
+.center-msg{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
+  color:var(--ink-soft);font-family:"Space Mono",monospace;font-size:13px;padding:40px 20px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="iconbtn" id="back" title="Volver" aria-label="Volver">&#8592;</button>
+    <div class="title">
+      <h1 id="phase">Stock</h1>
+      <div class="sub" id="counter">&nbsp;</div>
+    </div>
+    <div class="icons" id="home-icons">
+      <button class="iconbtn" id="nav-reg" title="Registro de stock" aria-label="Registro">&#128203;</button>
+      <button class="iconbtn" id="nav-cfg" title="Configuración" aria-label="Configuración">&#9881;</button>
+    </div>
+  </header>
+  <div class="bar" id="progbar"><i id="prog"></i></div>
+
+  <!-- HOME -->
+  <main class="home hidden" id="home">
+    <h2>Hacer stock</h2>
+    <div class="home-inner">
+      <button class="bigbtn" id="go-count">
+        <span class="bt">Hacer stock</span>
+        <span class="bs">Completá la cantidad actual de cada ítem en una tabla</span>
+      </button>
+    </div>
+    <div class="notice hidden" id="home-notice"></div>
+  </main>
+
+  <!-- COUNT (tabla editable) -->
+  <main class="config hidden" id="count">
+    <div class="count-toolbar">
+      <select id="ct-cat"></select>
+      <input id="ct-search" placeholder="Buscar ítem…" autocomplete="off">
+    </div>
+    <div class="cfg-scroll">
+      <div class="tbl-wrap"><table class="grid" id="count-table"></table></div>
+    </div>
+    <div class="cfg-foot">
+      <button class="cfgbtn" id="count-cancel">Cancelar</button>
+      <button class="cfgbtn save" id="count-save">Guardar stock</button>
+    </div>
+  </main>
+
+  <!-- SAVE -->
+  <main class="save-screen hidden" id="save">
+    <div class="save-card">
+      <div class="big">&#128230;</div>
+      <h3 id="save-title">Conteo terminado</h3>
+      <p id="save-sub"></p>
+      <button class="btn btn-green" id="do-save" style="width:100%">Guardar en el registro</button>
+      <button class="restart" id="save-back">Seguir contando</button>
+    </div>
+  </main>
+
+  <!-- REGISTRO LIST -->
+  <main class="reglist hidden" id="reglist"></main>
+
+  <!-- REGISTRO VIEW -->
+  <main class="regview hidden" id="regview">
+    <div class="tabs">
+      <button class="tab active" id="tab-stock" data-tab="stock">Stock</button>
+      <button class="tab" id="tab-ped" data-tab="ped">Pedidos</button>
+    </div>
+    <div class="pane" id="pane-stock">
+      <div class="filters">
+        <select id="f-cat"></select>
+        <select id="f-prov"></select>
+      </div>
+      <div class="exportrow">
+        <button id="copy-sheets">&#9783;&nbsp; Copiar para Sheets</button>
+        <button id="dl-csv">&#8681;&nbsp; Descargar CSV</button>
+      </div>
+      <div class="tablewrap"><table class="stock" id="stock-table"></table></div>
+      <div class="count-note" id="stock-note"></div>
+    </div>
+    <div class="pane hidden" id="pane-ped">
+      <button class="copiar-todo" id="copyall">&#9783;&nbsp; Copiar todo</button>
+      <div id="tickets"></div>
+    </div>
+  </main>
+
+  <!-- CONFIG -->
+  <main class="config hidden" id="config">
+    <div class="pinpad" id="pinpad">
+      <h3>Configuración</h3>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN">
+      <button class="go" id="pin-go">Entrar</button>
+    </div>
+    <div class="hidden" id="cfg-body"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== CONFIGURACIÓN ====================
+   Pegá acá los 2 valores de Supabase antes de subir a Netlify.
+   - SUPABASE_URL: Project URL (termina en .co, sin /rest/v1/)
+   - SUPABASE_ANON: clave "anon public"
+   - ADMIN_PIN: PIN del panel de configuración
+   Si quedan vacíos, la app funciona en modo local (sin guardar en la nube). */
+const SUPABASE_URL  = "https://mohfvdagkqpkeutcbauu.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vaGZ2ZGFna3Fwa2V1dGNiYXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NTU5NzMsImV4cCI6MjEwNTQzMTk3M30.KKfVxaBjPfvg7XVfqZlIQW0coXj_kWyKxfUomlN7VWg";
+const ADMIN_PIN     = "1234";
+/* ====================================================== */
+
+const SB_ON = !!(SUPABASE_URL && SUPABASE_ANON);
+const TZ = "America/Montevideo";
+
+const CATEGORIES = ["Frutas, verduras y huevos","Lácteos y fiambre","Almacén y repostería","Café, té e infusiones","Bebidas","Panificados y congelados","Descartables y packaging","Insumos y limpieza","Producción"];
+
+/* Semilla: se cargan en Supabase si la tabla stock_items está vacía,
+   y sirven de respaldo si no hay conexión. Cantidad mínima arranca en 0. */
+const DEFAULT_ITEMS = [
+  {"categoria": "Almacén y repostería", "proveedor": "La Colonial (super)", "item": "Aceite girasol", "paquete": "botella (900ml)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Aceituna en rodaja", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Azúcar", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Azúcar impalpable", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Azúcar stick Bella Unión", "paquete": "Pack (1000 Ud)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Cacao amargo", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Chocolate negro gota (para cookies)", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Colorante rojo", "paquete": "tarro (1 L)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Dulce de leche Los Nietitos cremoso", "paquete": "tarro (3,8 kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Dulce de leche Los Nietitos repostero", "paquete": "tarro (3,8 kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Edulcorante Splenda Stevia", "paquete": "Pack (400 Ud)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Harina Cañuelas 000", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Levadura seca Success", "paquete": "Paquete (500g)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Maicena", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "La Colonial (super)", "item": "Mermelada de arándanos", "paquete": "tarro (500g)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "La Colonial (super)", "item": "Mini Oreo", "paquete": "paquete", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Orégano", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Polvo de hornear Royal", "paquete": "Paquete (1kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Pulpa de tomate concentrada", "paquete": "caja (1L)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "La Colonial (super)", "item": "Rockclers", "paquete": "paquete (40g)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Sal fina Dos Anclas", "paquete": "Paquete (500g)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Salsa topping Selecta caramelo", "paquete": "Tarro (1.3kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Salsa topping Selecta chocolate", "paquete": "Tarro (1.3kg)", "cantidad_minima": 0},
+  {"categoria": "Almacén y repostería", "proveedor": "Finesa", "item": "Vainilla", "paquete": "tarro (1 L)", "cantidad_minima": 0},
+  {"categoria": "Bebidas", "proveedor": "Salus", "item": "Salus agua 600 SG", "paquete": "funda (6ud)", "cantidad_minima": 0},
+  {"categoria": "Bebidas", "proveedor": "Salus", "item": "Salus saborizada manzana", "paquete": "funda (6ud)", "cantidad_minima": 0},
+  {"categoria": "Bebidas", "proveedor": "Salus", "item": "Salus saborizada naranja", "paquete": "funda (6ud)", "cantidad_minima": 0},
+  {"categoria": "Bebidas", "proveedor": "Salus", "item": "Salus saborizada pomelo", "paquete": "funda (6ud)", "cantidad_minima": 0},
+  {"categoria": "Café, té e infusiones", "proveedor": "Café Bahía", "item": "Café", "paquete": "bolsa (2.5 kg)", "cantidad_minima": 0},
+  {"categoria": "Café, té e infusiones", "proveedor": "Café Bahía", "item": "Café descafeinado", "paquete": "paquete (500g)", "cantidad_minima": 0},
+  {"categoria": "Café, té e infusiones", "proveedor": "No hay proveedor", "item": "Té Twinings", "paquete": "Caja (6 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Casa Naranja", "item": "Bolsa papel empanada (12x18)", "paquete": "pack (250 ud.)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Bolsa papel madera (23x11)", "paquete": "pack (1 kilo/195 Ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Bolsas (24x35)", "paquete": "Rollo (1000ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Bolsas (35x50)", "paquete": "Rollo (500ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Caja blanca Grande (22x18x5)", "paquete": "Unidad", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Caja blanca Mediana (18x12x5)", "paquete": "Unidad", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Caja marron (30x16x4)", "paquete": "Unidad", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Cartón bandejas", "paquete": "Ud", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Cucharas de madera", "paquete": "paquete (100ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Porta vasos doble", "paquete": "Unidad", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Revolvedores grandes de madera", "paquete": "paquete (50ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Rollo de hojas separadoras", "paquete": "Pack (1000ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Rollo POS", "paquete": "Unidad", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Servilleta bob", "paquete": "Pack (18 paquetes de 100ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "No hay proveedor", "item": "Sorbito negro biodegradable", "paquete": "paquete (200ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Tapa negra vaso kraft 6oz", "paquete": "Funda (50 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Tapa negra vaso kraft 8oz y 12oz", "paquete": "Funda (50 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Tapa vaso licuado con cruz", "paquete": "Funda (12 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Tapa vaso licuado sellada", "paquete": "Funda (12 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Tapa vaso licuado con domo", "paquete": "Funda (12 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Mabipark", "item": "Vaso 12oz Polipapel blanco", "paquete": "Funda (50 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Mabipark", "item": "Vaso 6oz Polipapel blanco", "paquete": "Funda (50 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Mabipark", "item": "Vaso 8oz Polipapel blanco", "paquete": "Funda (50 ud)", "cantidad_minima": 0},
+  {"categoria": "Descartables y packaging", "proveedor": "Darnel", "item": "Vaso licuado 475cc", "paquete": "Funda (12 ud)", "cantidad_minima": 0},
+  {"categoria": "Frutas, verduras y huevos", "proveedor": "Don Joaquín", "item": "Albahaca", "paquete": "Bolsa (10g)", "cantidad_minima": 0},
+  {"categoria": "Frutas, verduras y huevos", "proveedor": "Don Joaquín", "item": "Banana", "paquete": "Kg", "cantidad_minima": 0},
+  {"categoria": "Frutas, verduras y huevos", "proveedor": "Don Joaquín", "item": "Frutillas", "paquete": "Kg", "cantidad_minima": 0},
+  {"categoria": "Frutas, verduras y huevos", "proveedor": "Don Joaquín", "item": "Huevos", "paquete": "mapple (x30)", "cantidad_minima": 0},
+  {"categoria": "Frutas, verduras y huevos", "proveedor": "Don Joaquín", "item": "Tomate", "paquete": "Kg", "cantidad_minima": 0},
+  {"categoria": "Insumos y limpieza", "proveedor": "No hay proveedor", "item": "Cápsulas de gas para sifón", "paquete": "caja (24Ud)", "cantidad_minima": 0},
+  {"categoria": "Insumos y limpieza", "proveedor": "Finesa", "item": "Guantes de nitrilo negros", "paquete": "Caja (100ud)", "cantidad_minima": 0},
+  {"categoria": "Insumos y limpieza", "proveedor": "Finesa", "item": "Paño microfibra 50x50cm", "paquete": "unidad", "cantidad_minima": 0},
+  {"categoria": "Lácteos y fiambre", "proveedor": "La Colonial (super)", "item": "Crema de leche", "paquete": "sache (500ml)", "cantidad_minima": 0},
+  {"categoria": "Lácteos y fiambre", "proveedor": "La Colonial (super)", "item": "Jamón Doña Coca rubí", "paquete": "Kg", "cantidad_minima": 0},
+  {"categoria": "Lácteos y fiambre", "proveedor": "Finesa", "item": "Leche entera Calcar", "paquete": "caja (1L)", "cantidad_minima": 0},
+  {"categoria": "Lácteos y fiambre", "proveedor": "Nude", "item": "Leche Nude", "paquete": "caja (12ud)", "cantidad_minima": 0},
+  {"categoria": "Lácteos y fiambre", "proveedor": "Finesa", "item": "Manteca", "paquete": "Caja (5kg)", "cantidad_minima": 0},
+  {"categoria": "Lácteos y fiambre", "proveedor": "La Colonial (super)", "item": "Muzzarella", "paquete": "Kg", "cantidad_minima": 0},
+  {"categoria": "Lácteos y fiambre", "proveedor": "La Colonial (super)", "item": "Queso crema", "paquete": "tarro (Xkg)", "cantidad_minima": 0},
+  {"categoria": "Panificados y congelados", "proveedor": "No hay proveedor", "item": "Helado Lekker crema", "paquete": "tarro (1.9 L)", "cantidad_minima": 0},
+  {"categoria": "Panificados y congelados", "proveedor": "No hay proveedor", "item": "Hielo", "paquete": "Kg", "cantidad_minima": 0},
+  {"categoria": "Panificados y congelados", "proveedor": "Friopan", "item": "Medialunas clásicas", "paquete": "Caja", "cantidad_minima": 0},
+  {"categoria": "Panificados y congelados", "proveedor": "Friopan", "item": "Medialunas grandes", "paquete": "Caja", "cantidad_minima": 0},
+  {"categoria": "Panificados y congelados", "proveedor": "BDB - Panificados", "item": "Pan de miga", "paquete": "paquete", "cantidad_minima": 0},
+  {"categoria": "Panificados y congelados", "proveedor": "Easy Congelados", "item": "Roll de canela", "paquete": "pack (4 ud)", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "Cookies nyc Chispas", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "Cookies nyc Red velvet", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "Cookies Clasica", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "Cookies nyc Oreos", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "Waffles", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "pizzas", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "Almibar", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "porciones banana", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "porciones frutilla", "paquete": "ud", "cantidad_minima": 0},
+  {"categoria": "Producción", "proveedor": "Producción", "item": "premescla chocolate", "paquete": "ud", "cantidad_minima": 0}
+];
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+function num(v){ if(v===null||v===undefined) return 0; if(typeof v==="number") return v;
+  const s=(""+v).trim().replace(",","."); const n=parseFloat(s); return isNaN(n)?0:n; }
+function fmt(n){ if(n===null||n===undefined||n==="") return ""; const x=Math.round(num(n)*100)/100; return x.toString(); }
+/* Modelo min-máx: se pide cuando actual <= mínimo, y se repone hasta el ideal.
+   pedirRaw = faltante crudo (en unidades de stock); pedirOf = redondeado a paquetes
+   enteros si hay unidades por paquete (por_paquete). */
+function pedirRaw(it){
+  const min=num(it.cantidad_minima), id=num(it.ideal);
+  const eff = id>0 ? Math.max(id,min) : min;      // si no hay ideal, el objetivo es el mínimo
+  const act=num(it.cantidad_actual);
+  if(act>min) return 0;                           // por encima del mínimo → no se pide (banda muerta)
+  const need = eff-act;
+  return need>0 ? need : 0;
+}
+function pedirOf(it){
+  const raw=pedirRaw(it); if(raw<=0) return 0;
+  const upp=num(it.por_paquete);
+  return upp>0 ? Math.ceil(raw/upp) : raw;         // redondeo a paquetes enteros
+}
+let toastT;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1700); }
+function copyText(text, cb){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>cb&&cb(true)).catch(fallback);
+  } else fallback();
+  function fallback(){ try{ const ta=document.createElement("textarea"); ta.value=text;
+    ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand("copy"); document.body.removeChild(ta); cb&&cb(true);}catch(e){ cb&&cb(false);} }
+}
+function todayISO(){ try{ return new Date().toLocaleDateString("sv-SE",{timeZone:TZ}); }catch(e){ return new Date().toISOString().slice(0,10); } }
+function fechaLarga(iso){ if(!iso) return "";
+  const p=(""+iso).slice(0,10).split("-"); if(p.length<3) return iso; return p[2]+"/"+p[1]+"/"+p[0]; }
+function horaDe(ts){ if(!ts) return ""; try{ return new Date(ts).toLocaleTimeString("es-UY",{timeZone:TZ,hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } }
+function catIdx(c){ const i=CATEGORIES.indexOf(c); return i<0?999:i; }
+function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+/* constructor de nodos (para la grilla de configuración) */
+function el(tag, props, ...kids){
+  props=props||{};
+  const n=document.createElement(tag);
+  for(const k in props){
+    if(k==="cls") n.className=props[k];
+    else if(k==="html") n.innerHTML=props[k];
+    else if(k==="text") n.textContent=props[k];
+    else if(k.startsWith("on")) n.addEventListener(k.slice(2).toLowerCase(), props[k]);
+    else if(typeof props[k]==="boolean"){ if(props[k]) n.setAttribute(k,""); }
+    else n.setAttribute(k, props[k]);
+  }
+  kids.flat().forEach(c=>c&&n.appendChild(typeof c==="string"?document.createTextNode(c):c));
+  return n;
+}
+function noBubble(node){ ["pointerdown","pointermove","pointerup","touchstart","touchmove","mousedown","click"]
+  .forEach(ev=>node.addEventListener(ev,e=>e.stopPropagation())); }
+function confirmDialog(msg,onYes,yesLabel){
+  const scrim=el("div",{cls:"modal-scrim"});
+  const close=()=>scrim.remove();
+  scrim.addEventListener("click",e=>{ if(e.target===scrim) close(); });
+  const no=el("button",{text:"Cancelar",onClick:close});
+  const yes=el("button",{cls:"danger",text:yesLabel||"Sí, continuar",onClick:()=>{ close(); onYes(); }});
+  scrim.appendChild(el("div",{cls:"modal"}, el("p",{text:msg}), el("div",{cls:"mrow"}, no, yes)));
+  document.body.appendChild(scrim);
+}
+function closePopovers(){ document.querySelectorAll(".scrim,.pop").forEach(n=>n.remove()); }
+function popoverAt(anchor, inner){
+  closePopovers();
+  const scrim=el("div",{cls:"scrim"}); scrim.addEventListener("click",closePopovers);
+  const pop=el("div",{cls:"pop"}, inner); noBubble(pop);
+  document.body.append(scrim, pop);
+  const r=anchor.getBoundingClientRect();
+  const w=Math.min(268, window.innerWidth*0.84);
+  let left=Math.max(8, Math.min(r.left, window.innerWidth-w-8));
+  let top=r.bottom+6; const maxTop=window.innerHeight-320; if(top>maxTop) top=Math.max(8, maxTop);
+  pop.style.left=left+"px"; pop.style.top=top+"px";
+  return pop;
+}
+
+/* ---------- Supabase (fetch a la API REST) ---------- */
+function sbHead(extra){ const h={ "apikey":SUPABASE_ANON, "Authorization":"Bearer "+SUPABASE_ANON, "Content-Type":"application/json" };
+  if(extra) Object.assign(h,extra); return h; }
+async function sb(method, table, opts){
+  opts=opts||{};
+  if(!SB_ON) throw new Error("SB_OFF");
+  const url = SUPABASE_URL.replace(/\/+$/,"") + "/rest/v1/" + table + (opts.query?("?"+opts.query):"");
+  const res = await fetch(url, { method, headers:sbHead(opts.prefer?{Prefer:opts.prefer}:null),
+    body: opts.body?JSON.stringify(opts.body):null });
+  if(!res.ok){ const t=await res.text().catch(()=>""); throw new Error("SB "+res.status+" "+t); }
+  const txt = await res.text(); return txt?JSON.parse(txt):null;
+}
+
+/* ---------- estado ---------- */
+let items = [];
+let offline = false;
+let localRegistros = [];
+
+function seedClone(){ return DEFAULT_ITEMS.map((it,i)=>({ id:"seed"+i, categoria:it.categoria, proveedor:it.proveedor,
+  item:it.item, paquete:it.paquete, por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal), position:i })); }
+
+async function loadItems(){
+  if(!SB_ON){ items=seedClone(); offline=true; return; }
+  try{
+    let rows = await sb("GET","stock_items",{query:"select=*&order=position.asc"});
+    if(!rows || rows.length===0){
+      const payload = DEFAULT_ITEMS.map((it,i)=>({ categoria:it.categoria, proveedor:it.proveedor, item:it.item,
+        paquete:it.paquete, por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal), position:i }));
+      rows = await sb("POST","stock_items",{ body:payload, prefer:"return=representation" });
+      rows.sort((a,b)=>a.position-b.position);
+    }
+    items=rows; offline=false;
+  }catch(e){ items=seedClone(); offline=true; }
+}
+async function saveConfig(rows){
+  const clean = rows.map((r,i)=>({ categoria:r.categoria||"", proveedor:r.proveedor||"", item:(r.item||"").trim(),
+    paquete:r.paquete||"", por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), position:i }))
+    .filter(r=>r.item!=="");
+  if(!SB_ON){ items=clean.map((r,i)=>({ ...r, id:"loc"+i })); return; }
+  await sb("DELETE","stock_items",{query:"id=gt.0"});
+  if(clean.length){
+    const saved = await sb("POST","stock_items",{ body:clean, prefer:"return=representation" });
+    saved.sort((a,b)=>a.position-b.position); items=saved;
+  } else { items=[]; }
+}
+async function saveRegistro(rows){
+  const fecha = todayISO();
+  const snap = rows.map((r,i)=>({ categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item,
+    paquete:r.paquete||"", por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), cantidad_actual:num(r.cantidad_actual), position:i }));
+  if(!SB_ON){ const reg={ id:"loc"+Date.now(), fecha, created_at:new Date().toISOString(), _items:snap };
+    localRegistros.unshift(reg); return reg; }
+  const reg = await sb("POST","stock_registros",{ body:[{fecha}], prefer:"return=representation" });
+  const rid = reg[0].id;
+  const payload = snap.map(s=>({ ...s, registro_id:rid }));
+  await sb("POST","stock_registro_items",{ body:payload });
+  return reg[0];
+}
+async function listRegistros(){
+  if(!SB_ON) return localRegistros;
+  try{ return (await sb("GET","stock_registros",{query:"select=*&order=created_at.desc"}))||[]; }
+  catch(e){ toast("No se pudo leer el registro"); return []; }
+}
+async function loadRegistroItems(reg){
+  if(reg._items) return reg._items;
+  try{ return (await sb("GET","stock_registro_items",{query:"registro_id=eq."+reg.id+"&order=position.asc"}))||[]; }
+  catch(e){ toast("No se pudo abrir el registro"); return []; }
+}
+
+/* ---------- router de pantallas ---------- */
+const SCREENS=["home","count","save","reglist","regview","config"];
+function show(scr){ closePopovers(); SCREENS.forEach(s=>$(s).classList.add("hidden")); $(scr).classList.remove("hidden");
+  $("home-icons").style.display = (scr==="home")?"flex":"none";
+  $("back").classList.toggle("hidden", scr==="home");
+  $("progbar").classList.add("hidden");
+  document.querySelector(".app").classList.toggle("wide", scr==="config" || scr==="regview" || scr==="count");
+}
+
+/* ---------- conteo (tabla editable estilo Sheets) ---------- */
+let count=null; // { rows:[{...item, cantidad_actual, _seen}] }
+function startCount(){
+  if(!items.length){ toast("No hay ítems cargados. Revisá Configuración."); return; }
+  const rows = items.slice()
+    .sort((a,b)=>(catIdx(a.categoria)-catIdx(b.categoria))||(a.position-b.position))
+    .map(it=>({ categoria:it.categoria, proveedor:it.proveedor, item:it.item, paquete:it.paquete,
+      por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal),
+      cantidad_actual:0, _seen:false }));
+  count={ rows };
+  show("count");
+  $("phase").textContent="Hacer stock";
+  buildCountFilter();
+  $("ct-search").value="";
+  renderCountTable();
+}
+function buildCountFilter(){
+  const cats=["(todas las categorías)", ...uniqInOrder(count.rows.map(r=>r.categoria), true)];
+  fillSelect($("ct-cat"), cats);
+}
+function countVisible(){
+  const fc=$("ct-cat").value, q=($("ct-search").value||"").toLowerCase().trim();
+  return count.rows.filter(r=>{
+    if(fc && fc.indexOf("(todas")<0 && r.categoria!==fc) return false;
+    if(q && (r.item||"").toLowerCase().indexOf(q)<0) return false;
+    return true;
+  });
+}
+function updateCountCounter(){
+  const seen=count.rows.filter(r=>r._seen).length;
+  const aPedir=count.rows.filter(r=>pedirOf(r)>0).length;
+  $("counter").textContent = seen+" / "+count.rows.length+" contados · "+aPedir+" para pedir";
+}
+function renderCountTable(){
+  const host=$("count-table"); host.innerHTML="";
+  const head=el("tr",{},
+    el("th",{text:"Ítem"}), el("th",{text:"Paquete"}),
+    el("th",{cls:"num",text:"Mín"}), el("th",{cls:"num",text:"Ideal"}),
+    el("th",{cls:"num",text:"Actual"}), el("th",{cls:"num",text:"Pedir"}));
+  host.appendChild(el("thead",{},head));
+  const tb=el("tbody",{});
+  const vis=countVisible();
+  vis.forEach(r=>{
+    const pedCell=el("td",{cls:"pedir"});
+    function paintPed(){ const p=pedirOf(r); pedCell.innerHTML = p>0?("<b>"+esc(fmt(p))+"</b>"):"—"; pedCell.classList.toggle("ok",!(p>0)); }
+    const inp=el("input",{cls:"cell",type:"text",inputmode:"decimal",autocomplete:"off",
+      value: r._seen?fmt(r.cantidad_actual):"", placeholder:"0"});
+    inp.addEventListener("input",()=>{
+      let v=inp.value.replace(/[^0-9.,]/g,""); const k=v.search(/[.,]/);
+      if(k!==-1) v=v.slice(0,k+1)+v.slice(k+1).replace(/[.,]/g,""); inp.value=v;
+      r.cantidad_actual=num(v); r._seen=(v!==""); paintPed(); updateCountCounter();
+    });
+    const tr=el("tr",{},
+      el("td",{cls:"ro",text:r.item}),
+      el("td",{cls:"ro soft",text:r.paquete||""}),
+      el("td",{cls:"ro soft num",text:fmt(r.cantidad_minima)}),
+      el("td",{cls:"ro soft num",text:fmt(r.ideal)}),
+      el("td",{cls:"numtd"}, inp),
+      pedCell);
+    paintPed();
+    tb.appendChild(tr);
+  });
+  host.appendChild(tb);
+  const wrap=host.closest(".tbl-wrap");
+  let nr=wrap.querySelector(".norows"); if(nr) nr.remove();
+  if(!vis.length) wrap.appendChild(el("div",{cls:"norows",text: count.rows.length?"Ningún ítem coincide con el filtro/búsqueda.":"No hay ítems. Revisá Configuración."}));
+  updateCountCounter();
+}
+function goSave(){
+  show("save");
+  $("phase").textContent="Guardar stock"; $("counter").innerHTML="&nbsp;";
+  const seen=count.rows.filter(x=>x._seen).length;
+  const aPedir=count.rows.filter(x=>pedirOf(x)>0).length;
+  const faltan=count.rows.length-seen;
+  $("save-title").textContent="Guardar stock";
+  $("save-sub").innerHTML = "Fecha: <b>"+fechaLarga(todayISO())+"</b><br>"+
+    count.rows.length+" ítems · "+seen+" con cantidad · "+aPedir+" para pedir"+
+    (faltan>0 ? ("<br><span style='color:var(--amber)'>"+faltan+" quedaron en 0 (sin contar)</span>") : "");
+}
+async function doSave(){
+  $("do-save").disabled=true; $("do-save").textContent="Guardando…";
+  try{
+    const reg=await saveRegistro(count.rows);
+    toast("Stock guardado");
+    count=null;
+    await openRegistro(reg);
+  }catch(e){ toast("No se pudo guardar: "+e.message); }
+  $("do-save").disabled=false; $("do-save").textContent="Guardar en el registro";
+}
+
+/* ---------- registro: lista ---------- */
+async function showRegList(){
+  show("reglist"); $("phase").textContent="Registro de stock"; $("counter").innerHTML="&nbsp;";
+  const cont=$("reglist"); cont.innerHTML='<div class="center-msg">Cargando…</div>';
+  const regs=await listRegistros();
+  cont.innerHTML="";
+  if(!regs.length){ cont.innerHTML='<div class="center-msg">Todavía no guardaste ningún stock.<br>Hacé un conteo y guardalo.</div>'; return; }
+  regs.forEach(reg=>{
+    const row=document.createElement("button"); row.className="reg-row";
+    const d=document.createElement("div"); d.className="rd";
+    const f=document.createElement("div"); f.className="rf"; f.textContent=fechaLarga(reg.fecha);
+    const t=document.createElement("div"); t.className="rt"; t.textContent=horaDe(reg.created_at)?("guardado "+horaDe(reg.created_at)):"";
+    d.appendChild(f); d.appendChild(t);
+    const ch=document.createElement("div"); ch.className="chev"; ch.innerHTML="&#8250;";
+    row.appendChild(d); row.appendChild(ch);
+    row.addEventListener("click",()=>openRegistro(reg));
+    cont.appendChild(row);
+  });
+}
+
+/* ---------- registro: vista con pestañas ---------- */
+let curReg=null, curRegItems=[], curTab="stock";
+async function openRegistro(reg){
+  curReg=reg; show("regview");
+  $("phase").textContent="Stock "+fechaLarga(reg.fecha); $("counter").innerHTML="&nbsp;";
+  $("stock-table").innerHTML='<tr><td class="center-msg" style="display:block">Cargando…</td></tr>';
+  curRegItems = await loadRegistroItems(reg);
+  setTab("stock");
+  buildFilters(); renderStockTable();
+}
+function setTab(tab){
+  curTab=tab;
+  $("tab-stock").classList.toggle("active",tab==="stock");
+  $("tab-ped").classList.toggle("active",tab==="ped");
+  $("pane-stock").classList.toggle("hidden",tab!=="stock");
+  $("pane-ped").classList.toggle("hidden",tab!=="ped");
+  if(tab==="ped") renderPedidos();
+}
+function buildFilters(){
+  const cats=["(todas las categorías)",...uniqInOrder(curRegItems.map(r=>r.categoria),true)];
+  const provs=["(todos los proveedores)",...uniqInOrder(curRegItems.map(r=>r.proveedor),false)];
+  fillSelect($("f-cat"),cats); fillSelect($("f-prov"),provs);
+}
+function uniqInOrder(arr,byCat){
+  const u=[...new Set(arr.filter(x=>x!==null&&x!==undefined&&x!==""))];
+  if(byCat) u.sort((a,b)=>(catIdx(a)-catIdx(b))||a.localeCompare(b)); else u.sort((a,b)=>a.localeCompare(b));
+  return u;
+}
+function fillSelect(sel,opts,keep){
+  const prev=keep?sel.value:null;
+  sel.innerHTML=""; opts.forEach(o=>{ const op=document.createElement("option"); op.value=o; op.textContent=o; sel.appendChild(op); });
+  if(prev!=null && opts.indexOf(prev)>=0) sel.value=prev;
+}
+function filteredStock(){
+  const fc=$("f-cat").value, fp=$("f-prov").value;
+  return curRegItems.filter(r=>{
+    if(fc && fc.indexOf("(todas")<0 && r.categoria!==fc) return false;
+    if(fp && fp.indexOf("(todos")<0 && r.proveedor!==fp) return false;
+    return true;
+  });
+}
+function renderStockTable(){
+  const rows=filteredStock();
+  const t=$("stock-table");
+  let h="<tr><th>Categoría</th><th>Proveedor</th><th>Ítem</th><th class=num>Mín</th><th class=num>Ideal</th><th class=num>Actual</th><th class=num>Pedir</th></tr>";
+  rows.forEach(r=>{
+    const p=pedirOf(r);
+    h+="<tr><td>"+esc(r.categoria)+"</td><td>"+esc(r.proveedor)+"</td><td>"+esc(r.item)+"</td>"+
+       "<td class=num>"+fmt(r.cantidad_minima)+"</td><td class=num>"+fmt(r.ideal)+"</td><td class=num>"+fmt(r.cantidad_actual)+"</td>"+
+       "<td class='num pedir"+(p>0?"":" ok")+"'>"+(p>0?("<b>"+fmt(p)+"</b>"):"—")+"</td></tr>";
+  });
+  t.innerHTML=h;
+  const totPed=rows.filter(r=>pedirOf(r)>0).length;
+  $("stock-note").textContent = rows.length+" ítems · "+totPed+" para pedir";
+}
+
+/* export */
+function stockMatrix(){
+  const rows=filteredStock();
+  const head=["Categoría","Proveedor","Ítem","Mínima","Ideal","Actual","Pedir"];
+  const body=rows.map(r=>[r.categoria,r.proveedor,r.item,fmt(r.cantidad_minima),fmt(r.ideal),fmt(r.cantidad_actual),fmt(pedirOf(r))]);
+  return [head,...body];
+}
+function toTSV(m){ return m.map(row=>row.map(c=>(""+(c==null?"":c)).replace(/\t/g," ").replace(/\r?\n/g," ")).join("\t")).join("\n"); }
+function toCSV(m){ return m.map(row=>row.map(c=>{ let s=""+(c==null?"":c); if(/[",\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }).join(",")).join("\r\n"); }
+function downloadCSV(){
+  const csv="﻿"+toCSV(stockMatrix());
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=url; a.download="stock_"+(curReg?(""+curReg.fecha).slice(0,10):todayISO())+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000); toast("CSV descargado");
+}
+
+/* pedidos (pestaña) */
+function provOrderOf(rows){ const o=[]; rows.forEach(r=>{ if(o.indexOf(r.proveedor)<0) o.push(r.proveedor); }); return o; }
+function pedidosGrouped(){
+  const rows=curRegItems.filter(r=>pedirOf(r)>0);
+  const ord=provOrderOf(curRegItems);
+  rows.sort((a,b)=>(ord.indexOf(a.proveedor)-ord.indexOf(b.proveedor))||(a.position||0)-(b.position||0));
+  const m=new Map(); rows.forEach(r=>{ const k=r.proveedor||"—"; if(!m.has(k)) m.set(k,[]); m.get(k).push(r); });
+  return m;
+}
+function lineText(r){ const q=fmt(pedirOf(r));
+  return "- "+(r.paquete ? (q+" "+r.paquete+" de "+r.item) : (q+" "+r.item)); }
+function linesOf(arr){ return arr.map(lineText).join("\n"); }
+function renderPedidos(){
+  const g=pedidosGrouped(); const cont=$("tickets"); cont.innerHTML="";
+  if(g.size===0){ $("copyall").classList.add("hidden");
+    cont.innerHTML='<div class="empty">Nada para pedir.<br>Todos los ítems están por encima del mínimo.</div>'; return; }
+  $("copyall").classList.remove("hidden");
+  g.forEach((arr,prov)=>{
+    const t=document.createElement("div"); t.className="ticket";
+    const head=document.createElement("div"); head.className="t-head";
+    const p=document.createElement("div"); p.className="p"; p.textContent=prov;
+    const c=document.createElement("div"); c.className="c"; c.textContent=arr.length+(arr.length===1?" ítem":" ítems");
+    const btn=document.createElement("button"); btn.className="copybtn"; btn.setAttribute("aria-label","Copiar "+prov); btn.innerHTML="&#9783;";
+    btn.addEventListener("click",()=>copyText("Pedido:\n"+linesOf(arr),ok=>{
+      if(ok){ btn.classList.add("ok"); btn.innerHTML="&#10003;"; toast("Copiado: "+prov);
+        setTimeout(()=>{ btn.classList.remove("ok"); btn.innerHTML="&#9783;"; },1400); } else toast("No se pudo copiar"); }));
+    head.appendChild(p); head.appendChild(c); head.appendChild(btn);
+    const ul=document.createElement("ul"); ul.className="lines";
+    arr.forEach(r=>{ const li=document.createElement("li");
+      li.appendChild(document.createTextNode("- "));
+      const b=document.createElement("b"); b.textContent=fmt(pedirOf(r))+(r.paquete?(" "+r.paquete):"");
+      li.appendChild(b); li.appendChild(document.createTextNode((r.paquete?" de ":" ")+r.item));
+      ul.appendChild(li); });
+    t.appendChild(head); t.appendChild(ul); cont.appendChild(t);
+  });
+}
+function copyAllPedidos(){ const g=pedidosGrouped(); if(!g.size){ toast("Nada para copiar"); return; }
+  const b=[]; g.forEach((arr,prov)=>b.push(prov+":\n"+linesOf(arr)));
+  copyText(b.join("\n\n"),ok=>toast(ok?"Copiado todo":"No se pudo copiar")); }
+
+/* ============================================================
+   CONFIG — GRILLA EDITABLE CON FILTROS (REUSABLE)
+   ============================================================ */
+const CFG_COLUMNS = [
+  { key:"categoria", label:"Categoría", type:"select", allowEmpty:true },
+  { key:"proveedor", label:"Proveedor", type:"select", allowEmpty:true },
+  { key:"item",      label:"Ítem",      type:"text",   required:true },
+  { key:"paquete",   label:"Paquete",   type:"text" },
+  { key:"por_paquete", label:"U/paq", type:"num" },
+  { key:"cantidad_minima", label:"Mín", type:"num" },
+  { key:"ideal", label:"Ideal", type:"num" }
+];
+let CFG_ROWS=[], CFG_FILTERS={}, CFG_MSG="", _pendingFocus=null;
+
+function showConfig(){
+  show("config"); $("phase").textContent="Configuración"; $("counter").innerHTML="&nbsp;";
+  $("pinpad").classList.remove("hidden"); $("cfg-body").classList.add("hidden"); $("cfg-body").innerHTML="";
+  $("pin").value=""; setTimeout(()=>$("pin").focus(),60);
+}
+function pinTry(){ if($("pin").value===ADMIN_PIN){ openCfg(); } else { toast("PIN incorrecto"); $("pin").value=""; } }
+function openCfg(){
+  $("pinpad").classList.add("hidden"); $("cfg-body").classList.remove("hidden");
+  CFG_ROWS = items.map(it=>({ categoria:it.categoria||"", proveedor:it.proveedor||"", item:it.item||"",
+    paquete:it.paquete||"", por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal) }));
+  CFG_FILTERS={}; CFG_MSG=""; renderCfg();
+}
+function cfgVal(r,key){ return (r[key]==null?"":String(r[key])).trim(); }
+function uniqueValues(key){ const set=new Map(); CFG_ROWS.forEach(r=>set.set(cfgVal(r,key),true));
+  return [...set.keys()].sort((a,b)=> a===""?-1 : b===""?1 : a.localeCompare(b,"es")); }
+function rowVisible(r){ return CFG_COLUMNS.every(c=>{ const f=CFG_FILTERS[c.key]; if(!f) return true; return f.has(cfgVal(r,c.key)); }); }
+
+function renderCfg(){
+  const host=$("cfg-body"); host.innerHTML="";
+  const head=el("div",{cls:"cfg-head"},
+    el("div",{cls:"cfg-hint",html:'Se pide cuando el stock llega al <b>mínimo</b>, y se repone hasta el <b>ideal</b>. <b>U/paq</b> = unidades por paquete (redondea el pedido a paquetes enteros). Tocá un encabezado (el <b>▾</b>) para filtrar. El 0 gris es placeholder.'}));
+
+  const table=el("table",{cls:"grid"});
+  const thead=el("thead"); const htr=el("tr");
+  htr.appendChild(el("th",{cls:"rownum",text:"#"}));
+  CFG_COLUMNS.forEach(c=>{
+    const active=!!CFG_FILTERS[c.key];
+    const fb=el("span",{cls:"fbtn"+(active?" on":""),text:"▾","aria-label":"Filtrar "+c.label});
+    const th=el("th",{}, el("div",{cls:"thh"}, el("span",{text:c.label}), fb));
+    th.style.cursor="pointer";
+    th.addEventListener("click",()=>openFilter(c.key,th));
+    htr.appendChild(th);
+  });
+  htr.appendChild(el("th",{}));
+  thead.appendChild(htr); table.appendChild(thead);
+
+  const tbody=el("tbody"); let shown=0;
+  CFG_ROWS.forEach((r,idx)=>{
+    if(!rowVisible(r)) return; shown++;
+    const tr=el("tr");
+    tr.appendChild(el("td",{cls:"rownum",text:String(shown)}));
+    CFG_COLUMNS.forEach(c=>{
+      if(c.type==="select"){
+        const v=r[c.key]||"";
+        const cell=el("button",{cls:"selcell"},
+          el("span",{cls:"cv"+(v?"":" empty"),text: v || (c.allowEmpty?"(ninguno)":"Elegí…")}),
+          el("span",{cls:"car",text:"▾"}));
+        cell.addEventListener("click",e=>{ e.stopPropagation(); openSelect(c,idx,cell); });
+        tr.appendChild(el("td",{}, cell));
+      } else if(c.type==="num"){
+        const raw=num(r[c.key]); const disp = raw>0 ? fmt(raw) : "";
+        const inp=el("input",{cls:"cell",type:"text",inputmode:"decimal",value:disp,placeholder:"0","data-idx":idx,"data-key":c.key});
+        inp.addEventListener("input",()=>{ let val=inp.value.replace(/[^0-9.,]/g,"");
+          const i=val.search(/[.,]/); if(i!==-1) val=val.slice(0,i+1)+val.slice(i+1).replace(/[.,]/g,"");
+          inp.value=val; CFG_ROWS[idx][c.key]=val; });
+        tr.appendChild(el("td",{cls:"numtd"}, inp));
+      } else {
+        const inp=el("input",{cls:"cell",type:"text",value:r[c.key]||"","data-idx":idx,"data-key":c.key,
+          placeholder:c.required?c.label:(c.label+" (opcional)")});
+        inp.addEventListener("input",()=>{ CFG_ROWS[idx][c.key]=inp.value; });
+        tr.appendChild(el("td",{}, inp));
+      }
+    });
+    const del=el("button",{cls:"delrow",text:"✕","aria-label":"Borrar fila"});
+    del.addEventListener("click",()=>{ CFG_ROWS.splice(idx,1); renderCfg(); });
+    tr.appendChild(el("td",{cls:"delcol"}, del));
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  const wrap=el("div",{cls:"tbl-wrap"}, table);
+  if(shown===0) wrap.appendChild(el("div",{cls:"norows",text: CFG_ROWS.length?"Ningún ítem coincide con los filtros.":"No hay ítems. Agregá el primero abajo."}));
+
+  const add=el("button",{cls:"addrow",text:"＋ Agregar ítem"});
+  add.addEventListener("click",()=>{ CFG_FILTERS={};
+    const lastCat=CFG_ROWS.length?CFG_ROWS[CFG_ROWS.length-1].categoria:"";
+    CFG_ROWS.push({categoria:lastCat,proveedor:"",item:"",paquete:"",por_paquete:0,cantidad_minima:0,ideal:0});
+    _pendingFocus={idx:CFG_ROWS.length-1,key:"item"}; renderCfg();
+    const w=host.querySelector(".tbl-wrap"); if(w) w.scrollTop=w.scrollHeight; });
+
+  const msg=el("div",{cls:"cfg-msg",text:CFG_MSG});
+  const restore=el("button",{cls:"cfg-restore",text:"Restaurar lista original"});
+  restore.addEventListener("click",()=>{ confirmDialog("Esto reemplaza TODOS los ítems por la lista original (los 86 por defecto) y borra tus cambios sin guardar. ¿Seguir?",()=>{
+    CFG_ROWS=DEFAULT_ITEMS.map(it=>({categoria:it.categoria,proveedor:it.proveedor,item:it.item,paquete:it.paquete,por_paquete:num(it.por_paquete),cantidad_minima:num(it.cantidad_minima),ideal:num(it.ideal)}));
+    CFG_FILTERS={}; CFG_MSG="Lista original cargada. Tocá Guardar para dejarla así."; renderCfg(); },"Sí, restaurar"); });
+
+  const body=el("div",{cls:"cfg-scroll"}, wrap, add, restore, msg);
+
+  const cancel=el("button",{cls:"cfgbtn",text:"Cancelar"}); cancel.addEventListener("click",()=>show("home"));
+  const save=el("button",{cls:"cfgbtn save",text:"Guardar cambios"});
+  save.addEventListener("click",async ()=>{ save.disabled=true; save.textContent="Guardando…"; CFG_MSG="";
+    try{ await saveConfig(CFG_ROWS); toast(offline?"Guardado local (sin nube)":"Configuración guardada"); show("home"); }
+    catch(e){ CFG_MSG="No se pudo guardar: "+e.message; save.disabled=false; save.textContent="Guardar cambios"; renderCfg(); } });
+  const foot=el("div",{cls:"cfg-foot"}, cancel, save);
+
+  host.append(head, body, foot);
+
+  if(_pendingFocus){ const {idx,key}=_pendingFocus; _pendingFocus=null;
+    setTimeout(()=>{ const n=host.querySelector('input[data-idx="'+idx+'"][data-key="'+key+'"]'); if(n){ try{n.focus()}catch(e){} } },30); }
+}
+
+/* filtro estilo Sheets */
+function openFilter(key, anchor){
+  const values=uniqueValues(key);
+  const temp=new Set(CFG_FILTERS[key]?[...CFG_FILTERS[key]]:values);
+  const search=el("input",{type:"text",placeholder:"Buscar…"}); noBubble(search);
+  const listBox=el("div",{cls:"plist"});
+  function paintList(){ listBox.innerHTML=""; const q=search.value.trim().toLowerCase();
+    values.filter(v=>((v===""?"(vacías)":v).toLowerCase().includes(q))).forEach(v=>{
+      const cb=el("input",{type:"checkbox"}); cb.checked=temp.has(v);
+      cb.addEventListener("change",()=>{ if(cb.checked) temp.add(v); else temp.delete(v); });
+      listBox.appendChild(el("label",{cls:"pitem"}, cb, el("span",{cls:"pv"+(v===""?" empty":""),text: v===""?"(vacías)":v}))); }); }
+  search.addEventListener("input",paintList);
+  const selAll=el("button",{text:"Seleccionar todo",onClick:()=>{ values.forEach(v=>temp.add(v)); paintList(); }});
+  const clr=el("button",{text:"Borrar",onClick:()=>{ temp.clear(); paintList(); }});
+  const cancelB=el("button",{text:"Cancelar",onClick:closePopovers});
+  const okB=el("button",{cls:"ok",text:"Aceptar",onClick:()=>{
+    if(temp.size===values.length) delete CFG_FILTERS[key]; else CFG_FILTERS[key]=new Set(temp);
+    closePopovers(); renderCfg(); }});
+  const inner=el("div",{}, el("div",{cls:"psearch"},search), el("div",{cls:"pact"},selAll,clr), listBox, el("div",{cls:"pfoot"},cancelB,okB));
+  paintList(); popoverAt(anchor,inner); setTimeout(()=>{ try{search.focus()}catch(e){} },30);
+}
+
+/* desplegable editable de una celda (Categoría / Proveedor) */
+function openSelect(col, idx, anchor){
+  const key=col.key; const cur=cfgVal(CFG_ROWS[idx],key); let editing=null;
+  const list=el("div",{cls:"olist"});
+  function renameTo(oldV,newV){ const t=(newV||"").trim();
+    if(t&&t!==oldV){ CFG_ROWS.forEach(r=>{ if(cfgVal(r,key)===oldV) r[key]=t; }); }
+    editing=null; renderCfg(); closePopovers(); }
+  function repaint(){ list.innerHTML="";
+    if(col.allowEmpty){ list.appendChild(el("div",{cls:"opt"},
+      el("span",{cls:"ov none"+((cur===""||cur==null)?" cur":""),text:"(ninguno)",
+        onClick:()=>{ CFG_ROWS[idx][key]=""; closePopovers(); renderCfg(); }}))); }
+    uniqueValues(key).filter(v=>v!=="").forEach(v=>{
+      if(editing===v){ const inp=el("input",{cls:"oedit",type:"text",value:v}); noBubble(inp);
+        inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); renameTo(v,inp.value); } if(e.key==="Escape"){ editing=null; repaint(); } });
+        const ok=el("button",{cls:"oi ok",text:"✓",onClick:e=>{ e.stopPropagation(); renameTo(v,inp.value); }});
+        list.appendChild(el("div",{cls:"opt editing"}, inp, ok)); setTimeout(()=>{ try{inp.focus();inp.select();}catch(e){} },20); return; }
+      const opt=el("div",{cls:"opt"},
+        el("span",{cls:"ov"+(v===cur?" cur":""),text:v,onClick:()=>{ CFG_ROWS[idx][key]=v; closePopovers(); renderCfg(); }}),
+        el("button",{cls:"oi",text:"✎","aria-label":"Renombrar",onClick:e=>{ e.stopPropagation(); editing=v; repaint(); }}),
+        el("button",{cls:"oi del",text:"✕","aria-label":"Quitar",onClick:e=>{ e.stopPropagation();
+          confirmDialog('¿Quitar «'+v+'» de la lista? Las filas que lo usan quedarán sin '+col.label.toLowerCase()+'.',()=>{
+            CFG_ROWS.forEach(r=>{ if(cfgVal(r,key)===v) r[key]=""; }); closePopovers(); renderCfg(); },"Sí, quitar"); }})
+      );
+      list.appendChild(opt);
+    });
+  }
+  const nin=el("input",{type:"text",placeholder:"Nueva/o "+col.label.toLowerCase()+"…"}); noBubble(nin);
+  const addOne=()=>{ const t=nin.value.trim(); if(t){ CFG_ROWS[idx][key]=t; closePopovers(); renderCfg(); } };
+  nin.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addOne(); } });
+  const addBtn=el("button",{text:"＋",onClick:addOne});
+  const inner=el("div",{}, el("div",{cls:"ptitle",text:col.label+" — tocá el nombre para elegir, ✎ renombra"}),
+    list, el("div",{cls:"newrow"}, nin, addBtn));
+  repaint(); popoverAt(anchor,inner);
+}
+
+/* ---------- back contextual ---------- */
+function goBack(){
+  const cur=SCREENS.find(s=>!$(s).classList.contains("hidden"));
+  if(cur==="count"){ count=null; show("home"); return; }
+  if(cur==="save"){ show("count"); renderCountTable(); return; }
+  if(cur==="reglist"){ show("home"); return; }
+  if(cur==="regview"){ showRegList(); return; }
+  if(cur==="config"){ show("home"); return; }
+  show("home");
+}
+
+/* ---------- eventos ---------- */
+$("go-count").addEventListener("click",startCount);
+$("ct-cat").addEventListener("change",renderCountTable);
+$("ct-search").addEventListener("input",renderCountTable);
+$("count-cancel").addEventListener("click",()=>{ count=null; show("home"); });
+$("count-save").addEventListener("click",goSave);
+$("nav-reg").addEventListener("click",showRegList);
+$("nav-cfg").addEventListener("click",showConfig);
+$("back").addEventListener("click",goBack);
+$("do-save").addEventListener("click",doSave);
+$("save-back").addEventListener("click",()=>{ show("count"); renderCountTable(); });
+$("tab-stock").addEventListener("click",()=>setTab("stock"));
+$("tab-ped").addEventListener("click",()=>setTab("ped"));
+$("f-cat").addEventListener("change",renderStockTable);
+$("f-prov").addEventListener("change",renderStockTable);
+$("copy-sheets").addEventListener("click",()=>copyText(toTSV(stockMatrix()),ok=>toast(ok?"Copiado — pegalo en Sheets":"No se pudo copiar")));
+$("dl-csv").addEventListener("click",downloadCSV);
+$("copyall").addEventListener("click",copyAllPedidos);
+$("pin-go").addEventListener("click",pinTry);
+$("pin").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); pinTry(); }});
+
+/* ---------- arranque ---------- */
+async function boot(){
+  show("home");
+  $("phase").textContent="Stock";
+  if(!SB_ON){ $("home-notice").classList.remove("hidden");
+    $("home-notice").textContent="Modo local: falta configurar Supabase (SUPABASE_URL y SUPABASE_ANON en el código). El registro no se guarda en la nube."; }
+  await loadItems();
+  if(SB_ON && offline){ $("home-notice").classList.remove("hidden");
+    $("home-notice").textContent="No se pudo conectar con Supabase. Estás usando la lista por defecto; los cambios y registros no se guardan hasta que haya conexión."; }
+}
+boot();
+</script>
+</body>
+</html>

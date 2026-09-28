@@ -9,9 +9,9 @@ Un solo repo → un solo proyecto de Cloudflare Pages (sin build, output directo
 ```
 index.html              hub: botones a cada app (lista APPS al final del archivo)
 protocolos/index.html   Protocolo Apertura y Cierre
-mise/                   Mise and Please        (pendiente migrar desde Netlify)
-pedidos/                Stock y Pedidos        (pendiente migrar desde Netlify)
-guias/                  Guías del Local        (nueva)
+mise/index.html         Mise and Please
+pedidos/index.html      Stock y Pedidos
+guias/index.html        Guías del Local
 ```
 
 ## Reglas de trabajo (no romper)
@@ -41,6 +41,6 @@ guias/                  Guías del Local        (nueva)
 
 ## Pendientes
 
-- Migrar Mise y Pedidos desde Netlify a sus carpetas.
+- Dar de baja los sitios viejos de Netlify (miseandplease, pedidosdemeter4f3, ordencocinademeter390fj) cuando las versiones nuevas estén andando.
 - Protocolos: el historial dice "Necesita conexión (versión de Netlify)"; ya no es Netlify.
 - Ideas futuras: frecuencia de revisión por ítem de stock → "tarea del día"; lista unificada de tareas del día entre apps; tabla de limpieza semanal; app de control de horas.

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf7f2;color:#1c1a17}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Guías del Local</title>
+<meta name="description" content="Guías del local de Demeter: buscador y guías de trabajo para el personal.">
+<style>
+  :root{
+    --paper:#faf7f2;
+    --paper-2:#ffffff;
+    --ink:#1c1a17;
+    --muted:#6b6459;
+    --chip:#f1ebe0;
+    --accent:#b4451f;
+    --accent-ink:#ffffff;
+    --line:#e2dbcd;
+    --cut:1px dashed #d8d0c2;
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:Archivo,-apple-system,BlinkMacSystemFont,sans-serif;
+    padding-inline:20px;
+    padding-block:24px;
+  }
+  .wrap{max-width:640px;margin:0 auto}
+
+  header.top{
+    border-bottom:1mm solid var(--accent);
+    padding-bottom:3mm;
+    margin-bottom:6mm;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:3mm;
+    flex-wrap:wrap;
+  }
+  header.top h1{
+    margin:0;
+    font:700 24pt/1 Archivo,sans-serif;
+    letter-spacing:-.015em;
+  }
+  header.top .sub{
+    font:700 8.5pt/1.1 'IBM Plex Mono',monospace;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  .search-box{
+    position:relative;
+    margin-bottom:5mm;
+  }
+  .search-box input{
+    width:100%;
+    font:500 11pt/1.3 Archivo,sans-serif;
+    color:var(--ink);
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:1.5mm;
+    padding:3mm 4mm 3mm 10mm;
+    outline:none;
+  }
+  .search-box input::placeholder{color:var(--muted)}
+  .search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(180,69,31,0.12)}
+  .search-box svg{
+    position:absolute;
+    left:3.4mm;
+    top:50%;
+    transform:translateY(-50%);
+    width:4mm;
+    height:4mm;
+    stroke:var(--muted);
+    pointer-events:none;
+  }
+
+  table.recipes{
+    width:100%;
+    border-collapse:collapse;
+    font:400 10.5pt/1.3 Archivo,sans-serif;
+  }
+  table.recipes thead th{
+    text-align:left;
+    font:700 7.5pt/1.4 'IBM Plex Mono',monospace;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+    padding:0 2mm 2mm;
+    border-bottom:1px solid var(--line);
+  }
+  table.recipes thead th.num{width:11mm}
+  table.recipes thead th.yield{width:24mm;text-align:right}
+  table.recipes tbody tr{
+    cursor:pointer;
+    border-bottom:1px solid var(--line);
+  }
+  table.recipes tbody tr:hover,
+  table.recipes tbody tr:focus-visible{
+    background:var(--chip);
+  }
+  table.recipes tbody tr:last-child{border-bottom:none}
+  table.recipes tbody td{
+    padding:3mm 2mm;
+  }
+  table.recipes td.num{
+    font:700 8.5pt/1.1 'IBM Plex Mono',monospace;
+    color:var(--accent);
+  }
+  table.recipes td.name{
+    font:600 10.5pt/1.3 Archivo,sans-serif;
+  }
+  table.recipes td.yield{
+    text-align:right;
+    font:700 8.5pt/1.1 'IBM Plex Mono',monospace;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .empty{
+    padding:10mm 2mm;
+    text-align:center;
+    color:var(--muted);
+    font:400 10pt/1.4 Archivo,sans-serif;
+  }
+
+  .back-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:1.6mm;
+    background:var(--accent);
+    color:var(--accent-ink);
+    border:none;
+    border-radius:1.5mm;
+    padding:2.4mm 4mm;
+    font:700 8.5pt/1.1 'IBM Plex Mono',monospace;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    cursor:pointer;
+    margin-bottom:5mm;
+  }
+  .back-btn:hover{background:#8d3315}
+  .back-btn svg{width:3.2mm;height:3.2mm;stroke:currentColor}
+
+  .card-frame{
+    border:var(--cut);
+    border-radius:1.5mm;
+    background:var(--paper);
+    overflow:hidden;
+  }
+  .card-frame article{
+    border:none !important;
+    padding:6mm 6mm !important;
+  }
+
+  .filters{display:flex;flex-wrap:wrap;gap:2mm;margin:-2mm 0 5mm}
+  .filters button{
+    font:700 8pt/1.1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);background:var(--paper-2);border:1px solid var(--line);
+    border-radius:1.5mm;padding:2.2mm 3.4mm;cursor:pointer;
+  }
+  .filters button:hover{border-color:var(--accent);color:var(--ink)}
+  .filters button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .filters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+  [hidden]{display:none !important}
+
+  @media (max-width:480px){
+    body{padding-inline:14px}
+    table.recipes thead th.yield,
+    table.recipes td.yield{display:none}
+  }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="wrap">
+
+  <section id="view-list">
+    <header class="top">
+      <h1>Guías del Local</h1>
+      <span class="sub" id="count-label">1 guía</span>
+    </header>
+
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="search" type="text" placeholder="Buscar guía por nombre…" autocomplete="off">
+    </div>
+
+    <div class="filters" id="filters" role="group" aria-label="Filtrar por tipo">
+      <button type="button" data-tipo="" aria-pressed="true">Todas</button>
+      <button type="button" data-tipo="Reglamentos" aria-pressed="false">Reglamentos</button>
+      <button type="button" data-tipo="Guías" aria-pressed="false">Guías</button>
+    </div>
+
+    <table class="recipes">
+      <thead>
+        <tr><th class="num">N°</th><th>Guía</th><th class="yield">Área</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty-msg" hidden>No hay nada que coincida con la búsqueda.</div>
+  </section>
+
+  <section id="view-detail" hidden>
+    <button class="back-btn" id="back-btn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Volver
+    </button>
+    <div class="card-frame" id="card-frame"></div>
+  </section>
+
+</div>
+
+<script type="application/json" id="recipes-data">[{"num": "01", "name": "Comida de personal", "tipo": "Reglamentos", "yield": "Personal", "html": "<article style=\"border:var(--cut,1px dashed #d8d0c2);box-sizing:border-box;padding:5mm 5.5mm;display:flex;flex-direction:column;gap:2.2mm;overflow:hidden;color:#1c1a17\"><header style=\"border-bottom:1mm solid var(--accent,#b4451f);padding-bottom:1.8mm;display:flex;align-items:flex-end;justify-content:space-between;gap:2mm\"><div style=\"display:flex;align-items:flex-end;gap:2.2mm;min-width:0\"><h2 style=\"margin:0;font:700 19pt/1 Archivo,sans-serif;letter-spacing:-.015em\">Comida de personal<\/h2><span style=\"flex:0 0 auto;background:#f1ebe0;padding:0.8mm 2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap;color:#3a352d\">Personal<\/span><\/div><span style=\"flex:0 0 auto;background:var(--accent,#b4451f);color:#fff;padding:0.9mm 2.2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap\">01<\/span><\/header><div><div style=\"display:flex;align-items:center;gap:1.8mm;margin-bottom:1.8mm\"><span style=\"flex:0 0 auto;width:1.6mm;height:3.8mm;background:var(--accent,#b4451f);border-radius:0.4mm\"><\/span><span style=\"font:700 8pt/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#3a352d\">Reglas<\/span><span style=\"flex:1 1 auto;height:1px;background:#e2dbcd\"><\/span><\/div><ol style=\"margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1.4mm;font:500 9.5pt/1.3 Archivo,sans-serif\"><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">1<\/span><span><b style=\"font:700 9pt 'IBM Plex Mono',monospace\">1<\/b> comida por jornada de trabajo de <b style=\"font:700 9pt 'IBM Plex Mono',monospace\">8 hs<\/b><\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">2<\/span><span>Por menos de 8 hs no aplica la comida de personal<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">3<\/span><span>Se come únicamente en el descanso<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">4<\/span><span>La hora de salida al descanso la define y autoriza el encargado de turno<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">5<\/span><span>No se permite comer durante el horario de trabajo<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">6<\/span><span>La comida debe ser tal cual está en la carta<\/span><\/li><\/ol><\/div><div><div style=\"display:flex;align-items:center;gap:1.8mm;margin-bottom:1.8mm\"><span style=\"flex:0 0 auto;width:1.6mm;height:3.8mm;background:var(--accent,#b4451f);border-radius:0.4mm\"><\/span><span style=\"font:700 8pt/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#3a352d\">Qué se puede comer<\/span><span style=\"flex:1 1 auto;height:1px;background:#e2dbcd\"><\/span><\/div><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:0.8mm 4mm;font:600 9.5pt/1.3 Archivo,sans-serif\"><div>· Tostado<\/div><div>· Medialuna XL<\/div><div>· Waffle salado<\/div><div>· Scone<\/div><\/div><p style=\"margin:1.6mm 0 0;font:400 8.5pt/1.3 Archivo,sans-serif;color:#6b6459\">Si queda poco de alguna opción, esa queda descartada y se debe elegir otra.<\/p><\/div><\/article>"}, {"num": "02", "name": "Horarios", "tipo": "Reglamentos", "yield": "Personal", "html": "<article style=\"border:var(--cut,1px dashed #d8d0c2);box-sizing:border-box;padding:5mm 5.5mm;display:flex;flex-direction:column;gap:2.2mm;overflow:hidden;color:#1c1a17\"><header style=\"border-bottom:1mm solid var(--accent,#b4451f);padding-bottom:1.8mm;display:flex;align-items:flex-end;justify-content:space-between;gap:2mm\"><div style=\"display:flex;align-items:flex-end;gap:2.2mm;min-width:0\"><h2 style=\"margin:0;font:700 19pt/1 Archivo,sans-serif;letter-spacing:-.015em\">Horarios<\/h2><span style=\"flex:0 0 auto;background:#f1ebe0;padding:0.8mm 2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap;color:#3a352d\">Personal<\/span><\/div><span style=\"flex:0 0 auto;background:var(--accent,#b4451f);color:#fff;padding:0.9mm 2.2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap\">02<\/span><\/header><div><div style=\"display:flex;align-items:center;gap:1.8mm;margin-bottom:1.8mm\"><span style=\"flex:0 0 auto;width:1.6mm;height:3.8mm;background:var(--accent,#b4451f);border-radius:0.4mm\"><\/span><span style=\"font:700 8pt/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#3a352d\">Reglas<\/span><span style=\"flex:1 1 auto;height:1px;background:#e2dbcd\"><\/span><\/div><ol style=\"margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1.4mm;font:500 9.5pt/1.3 Archivo,sans-serif\"><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">1<\/span><span>Los horarios son rotativos<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">2<\/span><span>Se exige puntualidad tanto para entrar como para salir<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">3<\/span><span>La <b style=\"font:700 9pt 'IBM Plex Mono',monospace\">hora de entrada<\/b> es la hora a la que se empieza a trabajar: a esa hora ya se tiene que estar listo para trabajar<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">4<\/span><span>La <b style=\"font:700 9pt 'IBM Plex Mono',monospace\">hora de salida<\/b> es la hora a la que se deja de trabajar<\/span><\/li><\/ol><\/div><\/article>"}, {"num": "03", "name": "Uniformes", "tipo": "Reglamentos", "yield": "Personal", "html": "<article style=\"border:var(--cut,1px dashed #d8d0c2);box-sizing:border-box;padding:5mm 5.5mm;display:flex;flex-direction:column;gap:2.2mm;overflow:hidden;color:#1c1a17\"><header style=\"border-bottom:1mm solid var(--accent,#b4451f);padding-bottom:1.8mm;display:flex;align-items:flex-end;justify-content:space-between;gap:2mm\"><div style=\"display:flex;align-items:flex-end;gap:2.2mm;min-width:0\"><h2 style=\"margin:0;font:700 19pt/1 Archivo,sans-serif;letter-spacing:-.015em\">Uniformes<\/h2><span style=\"flex:0 0 auto;background:#f1ebe0;padding:0.8mm 2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap;color:#3a352d\">Personal<\/span><\/div><span style=\"flex:0 0 auto;background:var(--accent,#b4451f);color:#fff;padding:0.9mm 2.2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap\">03<\/span><\/header><div><div style=\"display:flex;align-items:center;gap:1.8mm;margin-bottom:1.8mm\"><span style=\"flex:0 0 auto;width:1.6mm;height:3.8mm;background:var(--accent,#b4451f);border-radius:0.4mm\"><\/span><span style=\"font:700 8pt/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#3a352d\">Reglas<\/span><span style=\"flex:1 1 auto;height:1px;background:#e2dbcd\"><\/span><\/div><ol style=\"margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1.4mm;font:500 9.5pt/1.3 Archivo,sans-serif\"><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">1<\/span><span>Siempre deben estar limpios y presentables al público<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">2<\/span><span>El personal es responsable del cuidado y la limpieza de su uniforme<\/span><\/li><\/ol><\/div><\/article>"}, {"num": "04", "name": "Propina", "tipo": "Reglamentos", "yield": "Personal", "html": "<article style=\"border:var(--cut,1px dashed #d8d0c2);box-sizing:border-box;padding:5mm 5.5mm;display:flex;flex-direction:column;gap:2.2mm;overflow:hidden;color:#1c1a17\"><header style=\"border-bottom:1mm solid var(--accent,#b4451f);padding-bottom:1.8mm;display:flex;align-items:flex-end;justify-content:space-between;gap:2mm\"><div style=\"display:flex;align-items:flex-end;gap:2.2mm;min-width:0\"><h2 style=\"margin:0;font:700 19pt/1 Archivo,sans-serif;letter-spacing:-.015em\">Propina<\/h2><span style=\"flex:0 0 auto;background:#f1ebe0;padding:0.8mm 2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap;color:#3a352d\">Personal<\/span><\/div><span style=\"flex:0 0 auto;background:var(--accent,#b4451f);color:#fff;padding:0.9mm 2.2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap\">04<\/span><\/header><div><div style=\"display:flex;align-items:center;gap:1.8mm;margin-bottom:1.8mm\"><span style=\"flex:0 0 auto;width:1.6mm;height:3.8mm;background:var(--accent,#b4451f);border-radius:0.4mm\"><\/span><span style=\"font:700 8pt/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#3a352d\">Reglas<\/span><span style=\"flex:1 1 auto;height:1px;background:#e2dbcd\"><\/span><\/div><ol style=\"margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1.4mm;font:500 9.5pt/1.3 Archivo,sans-serif\"><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">1<\/span><span>El fondo de la propina es <b style=\"font:700 9pt 'IBM Plex Mono',monospace\">por día<\/b><\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">2<\/span><span>Se reparte en <b style=\"font:700 9pt 'IBM Plex Mono',monospace\">partes iguales<\/b> entre todas las personas que hayan trabajado ese día, aunque sea <b style=\"font:700 9pt 'IBM Plex Mono',monospace\">4 hs<\/b><\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">3<\/span><span>El reparto de la propina se hace <b style=\"font:700 9pt 'IBM Plex Mono',monospace\">1 vez por semana<\/b><\/span><\/li><\/ol><\/div><\/article>"}, {"num": "05", "name": "Sacar nuevo producto", "tipo": "Guías", "yield": "Producto", "html": "<article style=\"border:var(--cut,1px dashed #d8d0c2);box-sizing:border-box;padding:5mm 5.5mm;display:flex;flex-direction:column;gap:2.2mm;overflow:hidden;color:#1c1a17\"><header style=\"border-bottom:1mm solid var(--accent,#b4451f);padding-bottom:1.8mm;display:flex;align-items:flex-end;justify-content:space-between;gap:2mm\"><div style=\"display:flex;align-items:flex-end;gap:2.2mm;min-width:0\"><h2 style=\"margin:0;font:700 19pt/1 Archivo,sans-serif;letter-spacing:-.015em\">Sacar nuevo producto<\/h2><span style=\"flex:0 0 auto;background:#f1ebe0;padding:0.8mm 2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap;color:#3a352d\">Producto<\/span><\/div><span style=\"flex:0 0 auto;background:var(--accent,#b4451f);color:#fff;padding:0.9mm 2.2mm;border-radius:1mm;font:700 8.5pt/1.1 'IBM Plex Mono',monospace;white-space:nowrap\">05<\/span><\/header><div><div style=\"display:flex;align-items:center;gap:1.8mm;margin-bottom:1.8mm\"><span style=\"flex:0 0 auto;width:1.6mm;height:3.8mm;background:var(--accent,#b4451f);border-radius:0.4mm\"><\/span><span style=\"font:700 8pt/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#3a352d\">Pasos<\/span><span style=\"flex:1 1 auto;height:1px;background:#e2dbcd\"><\/span><\/div><ol style=\"margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1.4mm;font:500 9.5pt/1.3 Archivo,sans-serif\"><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">1<\/span><span>Probar el producto<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">2<\/span><span>Sacar el costo<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">3<\/span><span>Sacar fotos<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">4<\/span><span>Actualizar costo y precio en Fudo<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">5<\/span><span>Subir las fotos a Fudo<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">6<\/span><span><span style=\"display:flex;flex-direction:column;gap:0.6mm\"><span>Actualizar la carta física<\/span><span style=\"font:700 7.5pt/1.15 'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--accent,#b4451f)\">si aplica<\/span><\/span><\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">7<\/span><span><span style=\"display:flex;flex-direction:column;gap:0.6mm\"><span>Hacer la guía de producción<\/span><span style=\"font:700 7.5pt/1.15 'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--accent,#b4451f)\">si aplica<\/span><\/span><\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">8<\/span><span>Hacer la guía de cómo sacarlo en el local<\/span><\/li><li style=\"display:flex;gap:2.4mm;align-items:flex-start\"><span style=\"flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:5.6mm;height:5.6mm;border-radius:50%;background:var(--accent,#b4451f);color:#fff;font:700 9pt/1 'IBM Plex Mono',monospace\">9<\/span><span>Dar la bajada a marketing<\/span><\/li><\/ol><\/div><div><div style=\"display:flex;align-items:center;gap:1.8mm;margin-bottom:1.8mm\"><span style=\"flex:0 0 auto;width:1.6mm;height:3.8mm;background:var(--accent,#b4451f);border-radius:0.4mm\"><\/span><span style=\"font:700 8pt/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#3a352d\">Bajada a marketing<\/span><span style=\"flex:1 1 auto;height:1px;background:#e2dbcd\"><\/span><\/div><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:0.8mm 4mm;font:600 9.5pt/1.3 Archivo,sans-serif\"><div>· Fotos<\/div><div>· Nombre<\/div><div>· Cuándo sale<\/div><div>· Si es importante o no (ponerle énfasis)<\/div><\/div><\/div><\/article>"}]</script>
+<script>
+(function(){
+  var recipes = JSON.parse(document.getElementById('recipes-data').textContent);
+
+  var rowsEl = document.getElementById('rows');
+  var searchEl = document.getElementById('search');
+  var emptyEl = document.getElementById('empty-msg');
+  var countEl = document.getElementById('count-label');
+  var viewList = document.getElementById('view-list');
+  var viewDetail = document.getElementById('view-detail');
+  var cardFrame = document.getElementById('card-frame');
+  var backBtn = document.getElementById('back-btn');
+
+  function norm(s){
+    return (s || '').toString().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function renderRows(filter){
+    var q = norm(filter);
+    rowsEl.innerHTML = '';
+    var shown = 0;
+    recipes.forEach(function(r, idx){
+      if (tipo && r.tipo !== tipo) return;
+      if (q && norm(r.name).indexOf(q) === -1) return;
+      shown++;
+      var tr = document.createElement('tr');
+      tr.tabIndex = 0;
+      tr.setAttribute('role', 'button');
+      tr.innerHTML =
+        '<td class="num">' + r.num + '</td>' +
+        '<td class="name">' + r.name + '</td>' +
+        '<td class="yield">' + (r.yield || '—') + '</td>';
+      tr.addEventListener('click', function(){ openRecipe(idx); });
+      tr.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openRecipe(idx); }
+      });
+      rowsEl.appendChild(tr);
+    });
+    emptyEl.hidden = shown !== 0;
+  }
+
+  function openRecipe(idx){
+    var r = recipes[idx];
+    cardFrame.innerHTML = r.html;
+    viewList.hidden = true;
+    viewDetail.hidden = false;
+    window.scrollTo(0, 0);
+  }
+
+  function closeRecipe(){
+    viewDetail.hidden = true;
+    viewList.hidden = false;
+    window.scrollTo(0, 0);
+  }
+
+  backBtn.addEventListener('click', closeRecipe);
+  var tipo = '';
+  var filtersEl = document.getElementById('filters');
+  filtersEl.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-tipo]');
+    if (!b) return;
+    tipo = b.getAttribute('data-tipo');
+    Array.prototype.forEach.call(filtersEl.querySelectorAll('button'), function(x){
+      x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+    });
+    renderRows(searchEl.value);
+  });
+  searchEl.addEventListener('input', function(){ renderRows(searchEl.value); });
+
+  countEl.textContent = recipes.length + (recipes.length === 1 ? ' guía' : ' guías');
+  renderRows('');
+})();
+</script>
+
+</body>
+</html>
