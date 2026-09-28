@@ -201,6 +201,8 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:620px}
 #count-table{min-width:0}
 #count-table td.ro{white-space:normal}
 #count-table td.numtd{width:90px}
+/* con el teclado abierto (escribiendo en Hacer stock) se ocultan Cancelar/Guardar para no comer pantalla */
+#count.typing .cfg-foot{display:none}
 .grid th{position:sticky;top:0;background:#EFE9DB;z-index:2;text-align:left;font-size:12px;color:#6B6250;font-weight:800;padding:8px 8px;border-right:1px solid #D8CFBB;border-bottom:1px solid #C9BFA8;white-space:nowrap}
 .grid th .thh{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .grid th.rownum{left:0;z-index:3;width:38px;min-width:38px;text-align:center;padding:8px 0}
@@ -1087,6 +1089,9 @@ $("ct-cat").addEventListener("change",renderCountTable);
 $("ct-search").addEventListener("input",renderCountTable);
 $("count-cancel").addEventListener("click",()=>{ count=null; show("home"); });
 $("count-save").addEventListener("click",goSave);
+$("count").addEventListener("focusin",e=>{ if(e.target.tagName==="INPUT") $("count").classList.add("typing"); });
+$("count").addEventListener("focusout",()=>{ setTimeout(()=>{ const a=document.activeElement;
+  if(!(a && a.tagName==="INPUT" && $("count").contains(a))) $("count").classList.remove("typing"); },50); });
 $("nav-reg").addEventListener("click",showRegList);
 $("nav-cfg").addEventListener("click",showConfig);
 $("back").addEventListener("click",goBack);
