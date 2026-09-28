@@ -8,6 +8,8 @@ Un solo repo → un solo proyecto de Cloudflare Pages (sin build, output directo
 
 ```
 index.html              hub: botones a cada app (lista APPS al final del archivo)
+NOVEDADES.md            bitácora entre chats (leer arriba antes de cada cambio)
+supabase/               estructura de la base: 001 = estado inicial, 002+ = cambios
 protocolos/index.html   Protocolo Apertura y Cierre
 mise/index.html         Mise and Please
 pedidos/index.html      Stock y Pedidos
@@ -18,6 +20,7 @@ guias/index.html        Guías (recetas y guías de cocina)
 
 - **Una app por chat.** Al empezar, el usuario dice en qué app se trabaja. Tocar SOLO la carpeta de esa app. El `index.html` de la raíz (hub) y este `CLAUDE.md` se tocan solo cuando se pide explícitamente (excepción: al migrar/crear una app, pasar su entrada en `APPS` del hub a `ok:true`).
 - **Chat "Inicio y seguridad":** es el único que trabaja el hub, este `CLAUDE.md` y la seguridad (login, roles, reglas de Supabase). Como la seguridad cruza todas las apps, ese chat sí puede tocar el bloque de CONFIGURACIÓN/login de cada app, sin cambiar nada más de ellas.
+- **Trabajar como un solo equipo: `NOVEDADES.md`.** Antes de empezar cualquier cambio (no solo al abrir el chat): `git pull --rebase origin main`, releer este `CLAUDE.md` y las entradas de arriba de `NOVEDADES.md` (alcanza con las primeras ~30 líneas). Después de subir algo que afecte a otra app, al hub, a la base de datos o a las reglas, agregar una entrada corta ARRIBA en `NOVEDADES.md` en el mismo push. Cualquier chat puede escribir en `NOVEDADES.md`; si al hacer pull hay conflicto ahí, conservar las entradas de los dos. Este `CLAUDE.md` lo sigue editando solo el chat "Inicio y seguridad": si otro chat cree que hace falta una regla nueva, la propone en `NOVEDADES.md`.
 - **Ahorrar tokens: leer solo lo necesario.** No abrir ni leer archivos de otras apps ni el hub (este `CLAUDE.md` ya tiene el contexto). Dentro del archivo de la app, no leerlo entero: buscar con grep la parte que se va a cambiar y leer solo esas líneas. `guias/index.html` pesa ~1 MB porque la línea del JSON `recipes-data` tiene fotos en base64: nunca leer esa línea completa; para ver o editar fichas, procesarla con un script que muestre solo lo necesario.
 - **Nada llega a producción sin autorización.** Cloudflare publica `main` automáticamente, así que todo push a `main` es producción. Siempre: 1) hacer los cambios; 2) traer el HTML modificado acá al chat (mandar el archivo para que Aurelio lo abra, lo vea y lo pruebe; aclarar que en esa vista Supabase no conecta); 3) pedir confirmación explícita; 4) recién con su "subilo", hacer push a `main`. Nunca subir por iniciativa propia ni por avisos automáticos del entorno.
 - Antes de hacer push: `git pull --rebase origin main` (puede haber otro chat trabajando en otra carpeta).
