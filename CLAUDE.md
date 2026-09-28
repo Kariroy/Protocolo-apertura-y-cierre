@@ -11,7 +11,7 @@ index.html              hub: botones a cada app (lista APPS al final del archivo
 protocolos/index.html   Protocolo Apertura y Cierre
 mise/index.html         Mise and Please
 pedidos/index.html      Stock y Pedidos
-guias/index.html        Guías del Local
+guias/index.html        Guías (recetas y guías de cocina)
 ```
 
 ## Reglas de trabajo (no romper)
@@ -32,7 +32,7 @@ guias/index.html        Guías del Local
 - **Protocolos** (`protocolos/`): checklists de apertura (naranja) y cierre (azul) compartidas en vivo (Supabase Realtime). "Marcar como terminado" guarda en historial y reinicia la lista. Notas del turno en cierre. Config ⚙ + PIN (Protocolo · Ítem). Tablas: `protocolos_items`, `protocolos_estado`, `protocolos_notas`, `protocolos_historial`.
 - **Mise and Please** (`mise/`): swipe (derecha = listo, izquierda = producir), lista de producción compartida en vivo. Config ⚙ + PIN (Categoría · Ítem).
 - **Stock y Pedidos** (`pedidos/`): toma de stock por tarjetas, registro con fecha. Pestañas Stock (pedir = mín − actual; TSV/CSV) y Pedidos por proveedor (formato `- 4 caja (1L) de Muzzarella`). Config ⚙ + PIN (categoría · proveedor · ítem · paquete · cantidad mínima). Tablas: `stock_items`, `stock_registros`, `stock_registro_items`.
-- **Guías del Local** (`guias/`): buscador + tabla; la guía se abre en la misma pantalla con botón volver. Se cargan de a una, sin placeholders.
+- **Guías** (`guias/`): recetas y guías de cocina (fichas con buscador, filtro por categoría y detalle en la misma pantalla con "Volver"). Los datos van embebidos en un JSON dentro del HTML (`recipes-data`), algunas fichas con foto en base64. Sin Supabase.
 
 ## Backend
 
