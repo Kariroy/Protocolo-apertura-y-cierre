@@ -158,6 +158,9 @@ table.stock td.pedir.ok{color:var(--ink-soft)}
 .count-toolbar select{flex:0 0 auto;max-width:60%}
 .count-toolbar input{flex:1;min-width:120px}
 .count-toolbar select:focus,.count-toolbar input:focus{border-color:var(--green)}
+.catbtn{font:600 12px/1 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--ink);background:#fff;
+  border:1px solid var(--line);border-radius:1.5mm;padding:10px 12px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.catbtn.on{background:var(--green);border-color:var(--green);color:#fff}
 .grid td.ro{padding:8px 10px;font-size:14px;color:var(--ink);white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}
 .grid td.ro.soft{color:var(--ink-soft)}
 .grid td.ro.num{text-align:right;font-family:'IBM Plex Mono',monospace}
@@ -357,6 +360,7 @@ table.stock th, .grid th{ background:var(--kraft-2); color:var(--ink-soft); font
 
   <!-- COUNT (tabla editable) -->
   <main class="config hidden" id="count">
+    <div class="count-toolbar"><button class="catbtn" id="ct-catbtn">Categoría: todas ▾</button></div>
     <div class="cfg-scroll">
       <div class="tbl-wrap"><table class="grid" id="count-table"></table></div>
     </div>
@@ -736,8 +740,15 @@ const COUNT_COLS=[
   { key:"item", label:"Ítem", get:r=>r.item||"" },
   { key:"paquete", label:"Paquete", get:r=>r.paquete||"" },
   { key:"actual", label:"Actual", num:true, get:r=>r._seen?fmt(r.cantidad_actual):SIN_ANOTAR }];
+const COUNT_CAT={ key:"categoria", label:"Categoría", get:r=>r.categoria||"" }; // filtro aparte (no es columna)
 let COUNT_FILTERS={};
-function countVisible(){ return count.rows.filter(r=>passesFilters(r,COUNT_COLS,COUNT_FILTERS)); }
+function countVisible(){ return count.rows.filter(r=>passesFilters(r,[...COUNT_COLS,COUNT_CAT],COUNT_FILTERS)); }
+function paintCatBtn(){ const b=$("ct-catbtn"), f=COUNT_FILTERS.categoria;
+  b.textContent="Categoría: "+(!f?"todas":f.size===1?([...f][0]||"(vacías)"):(f.size+" elegidas"))+" ▾"; b.classList.toggle("on",!!f); }
+function openCatFilter(){
+  const cats=[...new Set(count.rows.map(COUNT_CAT.get))].sort((a,b)=>(catIdx(a)-catIdx(b))||a.localeCompare(b,"es"));
+  openFilterPop(cats, COUNT_FILTERS.categoria, sel=>{ if(sel) COUNT_FILTERS.categoria=sel; else delete COUNT_FILTERS.categoria; renderCountTable(); }, $("ct-catbtn"));
+}
 function updateCountCounter(){
   const seen=count.rows.filter(r=>r._seen).length;
   const aPedir=count.rows.filter(r=>pedirOf(r)>0).length;
@@ -746,6 +757,7 @@ function updateCountCounter(){
 function renderCountTable(){
   const host=$("count-table"); host.innerHTML="";
   const head=el("tr",{}, ...COUNT_COLS.map(c=>thFilter(c,COUNT_FILTERS,count.rows,renderCountTable)));
+  paintCatBtn();
   host.appendChild(el("thead",{},head));
   const tb=el("tbody",{});
   const vis=countVisible();
@@ -1203,6 +1215,7 @@ function goBack(){
 $("go-count").addEventListener("click",startCount);
 $("count-cancel").addEventListener("click",()=>{ count=null; show("home"); });
 $("count-save").addEventListener("click",goSave);
+$("ct-catbtn").addEventListener("click",openCatFilter);
 $("count").addEventListener("focusin",e=>{ if(e.target.tagName==="INPUT") $("count").classList.add("typing"); });
 $("count").addEventListener("focusout",()=>{ setTimeout(()=>{ const a=document.activeElement;
   if(!(a && a.tagName==="INPUT" && $("count").contains(a))) $("count").classList.remove("typing"); },50); });
