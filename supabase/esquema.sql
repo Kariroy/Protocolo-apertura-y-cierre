@@ -108,6 +108,8 @@ create table public.stock_items (
   proveedor text,
   item text not null,
   paquete text,
+  -- 007: cómo se cuenta: 'unidades' (cerradas) o 'gramos' (mín/ideal en gramos; por_paquete = gramos por paquete)
+  tipo text not null default 'unidades' check (tipo in ('unidades','gramos')),
   por_paquete numeric not null default 0,
   cantidad_minima numeric not null default 0,
   ideal numeric not null default 0,
@@ -139,6 +141,7 @@ create table public.stock_registro_items (
   cantidad_actual numeric not null default 0,
   "position" integer not null default 0,
   contado boolean not null default false,
+  tipo text not null default 'unidades' check (tipo in ('unidades','gramos')),  -- 007
   constraint stock_registro_items_pkey primary key (id),
   constraint stock_registro_items_registro_id_fkey foreign key (registro_id)
     references public.stock_registros(id) on delete cascade
