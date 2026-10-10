@@ -203,6 +203,7 @@ table.stock td.pedir.ok{color:var(--ink-soft)}
 table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:620px}
 #count-table{min-width:0}
 #count-table td.ro{white-space:normal}
+#count-table td.ro.gr{color:var(--green);font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 #count-table td.numtd{width:90px}
 /* con el teclado abierto (escribiendo en Hacer stock) se ocultan Cancelar/Guardar para no comer pantalla */
 #count.typing .cfg-foot{display:none}
@@ -329,6 +330,9 @@ table.stock th, .grid th{ background:var(--kraft-2); color:var(--ink-soft); font
 .opt .oedit{ border-color:var(--green); }
 .modal{ border-radius:2mm; } .modal .mrow button{ border-radius:1.5mm; }
 .toast{ border-radius:1.5mm; }
+.tipocell{display:block;width:100%;min-width:96px;height:34px;border:0;background:transparent;cursor:pointer;text-align:left;padding:0 10px;
+  font:600 11px/1 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+.tipocell.g{color:var(--green)}
 </style>
 </head>
 <body>
@@ -532,6 +536,14 @@ function fmt(n){ if(n===null||n===undefined||n==="") return ""; const x=Math.rou
 /* Modelo min-máx: se pide cuando actual <= mínimo, y se repone hasta el ideal.
    pedirRaw = faltante crudo (en unidades de stock); pedirOf = redondeado a paquetes
    enteros si hay unidades por paquete (por_paquete). */
+/* dos formas de contar: "unidades" (cerradas: cajas, botellas…) o "gramos".
+   En gramos, mín/ideal/actual van en gramos y U/paq = gramos por paquete
+   (si está vacío se toma del paquete, ej. "Paquete (1kg)" → 1000). */
+function tipoOf(it){ return it && it.tipo==="gramos" ? "gramos" : "unidades"; }
+function gramosDe(paq){ const m=/(\d+(?:[.,]\d+)?)\s*(kg|g)\b/i.exec(paq||""); if(!m) return 0;
+  const n=num(m[1].replace(",",".")); return m[2].toLowerCase()==="kg" ? n*1000 : n; }
+function porPaq(it){ const u=num(it.por_paquete); if(u>0) return u; return tipoOf(it)==="gramos" ? gramosDe(it.paquete) : 0; }
+function conU(it,v){ return tipoOf(it)==="gramos" ? fmt(v)+" g" : fmt(v); }
 // celda vacía = "sin anotar" (no es 0): no se calcula ni se pide. 0 solo si alguien lo cargó.
 function sinAnotar(it){ return it._seen===false || it.contado===false; }
 function pedirRaw(it){
@@ -545,7 +557,7 @@ function pedirRaw(it){
 }
 function pedirOf(it){
   const raw=pedirRaw(it); if(raw<=0) return 0;
-  const upp=num(it.por_paquete);
+  const upp=porPaq(it);
   return upp>0 ? Math.ceil(raw/upp) : raw;         // redondeo a paquetes enteros
 }
 let toastT;
@@ -625,7 +637,7 @@ let offline = false;
 let localRegistros = [];
 
 function seedClone(){ return DEFAULT_ITEMS.map((it,i)=>({ id:"seed"+i, categoria:it.categoria, proveedor:it.proveedor,
-  item:it.item, paquete:it.paquete, por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal), position:i })); }
+  item:it.item, paquete:it.paquete, tipo:tipoOf(it), por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal), position:i })); }
 
 async function loadItems(){
   if(!SB_ON){ items=seedClone(); offline=true; return; }
@@ -642,7 +654,7 @@ async function loadItems(){
 }
 async function saveConfig(rows){
   const clean = rows.map((r,i)=>({ categoria:r.categoria||"", proveedor:r.proveedor||"", item:(r.item||"").trim(),
-    paquete:r.paquete||"", por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), position:i }))
+    paquete:r.paquete||"", tipo:tipoOf(r), por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), position:i }))
     .filter(r=>r.item!=="");
   if(!SB_ON){ items=clean.map((r,i)=>({ ...r, id:"loc"+i })); return; }
   await sb("DELETE","stock_items",{query:"id=gt.0"});
@@ -661,7 +673,7 @@ async function todayRegistro(){
 async function saveRegistro(rows){
   const fecha = todayISO();
   const snap = rows.map((r,i)=>({ categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item,
-    paquete:r.paquete||"", por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), cantidad_actual:num(r.cantidad_actual), contado:!!r._seen, position:i }));
+    paquete:r.paquete||"", tipo:tipoOf(r), por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), cantidad_actual:num(r.cantidad_actual), contado:!!r._seen, position:i }));
   const now = new Date().toISOString();
   const prev = await todayRegistro();
   if(!SB_ON){
@@ -675,7 +687,7 @@ async function saveRegistro(rows){
     try{ await sb("POST","stock_registro_items",{ body:snap.map(x=>({ ...x, registro_id:rid })) }); }
     catch(e){ // si falla, se vuelve a poner lo que había para no perder el conteo anterior
       if(old.length) await sb("POST","stock_registro_items",{ body:old.map(o=>({ categoria:o.categoria, proveedor:o.proveedor, item:o.item,
-        paquete:o.paquete, por_paquete:o.por_paquete, cantidad_minima:o.cantidad_minima, ideal:o.ideal, cantidad_actual:o.cantidad_actual,
+        paquete:o.paquete, tipo:tipoOf(o), por_paquete:o.por_paquete, cantidad_minima:o.cantidad_minima, ideal:o.ideal, cantidad_actual:o.cantidad_actual,
         position:o.position, contado:o.contado, registro_id:rid })) }).catch(()=>{});
       throw e; }
     let reg=prev;
@@ -716,7 +728,7 @@ async function startCount(){
   if(!items.length){ toast("No hay ítems cargados. Revisá Configuración."); return; }
   const rows = items.slice()
     .sort((a,b)=>(catIdx(a.categoria)-catIdx(b.categoria))||(a.position-b.position))
-    .map(it=>({ categoria:it.categoria, proveedor:it.proveedor, item:it.item, paquete:it.paquete,
+    .map(it=>({ categoria:it.categoria, proveedor:it.proveedor, item:it.item, paquete:it.paquete, tipo:tipoOf(it),
       por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal),
       cantidad_actual:0, _seen:false }));
   // la planilla es la del día: arranca con lo que ya se cargó hoy (lo de días anteriores no)
@@ -738,7 +750,7 @@ async function startCount(){
 }
 const COUNT_COLS=[
   { key:"item", label:"Ítem", get:r=>r.item||"" },
-  { key:"paquete", label:"Paquete", get:r=>r.paquete||"" },
+  { key:"paquete", label:"Se cuenta en", get:r=>tipoOf(r)==="gramos"?"gramos":(r.paquete||"unidades") },
   { key:"actual", label:"Actual", num:true, get:r=>r._seen?fmt(r.cantidad_actual):SIN_ANOTAR }];
 const COUNT_CAT={ key:"categoria", label:"Categoría", get:r=>r.categoria||"" }; // filtro aparte (no es columna)
 let COUNT_FILTERS={};
@@ -772,7 +784,7 @@ function renderCountTable(){
     });
     const tr=el("tr",{},
       el("td",{cls:"ro",text:r.item}),
-      el("td",{cls:"ro soft",text:r.paquete||""}),
+      el("td",{cls:"ro soft"+(tipoOf(r)==="gramos"?" gr":""),text:COUNT_COLS[1].get(r)}),
       el("td",{cls:"numtd"}, inp));
     tb.appendChild(tr);
   });
@@ -790,7 +802,7 @@ let livePoll=null;
 const liveTimers=new Map();
 function isLive(){ return SB_ON && !offline; }
 function keyOf(s){ return (s||"").trim().toLowerCase(); }
-function snapOf(r,i,rid){ return { registro_id:rid, categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item, paquete:r.paquete||"",
+function snapOf(r,i,rid){ return { registro_id:rid, categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item, paquete:r.paquete||"", tipo:tipoOf(r),
   por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), position:i }; }
 async function ensureTodayRegistro(){
   let reg=await todayRegistro(); if(reg) return { reg, fresh:false };
@@ -928,9 +940,9 @@ const REG_COLS=[
   { key:"categoria", label:"Categoría", get:r=>r.categoria||"" },
   { key:"proveedor", label:"Proveedor", get:r=>r.proveedor||"" },
   { key:"item", label:"Ítem", get:r=>r.item||"" },
-  { key:"min", label:"Mín", num:true, get:r=>fmt(r.cantidad_minima) },
-  { key:"ideal", label:"Ideal", num:true, get:r=>fmt(r.ideal) },
-  { key:"actual", label:"Actual", num:true, get:r=>sinAnotar(r)?SIN_ANOTAR:fmt(r.cantidad_actual) },
+  { key:"min", label:"Mín", num:true, get:r=>conU(r,r.cantidad_minima) },
+  { key:"ideal", label:"Ideal", num:true, get:r=>conU(r,r.ideal) },
+  { key:"actual", label:"Actual", num:true, get:r=>sinAnotar(r)?SIN_ANOTAR:conU(r,r.cantidad_actual) },
   { key:"pedir", label:"Pedir", num:true, get:r=>{ const p=pedirOf(r); return p>0?fmt(p):"—"; } }];
 let REG_FILTERS={};
 function filteredStock(){ return curRegItems.filter(r=>passesFilters(r,REG_COLS,REG_FILTERS)); }
@@ -943,7 +955,7 @@ function renderStockTable(){
   rows.forEach(r=>{
     const p=pedirOf(r);
     h+="<tr><td>"+esc(r.categoria)+"</td><td>"+esc(r.proveedor)+"</td><td>"+esc(r.item)+"</td>"+
-       "<td class=num>"+fmt(r.cantidad_minima)+"</td><td class=num>"+fmt(r.ideal)+"</td><td class=num>"+(sinAnotar(r)?"<span style='color:var(--ink-soft)'>sin anotar</span>":fmt(r.cantidad_actual))+"</td>"+
+       "<td class=num>"+esc(conU(r,r.cantidad_minima))+"</td><td class=num>"+esc(conU(r,r.ideal))+"</td><td class=num>"+(sinAnotar(r)?"<span style='color:var(--ink-soft)'>sin anotar</span>":esc(conU(r,r.cantidad_actual)))+"</td>"+
        "<td class='num pedir"+(p>0?"":" ok")+"'>"+(p>0?("<b>"+fmt(p)+"</b>"):"—")+"</td></tr>";
   });
   const tb=document.createElement("tbody"); tb.innerHTML=h; t.appendChild(tb);
@@ -980,6 +992,7 @@ function pedidosGrouped(){
   return m;
 }
 function lineText(r){ const q=fmt(pedirOf(r));
+  if(tipoOf(r)==="gramos" && !(porPaq(r)>0)) return "- "+q+" g de "+r.item;   // sin tamaño de paquete: se pide en gramos
   return "- "+(r.paquete ? (q+" "+r.paquete+" de "+r.item) : (q+" "+r.item)); }
 function linesOf(arr){ return arr.map(lineText).join("\n"); }
 function renderPedidos(){
@@ -1018,6 +1031,7 @@ const CFG_COLUMNS = [
   { key:"proveedor", label:"Proveedor", type:"select", allowEmpty:true },
   { key:"item",      label:"Ítem",      type:"text",   required:true },
   { key:"paquete",   label:"Paquete",   type:"text" },
+  { key:"tipo",      label:"Se cuenta en", type:"tipo" },
   { key:"por_paquete", label:"U/paq", type:"num" },
   { key:"cantidad_minima", label:"Mín", type:"num" },
   { key:"ideal", label:"Ideal", type:"num" }
@@ -1033,7 +1047,7 @@ function pinTry(){ if($("pin").value===ADMIN_PIN){ openCfg(); } else { toast("PI
 function openCfg(){
   $("pinpad").classList.add("hidden"); $("cfg-body").classList.remove("hidden");
   CFG_ROWS = items.map(it=>({ categoria:it.categoria||"", proveedor:it.proveedor||"", item:it.item||"",
-    paquete:it.paquete||"", por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal) }));
+    paquete:it.paquete||"", tipo:tipoOf(it), por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal) }));
   CFG_FILTERS={}; CFG_MSG=""; renderCfg();
 }
 function cfgVal(r,key){ return (r[key]==null?"":String(r[key])).trim(); }
@@ -1044,7 +1058,7 @@ function rowVisible(r){ return CFG_COLUMNS.every(c=>{ const f=CFG_FILTERS[c.key]
 function renderCfg(){
   const host=$("cfg-body"); host.innerHTML="";
   const head=el("div",{cls:"cfg-head"},
-    el("div",{cls:"cfg-hint",html:'Se pide cuando el stock llega al <b>mínimo</b>, y se repone hasta el <b>ideal</b>. <b>U/paq</b> = unidades por paquete (redondea el pedido a paquetes enteros). Tocá un encabezado (el <b>▾</b>) para filtrar. El 0 gris es placeholder.'}));
+    el("div",{cls:"cfg-hint",html:'Se pide cuando el stock llega al <b>mínimo</b>, y se repone hasta el <b>ideal</b>. <b>Se cuenta en</b>: <b>unidades</b> cerradas o <b>gramos</b> (tocá para cambiar). En gramos, mín e ideal van en gramos. <b>U/paq</b> = unidades por paquete, o gramos por paquete si se cuenta en gramos (si lo dejás vacío se toma del paquete, ej. «(1kg)»). Redondea el pedido a paquetes enteros. Tocá un encabezado (el <b>▾</b>) para filtrar. El 0 gris es placeholder.'}));
 
   const table=el("table",{cls:"grid"});
   const thead=el("thead"); const htr=el("tr");
@@ -1073,6 +1087,11 @@ function renderCfg(){
           el("span",{cls:"car",text:"▾"}));
         cell.addEventListener("click",e=>{ e.stopPropagation(); openSelect(c,idx,cell); });
         tr.appendChild(el("td",{}, cell));
+      } else if(c.type==="tipo"){   // dos opciones: tocá para cambiar
+        const g=tipoOf(r)==="gramos";
+        const cell=el("button",{cls:"tipocell"+(g?" g":""),text:g?"gramos":"unidades"});
+        cell.addEventListener("click",e=>{ e.stopPropagation(); CFG_ROWS[idx].tipo=g?"unidades":"gramos"; renderCfg(); });
+        tr.appendChild(el("td",{}, cell));
       } else if(c.type==="num"){
         const raw=num(r[c.key]); const disp = raw>0 ? fmt(raw) : "";
         const inp=el("input",{cls:"cell",type:"text",inputmode:"decimal",value:disp,placeholder:"0","data-idx":idx,"data-key":c.key});
@@ -1100,7 +1119,7 @@ function renderCfg(){
   const add=el("button",{cls:"addrow",text:"＋ Agregar ítem"});
   add.addEventListener("click",()=>{ CFG_FILTERS={};
     const lastCat=CFG_ROWS.length?CFG_ROWS[CFG_ROWS.length-1].categoria:"";
-    CFG_ROWS.push({categoria:lastCat,proveedor:"",item:"",paquete:"",por_paquete:0,cantidad_minima:0,ideal:0});
+    CFG_ROWS.push({categoria:lastCat,proveedor:"",item:"",paquete:"",tipo:"unidades",por_paquete:0,cantidad_minima:0,ideal:0});
     _pendingFocus={idx:CFG_ROWS.length-1,key:"item"}; renderCfg();
     const w=host.querySelector(".tbl-wrap"); if(w) w.scrollTop=w.scrollHeight; });
 
