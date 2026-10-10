@@ -1056,7 +1056,10 @@ function uniqueValues(key){ const set=new Map(); CFG_ROWS.forEach(r=>set.set(cfg
 function rowVisible(r){ return CFG_COLUMNS.every(c=>{ const f=CFG_FILTERS[c.key]; if(!f) return true; return f.has(cfgVal(r,c.key)); }); }
 
 function renderCfg(){
-  const host=$("cfg-body"); host.innerHTML="";
+  const host=$("cfg-body");
+  // al redibujar (cambiar tipo, categoría, proveedor…) la tabla queda donde estaba
+  const ow=host.querySelector(".tbl-wrap"), keep=ow?{t:ow.scrollTop,l:ow.scrollLeft}:null, wy=window.scrollY;
+  host.innerHTML="";
   const head=el("div",{cls:"cfg-head"},
     el("div",{cls:"cfg-hint",html:'Se pide cuando el stock llega al <b>mínimo</b>, y se repone hasta el <b>ideal</b>. <b>Se cuenta en</b>: <b>unidades</b> cerradas o <b>gramos</b> (tocá para cambiar). En gramos, mín e ideal van en gramos. <b>U/paq</b> = unidades por paquete, o gramos por paquete si se cuenta en gramos (si lo dejás vacío se toma del paquete, ej. «(1kg)»). Redondea el pedido a paquetes enteros. Tocá un encabezado (el <b>▾</b>) para filtrar. El 0 gris es placeholder.'}));
 
@@ -1139,6 +1142,7 @@ function renderCfg(){
   const foot=el("div",{cls:"cfg-foot"}, cancel, save);
 
   host.append(head, body, foot);
+  if(keep){ wrap.scrollTop=keep.t; wrap.scrollLeft=keep.l; window.scrollTo(0,wy); }
 
   if(_pendingFocus){ const {idx,key}=_pendingFocus; _pendingFocus=null;
     setTimeout(()=>{ const n=host.querySelector('input[data-idx="'+idx+'"][data-key="'+key+'"]'); if(n){ try{n.focus()}catch(e){} } },30); }
