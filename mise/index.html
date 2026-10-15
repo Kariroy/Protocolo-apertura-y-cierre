@@ -321,7 +321,10 @@
   .grid tbody tr:nth-child(even) td.rownum{ background:#ebe4d6; }
   .grid td.rownum{ cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
   .grid tr.dragging td{ background:#dbe5f4 !important; }
-  .grid tr.dragging td.rownum{ background:var(--accent) !important; color:#fff; cursor:grabbing; }
+  .dropline{ position:fixed; height:3px; background:var(--accent); z-index:30; pointer-events:none; box-shadow:0 0 0 1px #fff; }
+  .dragghost{ position:fixed; z-index:31; pointer-events:none; background:var(--card); border:1px solid var(--accent); border-radius:1.5mm;
+    padding:6px 10px; font:600 14px/1.2 Archivo,sans-serif; color:var(--ink); box-shadow:0 10px 24px -10px rgba(28,26,23,.45);
+    max-width:70vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   body.rowdrag, body.rowdrag *{ cursor:grabbing !important; user-select:none !important; -webkit-user-select:none !important; }
   .addrow{ border-radius:1.5mm; border:1px dashed #d8d0c2; font:700 8.5pt/1.1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; padding:14px; }
   .cfg .restore{ font-family:'IBM Plex Mono',monospace; font-size:12px; }
@@ -856,41 +859,71 @@ function rowVisible(r){
   });
 }
 
-/* ---- mover filas arrastrando el # (mouse y dedo) ---- */
+/* ---- # de cada fila: tocar = menú (agregar arriba/abajo), arrastrar = mover (estilo Excel:
+   los números quedan fijos y una línea marca dónde va a caer la fila) ---- */
+let _dragEndAt = 0;
 function startRowDrag(e, tr, tbody){
   if(e.button!==undefined && e.button!==0) return;
   e.preventDefault();
   const handle=e.currentTarget, wrap=tbody.closest(".tbl-wrap");
-  const before=[...tbody.children].map(r=>+r.dataset.idx);
-  let lastY=e.clientY, raf=0, active=true;
-  try{ handle.setPointerCapture(e.pointerId); }catch(_){}
-  tr.classList.add("dragging"); document.body.classList.add("rowdrag"); buzz(10);
-  function place(){
-    const rows=[...tbody.children].filter(r=>r!==tr);
-    const next=rows.find(r=>{ const b=r.getBoundingClientRect(); return lastY < b.top + b.height/2; });
-    if(next){ if(tr.nextSibling!==next) tbody.insertBefore(tr, next); }
-    else if(tbody.lastChild!==tr) tbody.appendChild(tr);
+  const rows=[...tbody.children];
+  const before=rows.map(r=>+r.dataset.idx);
+  const src=rows.indexOf(tr);
+  const x0=e.clientX, y0=e.clientY;
+  let lastY=y0, lastX=x0, raf=0, dragging=false, target=src, line=null, ghost=null;
+  function boundary(){   // índice (0..n) del hueco donde caería la fila
+    const k=rows.findIndex(r=>{ const b=r.getBoundingClientRect(); return lastY < b.top + b.height/2; });
+    return k<0 ? rows.length : k;
+  }
+  function paint(){
+    target=boundary();
+    const wb=wrap.getBoundingClientRect();
+    const ref = target<rows.length ? rows[target].getBoundingClientRect().top : rows[rows.length-1].getBoundingClientRect().bottom;
+    const head = tbody.previousSibling ? tbody.previousSibling.getBoundingClientRect().bottom : wb.top;
+    const y=Math.max(head, Math.min(wb.bottom, ref));
+    const noop = target===src || target===src+1;
+    line.style.cssText=`left:${wb.left}px;width:${wb.width}px;top:${y-1.5}px;opacity:${noop?0:1}`;
+    ghost.style.left=Math.max(8, Math.min(lastX+14, window.innerWidth-ghost.offsetWidth-8))+"px";
+    ghost.style.top=Math.max(8, lastY-ghost.offsetHeight-12)+"px";
+  }
+  function begin(){
+    dragging=true; buzz(10);
+    tr.classList.add("dragging"); document.body.classList.add("rowdrag");
+    const r=CFG_ROWS[+tr.dataset.idx]||{};
+    line=el("div",{cls:"dropline"});
+    ghost=el("div",{cls:"dragghost",text:String(r.txt||"").trim()||"(sin nombre)"});
+    document.body.append(line, ghost);
+    paint();
+    raf=requestAnimationFrame(tick);
   }
   function tick(){   // auto-scroll cerca de los bordes
-    if(!active) return;
+    if(!dragging) return;
     const b=wrap.getBoundingClientRect(), edge=44;
     let v=0;
     if(lastY < b.top+edge) v=-Math.ceil((b.top+edge-lastY)/4);
     else if(lastY > b.bottom-edge) v=Math.ceil((lastY-(b.bottom-edge))/4);
-    if(v){ wrap.scrollTop+=v; place(); }
+    if(v){ wrap.scrollTop+=v; paint(); }
     raf=requestAnimationFrame(tick);
   }
-  raf=requestAnimationFrame(tick);
-  const move=ev=>{ if(ev.pointerId!==e.pointerId) return; lastY=ev.clientY; place(); };
+  const move=ev=>{
+    if(ev.pointerId!==e.pointerId) return;
+    lastY=ev.clientY; lastX=ev.clientX;
+    if(!dragging){ if(Math.abs(lastY-y0)>6 || Math.abs(lastX-x0)>6) begin(); else return; }
+    paint();
+  };
   const end=ev=>{
     if(ev.pointerId!==e.pointerId) return;
-    active=false; cancelAnimationFrame(raf);
     window.removeEventListener("pointermove",move);
     window.removeEventListener("pointerup",end);
     window.removeEventListener("pointercancel",end);
+    if(!dragging) return;   // fue un toque: el menú lo abre el click del #
+    _dragEndAt=Date.now();
+    dragging=false; cancelAnimationFrame(raf);
+    line.remove(); ghost.remove();
     document.body.classList.remove("rowdrag");
-    const after=[...tbody.children].map(r=>+r.dataset.idx);
-    if(after.join()!==before.join()){
+    if(ev.type==="pointerup" && target!==src && target!==src+1){
+      const after=before.slice(); const moved=after.splice(src,1)[0];
+      after.splice(target>src ? target-1 : target, 0, moved);
       // las filas visibles se reacomodan en sus mismos lugares (respeta filtros)
       const slots=before.slice().sort((a,b)=>a-b), old=CFG_ROWS.slice();
       after.forEach((from,k)=>{ CFG_ROWS[slots[k]]=old[from]; });
@@ -898,10 +931,31 @@ function startRowDrag(e, tr, tbody){
     }
     render();
   };
-  // en window: al mover la fila en la tabla el navegador suelta la captura del puntero
   window.addEventListener("pointermove",move);
   window.addEventListener("pointerup",end);
   window.addEventListener("pointercancel",end);
+}
+
+/* fila nueva con valores por defecto (la categoría se copia de la fila de referencia) */
+function newCfgRow(cat){
+  const nr={};
+  CFG_COLS.forEach(c=>{ nr[c.key] = c.key==="cat" ? (cat||"") : (c.options ? (c.emptyDefault||c.options[0]) : ""); });
+  return nr;
+}
+function insertCfgRow(at, cat){
+  const nr=newCfgRow(cat);
+  CFG_ROWS.splice(at, 0, nr);
+  if(!rowVisible(nr)){ CFG_FILTERS_BY[CFG_TAB]={}; CFG_FILTERS=CFG_FILTERS_BY[CFG_TAB]; }  // que se vea la fila nueva
+  _pendingFocus = { idx: at, key:"txt" };
+  render();
+}
+function openRowMenu(idx, anchor){
+  const cat=(CFG_ROWS[idx]||{}).cat||"";
+  const list=el("div",{cls:"olist"},
+    el("div",{cls:"opt"}, el("span",{cls:"ov",text:"↑  Agregar fila arriba",onClick:()=>{ closePopovers(); insertCfgRow(idx, cat); }})),
+    el("div",{cls:"opt"}, el("span",{cls:"ov",text:"↓  Agregar fila abajo",onClick:()=>{ closePopovers(); insertCfgRow(idx+1, cat); }}))
+  );
+  popoverAt(anchor, el("div",{}, el("div",{cls:"ptitle",text:"Fila "+anchor.textContent}), list));
 }
 
 function config(w){
@@ -912,13 +966,9 @@ function config(w){
     b.addEventListener("click",()=>{ if(CFG_TAB!==t.id){ useTab(t.id); CFG_MSG=""; render(); } });
     tabsRow.appendChild(b);
   });
-  const hint = CFG_TAB==="items"
-    ? 'Editá cada celda. El <b>embudo</b> filtra como en Sheets. Las cantidades van como comentario durante el checklist, no acá. Arrastrá el <b>#</b> para cambiar el orden.'
-    : 'Asigná a cada tarea un <b>día</b> (o “Todos los días”). Aparecen al final del checklist el día que corresponde. Arrastrá el <b>#</b> para cambiar el orden.';
   const head=el("div",{cls:"head"},
     el("h2",{text:"Configuración"}),
-    tabsRow,
-    el("div",{cls:"hint",html:hint})
+    tabsRow
   );
 
   // tabla
@@ -942,8 +992,9 @@ function config(w){
     if(!rowVisible(r)) return;
     shown++;
     const tr=el("tr",{"data-idx":idx});
-    const num=el("td",{cls:"rownum",text:String(shown),title:"Arrastrá para mover"});
+    const num=el("td",{cls:"rownum",text:String(shown),title:"Tocá para agregar filas · arrastrá para mover"});
     num.addEventListener("pointerdown",e=>startRowDrag(e, tr, tbody));
+    num.addEventListener("click",()=>{ if(Date.now()-_dragEndAt>400) openRowMenu(idx, num); });
     tr.appendChild(num);
     CFG_COLS.forEach(c=>{
       if(c.type==="select"){
@@ -974,33 +1025,19 @@ function config(w){
   }
 
   const addLabel = CFG_TAB==="items" ? "＋ Agregar ítem" : "＋ Agregar tarea";
-  const add=el("button",{cls:"addrow",text:addLabel});
-  add.addEventListener("click",()=>{
+  const add = CFG_ROWS.length ? null : el("button",{cls:"addrow",text:addLabel});   // filas nuevas: tocando el #
+  if(add) add.addEventListener("click",()=>{
     CFG_FILTERS_BY[CFG_TAB]={}; CFG_FILTERS=CFG_FILTERS_BY[CFG_TAB]; // limpiar filtros para ver la fila nueva
     const firstCat = CFG_ROWS.length? CFG_ROWS[0].cat : "";   // la fila nueva va arriba de todo
-    const nr={};
-    CFG_COLS.forEach(c=>{
-      nr[c.key] = c.key==="cat" ? firstCat : (c.options ? (c.emptyDefault||c.options[0]) : "");
-    });
-    CFG_ROWS.unshift(nr);
+    CFG_ROWS.unshift(newCfgRow(firstCat));
     _pendingFocus = { idx: 0, key:"txt" };
     _tblTop = true;
     render();
   });
 
   const msg=el("div",{cls:"msg",text:CFG_MSG});
-  const restore=el("button",{cls:"restore",text: CFG_TAB==="items" ? "Restaurar lista original" : "Restaurar tareas por defecto"});
-  restore.addEventListener("click",()=>{
-    confirmDialog("Esto reemplaza TODO por lo original y borra tus cambios sin guardar. ¿Seguir?", async ()=>{
-      CFG_MSG="Restaurando…"; render();
-      const res=await restoreDataset(tabDef(CFG_TAB));
-      if(res.ok){ await reloadCurTab(); CFG_MSG="Original cargado. Tocá Guardar para dejarlo así."; }
-      else CFG_MSG=res.msg;
-      render();
-    }, "Sí, restaurar");
-  });
 
-  const body=el("div",{cls:"body"}, tblWrap, add, restore, msg);
+  const body=el("div",{cls:"body"}, tblWrap, add, msg);
 
   const cancel=el("button",{cls:"btn ghost",text:"Salir"});
   const save=el("button",{cls:"btn",text:"Guardar cambios"});
