@@ -534,6 +534,14 @@ function normItems(items, proto){
   if(!Array.isArray(items) || items.length===0) return seedChk(proto);
   return items.map(function(it){ return { txt:(it&&it.txt)||"", done:!!(it&&it.done) }; });
 }
+/* Lista de hoy con los ítems actuales de Configuración, conservando lo ya marcado (por texto).
+   Así, si se editan los ítems (acá o desde el Panel), la lista del día se actualiza. */
+function mergeItems(items, proto){
+  var key = function(t){ return String(t||"").trim().toLowerCase(); };
+  var done = {};
+  (Array.isArray(items) ? items : []).forEach(function(it){ if(it && it.done) done[key(it.txt)] = true; });
+  return PROTOCOLOS[proto].items.map(function(t){ return { txt:t, done:!!done[key(t)] }; });
+}
 async function fetchDia(proto, dia){
   var res = await sb.from(DIA_TABLE).select("*").eq("proto", proto).eq("dia", dia).limit(1);
   if(res.error) throw res.error;
@@ -656,10 +664,18 @@ async function openProto(key){
   render();
   if(!sb) return;
   try{
+    try{ var its = await fetchItems(); if(its.length) setItemsFromRows(its); }catch(e){}   // ítems al día (pudieron editarse desde el Panel)
     var dia = todayStr();
     var row = await fetchDia(key, dia);
     if(!row) row = await createDia(key, dia);
-    if(row){ DIA_ID = row.id; CHK = normItems(row.items, key); NOTA = row.notas || ""; }
+    if(row){
+      DIA_ID = row.id; NOTA = row.notas || "";
+      if(row.terminado){ CHK = normItems(row.items, key); }   // día ya terminado: queda como se guardó (Registro)
+      else {
+        CHK = mergeItems(row.items, key);
+        if(JSON.stringify(CHK) !== JSON.stringify(normItems(row.items, key))) pushItems();   // que todos vean la lista nueva
+      }
+    }
     startRealtime(key, dia);
     if(state.screen==="check" && state.protoKey===key) render();
   }catch(e){ /* respaldo local ya renderizado */ }
