@@ -198,6 +198,110 @@
   }
   .home-link:hover{color:var(--accent)}
 
+  /* ============ NEGOCIO 🔒 (sección privada, contenido cifrado) ============ */
+  .toprow{display:flex;align-items:center;justify-content:space-between;gap:3mm;margin-bottom:4mm}
+  .toprow .home-link{margin-bottom:0}
+  .neg-open{
+    font:700 8pt/1.1 'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--muted);background:none;border:1px solid var(--line);border-radius:1.5mm;
+    padding:1.6mm 3mm;cursor:pointer;
+  }
+  .neg-open:hover{color:var(--accent);border-color:var(--accent)}
+  .btn{
+    display:inline-flex;align-items:center;gap:1.4mm;
+    font:700 8pt/1.1 'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:1.5mm;
+    padding:2.4mm 3.6mm;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .btn.primary:hover{background:#173c74;border-color:#173c74;color:var(--accent-ink)}
+  .btn.danger{color:#a8541d}
+  .btn.danger:hover{border-color:#a8541d;color:#a8541d}
+  .btn:disabled{opacity:.5;cursor:default}
+  .toolbar{display:flex;flex-wrap:wrap;gap:1.6mm;margin-bottom:5mm}
+  .field{display:block;margin-bottom:4mm}
+  .field > span{
+    display:block;margin-bottom:1.4mm;
+    font:700 7.5pt/1.2 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  }
+  .field input,.field select,.field textarea,.cat-row input{
+    width:100%;font:500 11pt/1.4 Archivo,sans-serif;color:var(--ink);background:var(--paper-2);
+    border:1px solid var(--line);border-radius:1.5mm;padding:3mm 3.4mm;outline:none;
+  }
+  .field textarea{min-height:55vh;resize:vertical;font:400 11pt/1.55 Archivo,sans-serif}
+  .field input:focus,.field select:focus,.field textarea:focus,.cat-row input:focus{
+    border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,78,150,0.14);
+  }
+  .warn{
+    border:1px solid #a8541d;background:#fbf1e8;color:#6b3412;border-radius:1.5mm;
+    padding:3mm 3.6mm;margin:0 0 4mm;font:400 9.5pt/1.45 Archivo,sans-serif;
+  }
+  .note{margin:0 0 4mm;color:var(--muted);font:400 9.5pt/1.45 Archivo,sans-serif}
+  .err{margin:0 0 3mm;color:#a8541d;font:600 9.5pt/1.4 Archivo,sans-serif;min-height:1em}
+  .neg-status{
+    margin:0 0 4mm;font:700 7.5pt/1.3 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  }
+  .neg-status.ok{color:#2e7d4f}
+  .neg-status.local{color:#a8541d}
+  .lock-box{max-width:420px}
+  .neg-card{background:var(--paper-2);border:1px solid var(--line);border-radius:1.5mm;padding:6mm;margin-bottom:5mm}
+  .neg-card h2{margin:0 0 2.4mm;font:700 18pt/1.15 Archivo,sans-serif;letter-spacing:-.01em;overflow-wrap:anywhere}
+  .neg-meta{
+    display:flex;flex-wrap:wrap;gap:2mm;align-items:center;margin-bottom:5mm;padding-bottom:3mm;border-bottom:1px solid var(--line);
+    font:700 7.5pt/1.3 'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+  }
+  .neg-meta .chipcat{background:var(--chip);border-radius:1mm;padding:1mm 1.8mm}
+  .neg-body{font:400 11pt/1.55 Archivo,sans-serif;overflow-wrap:anywhere}
+  .neg-body p{margin:0 0 3mm}
+  .neg-body h3,.neg-body h4,.neg-body h5{margin:5mm 0 2mm;font-family:Archivo,sans-serif;font-weight:700;line-height:1.2}
+  .neg-body h3{font-size:14pt;border-bottom:1mm solid var(--accent);padding-bottom:1.4mm}
+  .neg-body h4{font-size:12pt}
+  .neg-body h5{font-size:11pt;color:var(--muted)}
+  .neg-body ul{margin:0 0 3mm;padding-left:5mm}
+  .neg-body li{margin-bottom:1mm}
+  .neg-body a{color:var(--accent)}
+  .neg-sub{display:none;margin-top:1mm;font:700 7pt/1.2 'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  @media (max-width:480px){ .neg-sub{display:block} }
+  .wrap:has(#neg-cfg:not([hidden])){max-width:1100px}
+  .cfg-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:1.5mm;background:var(--paper-2);margin-bottom:4mm;max-height:70vh;overflow-y:auto}
+  table.cfg{border-collapse:collapse;width:100%;font:400 10pt/1.3 Archivo,sans-serif}
+  table.cfg th{
+    position:sticky;top:0;z-index:1;background:var(--chip);text-align:left;padding:2mm 1.4mm 1mm;
+    font:700 7pt/1.2 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;
+  }
+  table.cfg tr.filtro th{top:7mm;padding:0 1mm 1.6mm;border-bottom:1px solid var(--line)}
+  table.cfg td{padding:.6mm 1mm;border-bottom:1px solid var(--line)}
+  table.cfg input,table.cfg select{
+    width:100%;min-width:26mm;font:500 10pt/1.3 Archivo,sans-serif;color:var(--ink);
+    background:transparent;border:1px solid transparent;border-radius:1mm;padding:1.6mm 2mm;outline:none;
+  }
+  table.cfg tr.filtro input{background:var(--paper-2);border-color:var(--line);font-size:9pt;padding:1.2mm 2mm;text-transform:none;letter-spacing:0}
+  table.cfg input:focus,table.cfg select:focus{border-color:var(--accent);background:var(--paper-2)}
+  table.cfg input.wide{min-width:52mm}
+  table.cfg input.num{min-width:15mm;width:17mm;text-align:right;font-family:'IBM Plex Mono',monospace}
+  table.cfg tr.mod td{background:#eef3fb}
+  table.cfg tr.nueva td{background:#eaf5ee}
+  .cfg-acc{white-space:nowrap}
+  .cfg-acc button{
+    font:700 9pt/1 'IBM Plex Mono',monospace;color:var(--muted);background:none;border:1px solid var(--line);
+    border-radius:1mm;width:7mm;height:7mm;margin-left:.8mm;cursor:pointer;
+  }
+  .cfg-acc button:hover{color:var(--accent);border-color:var(--accent)}
+  .cfg-acc button:disabled{opacity:.3;cursor:default}
+  .cfg-acc button[title="Borrar fila"]:hover{color:#a8541d;border-color:#a8541d}
+  .cat-row{display:flex;gap:2mm;margin-bottom:2mm;align-items:center}
+  .cat-row input{flex:1}
+  .cat-row small{font:700 7pt/1 'IBM Plex Mono',monospace;color:var(--muted);white-space:nowrap}
+  dialog.neg-dlg{
+    border:1px solid var(--line);border-radius:2mm;padding:6mm;width:min(92vw,420px);
+    background:var(--paper-2);color:var(--ink);
+  }
+  dialog.neg-dlg::backdrop{background:rgba(28,26,23,.45)}
+  dialog.neg-dlg h3{margin:0 0 3mm;font:700 13pt/1.2 Archivo,sans-serif;border-bottom:1mm solid var(--accent);padding-bottom:2mm}
+  /* el primer botón (el que toma Enter) es el principal; se muestra a la derecha */
+  dialog.neg-dlg .toolbar{margin:4mm 0 0;flex-direction:row-reverse;justify-content:flex-start}
+
   @media (max-width:480px){
     body{padding-inline:14px}
     table.recipes thead th.yield,
@@ -214,7 +318,10 @@
 <div class="wrap">
 
   <section id="view-list">
-    <a class="home-link" href="../">← Inicio</a>
+    <div class="toprow">
+      <a class="home-link" href="../">← Inicio</a>
+      <button class="neg-open" type="button" id="neg-open">🔒 Negocio</button>
+    </div>
     <header class="top">
       <h1>Guías</h1>
       <span class="sub" id="count-label">13 recetas</span>
@@ -243,6 +350,149 @@
     </button>
     <div class="card-frame" id="card-frame"></div>
   </section>
+
+  <!-- ============ NEGOCIO 🔒 (sección privada) ============ -->
+  <section id="neg-lock" hidden>
+    <div class="toprow"><a class="home-link" href="./" data-neg-exit>← Guías</a></div>
+    <header class="top">
+      <h1>Negocio 🔒</h1>
+      <span class="sub">Privado</span>
+    </header>
+    <div class="neg-status" id="neg-status-lock">Conectando…</div>
+    <div class="lock-box">
+      <p class="note" id="neg-lock-msg"></p>
+      <form id="neg-lock-form" autocomplete="off" hidden>
+        <label class="field"><span>Contraseña</span><input type="password" id="neg-pass" autocomplete="off"></label>
+        <label class="field" id="neg-pass2-wrap" hidden><span>Repetir contraseña</span><input type="password" id="neg-pass2" autocomplete="off"></label>
+        <p class="err" id="neg-lock-err"></p>
+        <div class="toolbar"><button class="btn primary" type="submit" id="neg-lock-btn">Entrar</button></div>
+      </form>
+      <div class="warn">
+        <strong>Importante:</strong> si te olvidás la contraseña, el contenido <strong>no se puede recuperar</strong>:
+        nadie puede abrirlo, ni desde la base ni desde un respaldo. No la guardes en el navegador de la compu del local.
+        Descargá respaldos seguido.
+      </div>
+      <div id="neg-migrate-lock" hidden>
+        <p class="note">Hay fichas guardadas en este navegador (modo local) y la base todavía está vacía.</p>
+        <div class="toolbar"><button class="btn" type="button" id="neg-migrate-lock-btn">Pasar lo local a la base</button></div>
+      </div>
+      <div class="toolbar" id="neg-import-lock-wrap" hidden><button class="btn" type="button" id="neg-import-lock">Importar respaldo</button></div>
+    </div>
+  </section>
+
+  <section id="neg-list" hidden>
+    <div class="toprow">
+      <a class="home-link" href="./" data-neg-exit>← Guías</a>
+      <button class="neg-open" type="button" id="neg-lock-now">🔒 Bloquear</button>
+    </div>
+    <header class="top">
+      <h1>Negocio</h1>
+      <span class="sub" id="neg-count">0 fichas</span>
+    </header>
+    <div class="neg-status" id="neg-status-list"></div>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="neg-new">+ Nueva</button>
+      <button class="btn" type="button" id="neg-cats-btn">Categorías</button>
+      <button class="btn" type="button" id="neg-cfg-btn">⚙ Listas de las apps</button>
+      <button class="btn" type="button" id="neg-export">Descargar respaldo</button>
+      <button class="btn" type="button" id="neg-import">Importar respaldo</button>
+      <button class="btn" type="button" id="neg-migrate" hidden>Pasar lo local a la base</button>
+    </div>
+    <p class="note" id="neg-backup-note"></p>
+    <p class="warn" id="neg-bad" hidden></p>
+
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="neg-search" type="text" placeholder="Buscar en título y texto…" autocomplete="off">
+    </div>
+    <div class="filters" id="neg-filters"></div>
+    <table class="recipes">
+      <thead>
+        <tr><th>Título</th><th class="cat">Categoría</th><th class="yield">Actualizada</th></tr>
+      </thead>
+      <tbody id="neg-rows"></tbody>
+    </table>
+    <div class="empty" id="neg-empty" hidden>No hay fichas todavía.</div>
+  </section>
+
+  <section id="neg-detail" hidden>
+    <button class="back-btn" id="neg-back" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Volver
+    </button>
+    <article class="neg-card" id="neg-card"></article>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="neg-edit-btn">Editar</button>
+      <button class="btn danger" type="button" id="neg-del-btn">Borrar</button>
+    </div>
+  </section>
+
+  <section id="neg-edit" hidden>
+    <header class="top">
+      <h1 id="neg-edit-title">Nueva ficha</h1>
+      <span class="sub">Negocio 🔒</span>
+    </header>
+    <form id="neg-edit-form" autocomplete="off">
+      <label class="field"><span>Título</span><input type="text" id="neg-f-titulo" maxlength="200"></label>
+      <label class="field"><span>Categoría</span><select id="neg-f-cat"></select></label>
+      <label class="field"><span>Texto</span><textarea id="neg-f-texto"></textarea></label>
+      <p class="note">Formato: <strong>**negrita**</strong> · <em>*cursiva*</em> · <code># Título</code> / <code>## Subtítulo</code> al empezar la línea · <code>- ítem</code> para listas · los links (https://…) quedan clickeables.</p>
+      <p class="err" id="neg-edit-err"></p>
+      <div class="toolbar">
+        <button class="btn primary" type="submit" id="neg-save">Guardar</button>
+        <button class="btn" type="button" id="neg-cancel">Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="neg-cats" hidden>
+    <header class="top">
+      <h1>Categorías</h1>
+      <span class="sub">Negocio 🔒</span>
+    </header>
+    <p class="note">Renombrar una categoría actualiza sus fichas. Solo se puede borrar una categoría sin fichas.</p>
+    <div id="neg-cat-list"></div>
+    <div class="toolbar"><button class="btn" type="button" id="neg-cat-add">+ Agregar</button></div>
+    <p class="err" id="neg-cat-err"></p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="neg-cat-save">Guardar</button>
+      <button class="btn" type="button" id="neg-cat-cancel">Cancelar</button>
+    </div>
+  </section>
+
+  <section id="neg-cfg" hidden>
+    <div class="toprow">
+      <a class="home-link" href="#" id="neg-cfg-back">← Negocio</a>
+    </div>
+    <header class="top">
+      <h1>Listas de las apps</h1>
+      <span class="sub" id="neg-cfg-count"></span>
+    </header>
+    <div class="filters" id="neg-cfg-tabs"></div>
+    <p class="note" id="neg-cfg-info"></p>
+    <div class="toolbar">
+      <button class="btn" type="button" id="neg-cfg-add">+ Fila</button>
+      <button class="btn primary" type="button" id="neg-cfg-save">Guardar</button>
+      <button class="btn" type="button" id="neg-cfg-reload">Recargar</button>
+    </div>
+    <p class="err" id="neg-cfg-err"></p>
+    <div class="cfg-wrap">
+      <table class="cfg"><thead id="neg-cfg-head"></thead><tbody id="neg-cfg-body"></tbody></table>
+      <div class="empty" id="neg-cfg-empty" hidden></div>
+    </div>
+    <p class="note">Azul = fila cambiada · verde = fila nueva. Nada se guarda hasta tocar "Guardar".</p>
+    <div id="neg-cfg-dls"></div>
+  </section>
+
+  <dialog class="neg-dlg" id="neg-dlg">
+    <form method="dialog" id="neg-dlg-form">
+      <h3 id="neg-dlg-title"></h3>
+      <p class="note" id="neg-dlg-text"></p>
+      <label class="field" id="neg-dlg-pass-wrap" hidden><span>Contraseña</span><input type="password" id="neg-dlg-pass" autocomplete="off"></label>
+      <div class="toolbar" id="neg-dlg-btns"></div>
+    </form>
+  </dialog>
+  <input type="file" id="neg-file" accept=".json,application/json" hidden>
 
 </div>
 
@@ -336,5 +586,1029 @@
   countEl.textContent = recipes.length + ' fichas';
   renderFilters();
   renderRows('');
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   CONFIGURACIÓN  ← pegá acá tus datos de Supabase
+   ============================================================ */
+var SUPABASE_URL  = "https://mohfvdagkqpkeutcbauu.supabase.co";
+var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vaGZ2ZGFna3Fwa2V1dGNiYXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NTU5NzMsImV4cCI6MjEwNTQzMTk3M30.KKfVxaBjPfvg7XVfqZlIQW0coXj_kWyKxfUomlN7VWg";
+
+var NEG_TABLE     = "guias_privadas";         // sección Negocio 🔒 (todo cifrado)
+var ADMIN_PIN     = "1234";                  // PIN de Configuración (Negocio NO lo usa: tiene su propia contraseña)
+</script>
+
+<script>
+/* ============================================================
+   NEGOCIO 🔒 · sección privada
+   Todo se cifra en el navegador: contraseña → PBKDF2-SHA256 (salt aleatorio,
+   600.000 iteraciones) → clave AES-GCM 256 (no exportable, solo en memoria).
+   Cada ficha {uid, titulo, categoria, texto} se cifra con un IV nuevo en cada
+   guardado. La fila "meta" guarda salt + iteraciones y, cifrados, un control
+   (para saber si la contraseña es correcta) y la lista de categorías.
+   Ni la contraseña ni la clave se guardan en ningún lado.
+   Guarda en Supabase (tabla guias_privadas, migración 008); si no está o no
+   conecta, guarda lo cifrado en localStorage "guias:negocio".
+   ============================================================ */
+(function(){
+  var LS_KEY      = 'guias:negocio';
+  var LS_RESPALDO = 'guias:negocio-ultimo-respaldo';
+  var CHECK       = 'demeter-negocio-v1';
+  var ITER        = 600000;
+  var IDLE_MS     = 10 * 60 * 1000;           // se bloquea sola tras 10 min sin uso
+  var CATS_INICIALES = ['Estrategia', 'Finanzas', 'Proveedores', 'Ideas'];
+
+  function $(id){ return document.getElementById(id); }
+  var te = new TextEncoder(), td = new TextDecoder();
+
+  /* ---------- cifrado ---------- */
+  function b64(buf){
+    var b = new Uint8Array(buf), s = '';
+    for (var i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  function unb64(s){
+    var bin = atob(s), b = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+    return b;
+  }
+  function rnd(n){ return crypto.getRandomValues(new Uint8Array(n)); }
+  function nuevoUid(){ return Array.from(rnd(12), function(x){ return x.toString(16).padStart(2, '0'); }).join(''); }
+  function ahora(){ return new Date().toISOString(); }
+
+  async function derivarClave(pass, saltB64, iter){
+    var base = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: unb64(saltB64), iterations: iter, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  async function cifrar(key, obj){
+    var iv = rnd(12);
+    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, te.encode(JSON.stringify(obj)));
+    return { datos: b64(ct), iv: b64(iv) };
+  }
+  async function descifrar(key, fila){
+    var pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(fila.iv) }, key, unb64(fila.datos));
+    return JSON.parse(td.decode(pt));
+  }
+
+  /* ---------- almacenamiento: local (localStorage) ---------- */
+  var local = {
+    nombre: 'local',
+    leer: function(){
+      try { var d = JSON.parse(localStorage.getItem(LS_KEY)); if (d && d.fichas) return d; } catch(e){}
+      return { meta: null, fichas: [], nextId: 1 };
+    },
+    escribir: function(d){
+      try { localStorage.setItem(LS_KEY, JSON.stringify(d)); }
+      catch(e){ throw new Error('No se pudo guardar en este navegador (' + e.message + ').'); }
+    },
+    tieneDatos: function(){ return !!this.leer().meta; },
+    cargar: async function(){ var d = this.leer(); return { meta: d.meta, fichas: d.fichas.slice() }; },
+    guardarMeta: async function(m){
+      var d = this.leer();
+      d.meta = { salt: m.salt, iteraciones: m.iteraciones, datos: m.datos, iv: m.iv,
+                 created_at: (d.meta && d.meta.created_at) || ahora(), updated_at: ahora() };
+      this.escribir(d); return d.meta;
+    },
+    insertar: async function(f){
+      var d = this.leer();
+      var fila = { id: d.nextId++, datos: f.datos, iv: f.iv,
+                   created_at: f.created_at || ahora(), updated_at: f.updated_at || ahora() };
+      d.fichas.push(fila); this.escribir(d); return fila;
+    },
+    actualizar: async function(id, f){
+      var d = this.leer();
+      var fila = d.fichas.find(function(x){ return x.id === id; });
+      if (!fila) throw new Error('La ficha ya no existe.');
+      fila.datos = f.datos; fila.iv = f.iv; fila.updated_at = ahora();
+      this.escribir(d); return fila;
+    },
+    borrar: async function(id){
+      var d = this.leer();
+      d.fichas = d.fichas.filter(function(x){ return x.id !== id; });
+      this.escribir(d);
+    },
+    borrarFichas: async function(){ var d = this.leer(); d.fichas = []; this.escribir(d); },
+    vaciar: function(){ try { localStorage.removeItem(LS_KEY); } catch(e){} }
+  };
+
+  /* ---------- almacenamiento: Supabase ---------- */
+  var base = {
+    nombre: 'supabase', sb: null,
+    chk: function(r){ if (r.error) throw new Error(r.error.message || 'Error de Supabase'); return r.data; },
+    cargar: async function(){
+      var filas = this.chk(await this.sb.from(NEG_TABLE)
+        .select('id,tipo,datos,iv,salt,iteraciones,created_at,updated_at').order('id'));
+      var meta = null, fichas = [];
+      filas.forEach(function(f){ if (f.tipo === 'meta') { if (!meta) meta = f; } else fichas.push(f); });
+      return { meta: meta, fichas: fichas };
+    },
+    guardarMeta: async function(m){
+      var fila = { tipo: 'meta', salt: m.salt, iteraciones: m.iteraciones, datos: m.datos, iv: m.iv, updated_at: ahora() };
+      if (m.id != null) return this.chk(await this.sb.from(NEG_TABLE).update(fila).eq('id', m.id).select().single());
+      return this.chk(await this.sb.from(NEG_TABLE).insert(fila).select().single());
+    },
+    insertar: async function(f){
+      var fila = { tipo: 'ficha', datos: f.datos, iv: f.iv };
+      if (f.created_at) fila.created_at = f.created_at;
+      if (f.updated_at) fila.updated_at = f.updated_at;
+      return this.chk(await this.sb.from(NEG_TABLE).insert(fila).select().single());
+    },
+    actualizar: async function(id, f){
+      return this.chk(await this.sb.from(NEG_TABLE)
+        .update({ datos: f.datos, iv: f.iv, updated_at: ahora() }).eq('id', id).select().single());
+    },
+    borrar: async function(id){ this.chk(await this.sb.from(NEG_TABLE).delete().eq('id', id).eq('tipo', 'ficha')); },
+    borrarFichas: async function(){ this.chk(await this.sb.from(NEG_TABLE).delete().eq('tipo', 'ficha')); }
+  };
+
+  /* ---------- estado ---------- */
+  var S = {
+    store: null, motivoLocal: '', iniciando: null,
+    key: null, meta: null, cats: [], fichas: [], ilegibles: 0,
+    activeCat: 'Todas', actual: null, editando: null
+  };
+
+  function conTiempo(p, ms){
+    return Promise.race([p, new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('sin respuesta')); }, ms); })]);
+  }
+
+  async function elegirStore(){
+    if (typeof supabase === 'undefined' || !supabase.createClient) { S.motivoLocal = 'sin conexión a Supabase'; return local; }
+    try {
+      base.sb = base.sb || supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+      var r = await conTiempo(base.sb.from(NEG_TABLE).select('id').limit(1), 7000);
+      if (r.error) throw r.error;
+      return base;
+    } catch(e){
+      var msg = (e && (e.message || '')) + ' ' + (e && e.code || '');
+      S.motivoLocal = /PGRST205|42P01|does not exist|Could not find/i.test(msg)
+        ? 'falta crear la tabla en Supabase (008)'
+        : 'sin conexión a Supabase';
+      return local;
+    }
+  }
+
+  /* ---------- vistas ---------- */
+  var VISTAS = ['view-list', 'view-detail', 'neg-lock', 'neg-list', 'neg-detail', 'neg-edit', 'neg-cats', 'neg-cfg'];
+  function mostrar(id){
+    VISTAS.forEach(function(v){ $(v).hidden = (v !== id); });
+    window.scrollTo(0, 0);
+  }
+  function enNegocio(){
+    return VISTAS.slice(2).some(function(v){ return !$(v).hidden; });
+  }
+
+  function textoEstado(){
+    if (!S.store) return { t: 'Conectando…', c: '' };
+    if (S.store === base) return { t: '✓ Guardado en Supabase', c: 'ok' };
+    return { t: '⚠ Guardado solo en este navegador · ' + S.motivoLocal + ' · descargá respaldos', c: 'local' };
+  }
+  function pintarEstado(){
+    var e = textoEstado();
+    ['neg-status-lock', 'neg-status-list'].forEach(function(id){
+      $(id).textContent = e.t; $(id).className = 'neg-status ' + e.c;
+    });
+  }
+
+  /* ---------- texto con formato simple ---------- */
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function enLinea(s){
+    s = esc(s);
+    s = s.replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/(^|[^*\w])\*(\S(?:.*?\S)?)\*(?!\*)/g, '$1<em>$2</em>');
+    s = s.replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,;:)!?])/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+    return s;
+  }
+  function formato(texto){
+    var out = [], parrafo = [], lista = null;
+    function cerrarP(){ if (parrafo.length) { out.push('<p>' + parrafo.map(enLinea).join('<br>') + '</p>'); parrafo = []; } }
+    function cerrarL(){ if (lista) { out.push('<ul>' + lista.map(function(x){ return '<li>' + enLinea(x) + '</li>'; }).join('') + '</ul>'); lista = null; } }
+    String(texto || '').replace(/\r/g, '').split('\n').forEach(function(l){
+      var m;
+      if (/^\s*$/.test(l)) { cerrarP(); cerrarL(); }
+      else if ((m = l.match(/^(#{1,3})\s+(.*)$/))) { cerrarP(); cerrarL(); var n = m[1].length + 2; out.push('<h' + n + '>' + enLinea(m[2]) + '</h' + n + '>'); }
+      else if ((m = l.match(/^\s*[-•*]\s+(.*)$/))) { cerrarP(); (lista = lista || []).push(m[1]); }
+      else { cerrarL(); parrafo.push(l); }
+    });
+    cerrarP(); cerrarL();
+    return out.join('');
+  }
+
+  function fecha(iso){
+    if (!iso) return '—';
+    var d = new Date(iso);
+    return d.toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  }
+  function norm(s){
+    return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  /* ---------- diálogo genérico ---------- */
+  function dialogo(o){
+    return new Promise(function(resolve){
+      var dlg = $('neg-dlg');
+      $('neg-dlg-title').textContent = o.titulo || '';
+      $('neg-dlg-text').textContent = o.texto || '';
+      $('neg-dlg-pass-wrap').hidden = !o.pass;
+      $('neg-dlg-pass').value = '';
+      var btns = $('neg-dlg-btns'); btns.innerHTML = '';
+      (o.botones || [{ label: 'Aceptar', value: 'ok', primary: true }]).forEach(function(b){
+        var el = document.createElement('button');
+        el.className = 'btn' + (b.primary ? ' primary' : '');
+        el.value = b.value; el.textContent = b.label;
+        btns.appendChild(el);
+      });
+      dlg.returnValue = '';
+      dlg.onclose = function(){
+        var v = dlg.returnValue || null, p = $('neg-dlg-pass').value;
+        $('neg-dlg-pass').value = '';
+        resolve({ valor: v, pass: p });
+      };
+      dlg.showModal();
+      if (o.pass) $('neg-dlg-pass').focus();
+    });
+  }
+
+  /* ---------- pantalla de contraseña ---------- */
+  async function abrirNegocio(){
+    mostrar('neg-lock');
+    if (!window.crypto || !crypto.subtle) {
+      $('neg-lock-msg').textContent = 'Este navegador no permite cifrar acá (hace falta abrir la página por https).';
+      return;
+    }
+    if (S.key) {
+      try { await recargar(); } catch(e){ return; }
+      pintarLista(); mostrar('neg-list'); return;
+    }
+    await pintarLock();
+  }
+
+  async function pintarLock(){
+    $('neg-lock-form').hidden = true;
+    $('neg-migrate-lock').hidden = true;
+    $('neg-import-lock-wrap').hidden = true;
+    $('neg-lock-err').textContent = '';
+    $('neg-lock-msg').textContent = 'Conectando…';
+    if (!S.store) { S.iniciando = S.iniciando || elegirStore(); S.store = await S.iniciando; }
+    pintarEstado();
+    var d;
+    try { d = await S.store.cargar(); }
+    catch(e){ $('neg-lock-msg').textContent = 'No se pudo leer: ' + e.message; return; }
+    S.meta = d.meta;
+    var crear = !S.meta;
+    $('neg-pass2-wrap').hidden = !crear;
+    $('neg-lock-btn').textContent = crear ? 'Crear y entrar' : 'Entrar';
+    $('neg-lock-msg').textContent = crear
+      ? 'Primera vez: elegí una contraseña para esta sección (mínimo 10 caracteres; mejor una frase larga). Es distinta del PIN de configuración.'
+      : 'Ingresá la contraseña de Negocio.';
+    $('neg-lock-form').hidden = false;
+    $('neg-import-lock-wrap').hidden = !crear;
+    $('neg-migrate-lock').hidden = !(crear && S.store === base && local.tieneDatos());
+    $('neg-pass').value = ''; $('neg-pass2').value = '';
+    $('neg-pass').focus();
+  }
+
+  $('neg-lock-form').addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    var p = $('neg-pass').value, err = $('neg-lock-err'), btn = $('neg-lock-btn');
+    err.textContent = '';
+    btn.disabled = true;
+    try {
+      if (!S.meta) {
+        if (p.length < 10) throw new Error('La contraseña tiene que tener al menos 10 caracteres.');
+        if (p !== $('neg-pass2').value) throw new Error('Las dos contraseñas no coinciden.');
+        await crearBoveda(p);
+      } else {
+        await abrirBoveda(p);
+      }
+      $('neg-pass').value = ''; $('neg-pass2').value = '';
+      S.activeCat = 'Todas'; $('neg-search').value = '';
+      pintarLista(); mostrar('neg-list'); tocar();
+    } catch(e){
+      err.textContent = e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  async function crearBoveda(pass){
+    var d = await S.store.cargar();          // por si se creó desde otro equipo recién
+    if (d.meta) { S.meta = d.meta; throw new Error('Ya hay una contraseña creada (desde otro equipo). Recargá la página.'); }
+    var salt = b64(rnd(16));
+    var key = await derivarClave(pass, salt, ITER);
+    var c = await cifrar(key, { check: CHECK, categorias: CATS_INICIALES.slice() });
+    S.meta = await S.store.guardarMeta({ salt: salt, iteraciones: ITER, datos: c.datos, iv: c.iv });
+    S.key = key; S.cats = CATS_INICIALES.slice(); S.fichas = []; S.ilegibles = 0;
+  }
+
+  async function abrirMeta(key, meta){
+    var m;
+    try { m = await descifrar(key, meta); } catch(e){ m = null; }
+    if (!m || m.check !== CHECK) throw new Error('Contraseña incorrecta.');
+    return m;
+  }
+
+  async function abrirBoveda(pass){
+    var key = await derivarClave(pass, S.meta.salt, S.meta.iteraciones || ITER);
+    var m = await abrirMeta(key, S.meta);
+    S.key = key; S.cats = m.categorias || CATS_INICIALES.slice();
+    await recargar();
+  }
+
+  async function recargar(){
+    var d = await S.store.cargar();
+    if (d.meta) {
+      S.meta = d.meta;
+      try { S.cats = (await abrirMeta(S.key, d.meta)).categorias || S.cats; }
+      catch(e){ bloquear(); throw new Error('La contraseña cambió desde otro equipo. Volvé a entrar.'); }
+    }
+    var lista = [], malas = 0;
+    for (var i = 0; i < d.fichas.length; i++) {
+      var f = d.fichas[i];
+      try {
+        var p = await descifrar(S.key, f);
+        lista.push({ id: f.id, uid: p.uid, titulo: p.titulo, categoria: p.categoria, texto: p.texto,
+                     created_at: f.created_at, updated_at: f.updated_at });
+      } catch(e){ malas++; }
+    }
+    S.fichas = lista; S.ilegibles = malas;
+  }
+
+  function bloquear(){
+    S.key = null; S.fichas = []; S.cats = []; S.actual = null; S.editando = null;
+    C.orig = []; C.filas = []; C.filtros = {};
+    $('neg-f-titulo').value = ''; $('neg-f-texto').value = ''; $('neg-card').innerHTML = '';
+    $('neg-rows').innerHTML = '';
+    clearTimeout(timerIdle);
+    if (enNegocio()) { mostrar('neg-lock'); pintarLock(); }
+  }
+
+  /* ---------- bloqueo automático ---------- */
+  var timerIdle = null, ocultoDesde = 0;
+  function tocar(){
+    if (!S.key) return;
+    clearTimeout(timerIdle);
+    timerIdle = setTimeout(bloquear, IDLE_MS);
+  }
+  ['click', 'keydown', 'touchstart', 'scroll', 'input'].forEach(function(ev){
+    document.addEventListener(ev, tocar, { passive: true });
+  });
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) { ocultoDesde = Date.now(); return; }
+    if (S.key && ocultoDesde && Date.now() - ocultoDesde > IDLE_MS) bloquear();
+  });
+
+  /* ---------- lista ---------- */
+  function todasLasCats(){
+    var cats = S.cats.slice();
+    S.fichas.forEach(function(f){ var c = f.categoria || 'Sin categoría'; if (cats.indexOf(c) === -1) cats.push(c); });
+    return cats;
+  }
+
+  function pintarLista(){
+    pintarEstado();
+    $('neg-count').textContent = S.fichas.length + (S.fichas.length === 1 ? ' ficha' : ' fichas');
+    $('neg-migrate').hidden = !(S.store === base && local.tieneDatos());
+    var bad = $('neg-bad');
+    bad.hidden = !S.ilegibles;
+    bad.textContent = S.ilegibles ? S.ilegibles + ' ficha(s) guardada(s) no se pudieron abrir con esta contraseña.' : '';
+    var ult = null; try { ult = localStorage.getItem(LS_RESPALDO); } catch(e){}
+    $('neg-backup-note').textContent = ult
+      ? 'Último respaldo descargado en este equipo: ' + fecha(ult) + '.'
+      : 'Todavía no descargaste un respaldo desde este equipo.';
+
+    var cats = todasLasCats();
+    if (S.activeCat !== 'Todas' && cats.indexOf(S.activeCat) === -1) S.activeCat = 'Todas';
+    var fil = $('neg-filters'); fil.innerHTML = '';
+    ['Todas'].concat(cats).forEach(function(c){
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = c;
+      b.setAttribute('aria-pressed', String(c === S.activeCat));
+      b.addEventListener('click', function(){ S.activeCat = c; pintarLista(); });
+      fil.appendChild(b);
+    });
+    pintarFilas();
+  }
+
+  function pintarFilas(){
+    var q = norm($('neg-search').value);
+    var rows = $('neg-rows'); rows.innerHTML = '';
+    var orden = S.fichas.slice().sort(function(a, b){ return (b.updated_at || '').localeCompare(a.updated_at || ''); });
+    var n = 0;
+    orden.forEach(function(f){
+      var cat = f.categoria || 'Sin categoría';
+      if (S.activeCat !== 'Todas' && cat !== S.activeCat) return;
+      if (q && norm(f.titulo + ' ' + f.texto + ' ' + cat).indexOf(q) === -1) return;
+      n++;
+      var tr = document.createElement('tr');
+      tr.tabIndex = 0; tr.setAttribute('role', 'button');
+      tr.innerHTML = '<td class="name">' + esc(f.titulo || '(sin título)') +
+        '<div class="neg-sub">' + esc(cat) + ' · ' + fecha(f.updated_at) + '</div></td>' +
+        '<td class="cat"><span>' + esc(cat) + '</span></td>' +
+        '<td class="yield">' + fecha(f.updated_at) + '</td>';
+      tr.addEventListener('click', function(){ abrirFicha(f.id); });
+      tr.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirFicha(f.id); } });
+      rows.appendChild(tr);
+    });
+    var vacio = $('neg-empty');
+    vacio.hidden = n !== 0;
+    vacio.textContent = S.fichas.length ? 'No se encontró nada con esa búsqueda.' : 'No hay fichas todavía. Tocá "+ Nueva".';
+  }
+  $('neg-search').addEventListener('input', pintarFilas);
+
+  /* ---------- detalle ---------- */
+  function buscar(id){ return S.fichas.find(function(f){ return f.id === id; }); }
+
+  function abrirFicha(id){
+    var f = buscar(id); if (!f) return;
+    S.actual = id;
+    $('neg-card').innerHTML =
+      '<h2>' + esc(f.titulo || '(sin título)') + '</h2>' +
+      '<div class="neg-meta"><span class="chipcat">' + esc(f.categoria || 'Sin categoría') + '</span>' +
+      '<span>Creada ' + fecha(f.created_at) + '</span><span>· Editada ' + fecha(f.updated_at) + '</span></div>' +
+      '<div class="neg-body">' + (formato(f.texto) || '<p class="note">(sin texto)</p>') + '</div>';
+    mostrar('neg-detail');
+  }
+  $('neg-back').addEventListener('click', function(){ pintarLista(); mostrar('neg-list'); });
+
+  $('neg-del-btn').addEventListener('click', async function(){
+    var f = buscar(S.actual); if (!f) return;
+    if (!confirm('¿Borrar la ficha "' + (f.titulo || '(sin título)') + '"?\nNo se puede deshacer (salvo desde un respaldo).')) return;
+    try {
+      await S.store.borrar(f.id);
+      S.fichas = S.fichas.filter(function(x){ return x.id !== f.id; });
+      pintarLista(); mostrar('neg-list');
+    } catch(e){ alert('No se pudo borrar: ' + e.message); }
+  });
+
+  /* ---------- edición ---------- */
+  function abrirEditor(f){
+    S.editando = f ? f.id : null;
+    $('neg-edit-title').textContent = f ? 'Editar ficha' : 'Nueva ficha';
+    $('neg-edit-err').textContent = '';
+    var sel = $('neg-f-cat'); sel.innerHTML = '';
+    var cats = todasLasCats();
+    var actual = f ? (f.categoria || 'Sin categoría') : (S.activeCat !== 'Todas' ? S.activeCat : cats[0]);
+    cats.forEach(function(c){
+      var o = document.createElement('option'); o.value = c; o.textContent = c;
+      if (c === actual) o.selected = true;
+      sel.appendChild(o);
+    });
+    $('neg-f-titulo').value = f ? f.titulo : '';
+    $('neg-f-texto').value = f ? f.texto : '';
+    $('neg-edit-form').dataset.orig = JSON.stringify([$('neg-f-titulo').value, sel.value, $('neg-f-texto').value]);
+    mostrar('neg-edit');
+    $('neg-f-titulo').focus();
+  }
+  function hayCambios(){
+    return $('neg-edit-form').dataset.orig !== JSON.stringify([$('neg-f-titulo').value, $('neg-f-cat').value, $('neg-f-texto').value]);
+  }
+  $('neg-new').addEventListener('click', function(){ abrirEditor(null); });
+  $('neg-edit-btn').addEventListener('click', function(){ var f = buscar(S.actual); if (f) abrirEditor(f); });
+  $('neg-cancel').addEventListener('click', function(){
+    if (hayCambios() && !confirm('¿Descartar los cambios?')) return;
+    if (S.editando != null && buscar(S.editando)) abrirFicha(S.editando);
+    else { pintarLista(); mostrar('neg-list'); }
+  });
+
+  $('neg-edit-form').addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    var titulo = $('neg-f-titulo').value.trim();
+    if (!titulo) { $('neg-edit-err').textContent = 'Poné un título.'; return; }
+    var btn = $('neg-save'); btn.disabled = true;
+    try {
+      var previa = S.editando != null ? buscar(S.editando) : null;
+      var datos = { uid: previa ? previa.uid : nuevoUid(), titulo: titulo,
+                    categoria: $('neg-f-cat').value, texto: $('neg-f-texto').value };
+      var c = await cifrar(S.key, datos);
+      var fila = previa ? await S.store.actualizar(previa.id, c) : await S.store.insertar(c);
+      var f = Object.assign({ id: fila.id, created_at: fila.created_at, updated_at: fila.updated_at }, datos);
+      S.fichas = S.fichas.filter(function(x){ return x.id !== f.id; }).concat([f]);
+      S.editando = null;
+      abrirFicha(f.id);
+    } catch(e){
+      $('neg-edit-err').textContent = 'No se pudo guardar: ' + e.message;
+    } finally { btn.disabled = false; }
+  });
+
+  /* ---------- categorías ---------- */
+  function filaCat(nombre, orig){
+    var row = document.createElement('div'); row.className = 'cat-row';
+    row.dataset.orig = orig || '';
+    var inp = document.createElement('input'); inp.type = 'text'; inp.value = nombre; inp.maxLength = 40;
+    var usos = orig ? S.fichas.filter(function(f){ return f.categoria === orig; }).length : 0;
+    var sm = document.createElement('small'); sm.textContent = usos + ' fichas';
+    var del = document.createElement('button'); del.type = 'button'; del.className = 'btn danger'; del.textContent = '✕';
+    del.title = 'Borrar categoría';
+    del.addEventListener('click', function(){
+      if (usos) { $('neg-cat-err').textContent = 'Primero pasá sus ' + usos + ' fichas a otra categoría.'; return; }
+      row.remove();
+    });
+    row.appendChild(inp); row.appendChild(sm); row.appendChild(del);
+    return row;
+  }
+  $('neg-cats-btn').addEventListener('click', function(){
+    var cont = $('neg-cat-list'); cont.innerHTML = '';
+    $('neg-cat-err').textContent = '';
+    todasLasCats().forEach(function(c){ cont.appendChild(filaCat(c, c)); });
+    mostrar('neg-cats');
+  });
+  $('neg-cat-add').addEventListener('click', function(){
+    var r = filaCat('', ''); $('neg-cat-list').appendChild(r); r.querySelector('input').focus();
+  });
+  $('neg-cat-cancel').addEventListener('click', function(){ pintarLista(); mostrar('neg-list'); });
+  $('neg-cat-save').addEventListener('click', async function(){
+    var err = $('neg-cat-err'); err.textContent = '';
+    var filas = Array.from($('neg-cat-list').children);
+    var nuevas = [], renombres = {};
+    for (var i = 0; i < filas.length; i++) {
+      var nom = filas[i].querySelector('input').value.trim().replace(/\s+/g, ' ');
+      var orig = filas[i].dataset.orig;
+      if (!nom) { err.textContent = 'Hay una categoría sin nombre.'; return; }
+      if (nuevas.some(function(x){ return norm(x) === norm(nom); })) { err.textContent = 'Categoría repetida: ' + nom; return; }
+      nuevas.push(nom);
+      if (orig && orig !== nom) renombres[orig] = nom;
+    }
+    if (!nuevas.length) { err.textContent = 'Tiene que quedar al menos una categoría.'; return; }
+    var btn = this; btn.disabled = true;
+    try {
+      await guardarCats(nuevas);
+      for (var j = 0; j < S.fichas.length; j++) {
+        var f = S.fichas[j];
+        if (renombres[f.categoria]) {
+          f.categoria = renombres[f.categoria];
+          var c = await cifrar(S.key, { uid: f.uid, titulo: f.titulo, categoria: f.categoria, texto: f.texto });
+          var fila = await S.store.actualizar(f.id, c);
+          f.updated_at = fila.updated_at;
+        }
+      }
+      pintarLista(); mostrar('neg-list');
+    } catch(e){ err.textContent = 'No se pudo guardar: ' + e.message; }
+    finally { btn.disabled = false; }
+  });
+
+  async function guardarCats(cats){
+    var c = await cifrar(S.key, { check: CHECK, categorias: cats });
+    S.meta = await S.store.guardarMeta({ id: S.meta.id, salt: S.meta.salt, iteraciones: S.meta.iteraciones, datos: c.datos, iv: c.iv });
+    S.cats = cats.slice();
+  }
+
+  /* ---------- respaldo ---------- */
+  function paqueteDe(d){
+    return {
+      app: 'demeter-guias-negocio', version: 1, exportado: ahora(),
+      meta: { salt: d.meta.salt, iteraciones: d.meta.iteraciones, datos: d.meta.datos, iv: d.meta.iv },
+      fichas: d.fichas.map(function(f){ return { datos: f.datos, iv: f.iv, created_at: f.created_at, updated_at: f.updated_at }; })
+    };
+  }
+
+  $('neg-export').addEventListener('click', async function(){
+    try {
+      var d = await S.store.cargar();
+      if (!d.meta) throw new Error('No hay nada guardado.');
+      var blob = new Blob([JSON.stringify(paqueteDe(d), null, 1)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'negocio-respaldo-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+      try { localStorage.setItem(LS_RESPALDO, ahora()); } catch(e){}
+      pintarLista();
+    } catch(e){ alert('No se pudo descargar: ' + e.message); }
+  });
+
+  function validarPaquete(o){
+    return o && o.meta && o.meta.salt && o.meta.datos && o.meta.iv && Array.isArray(o.fichas);
+  }
+
+  // copia tal cual (cifrado), cuando el destino está vacío
+  async function copiarCrudo(p){
+    var cur = await S.store.cargar();
+    if (cur.meta) throw new Error('El destino ya tiene datos.');
+    await S.store.guardarMeta({ salt: p.meta.salt, iteraciones: p.meta.iteraciones || ITER, datos: p.meta.datos, iv: p.meta.iv });
+    for (var i = 0; i < p.fichas.length; i++) await S.store.insertar(p.fichas[i]);
+    return p.fichas.length;
+  }
+
+  // suma (o reemplaza) las fichas de un paquete a la sección abierta, re-cifrando con la clave actual
+  async function fusionar(p, preguntarModo){
+    var key = null;
+    if (p.meta.salt === S.meta.salt && (p.meta.iteraciones || ITER) === (S.meta.iteraciones || ITER)) key = S.key;
+    var m = null;
+    if (key) { try { m = await abrirMeta(key, p.meta); } catch(e){ key = null; } }
+    if (!key) {
+      var r = await dialogo({ titulo: 'Contraseña del respaldo', pass: true,
+        texto: 'Este respaldo se hizo con otra contraseña. Ingresala para abrirlo.',
+        botones: [{ label: 'Abrir', value: 'ok', primary: true }, { label: 'Cancelar', value: 'no' }] });
+      if (r.valor !== 'ok') return null;
+      key = await derivarClave(r.pass, p.meta.salt, p.meta.iteraciones || ITER);
+      m = await abrirMeta(key, p.meta);
+    }
+    var entrantes = [], malas = 0;
+    for (var i = 0; i < p.fichas.length; i++) {
+      try { entrantes.push({ fila: p.fichas[i], d: await descifrar(key, p.fichas[i]) }); } catch(e){ malas++; }
+    }
+    var reemplazar = false;
+    if (preguntarModo && S.fichas.length) {
+      var q = await dialogo({ titulo: 'Importar respaldo',
+        texto: 'El respaldo tiene ' + entrantes.length + ' fichas y acá hay ' + S.fichas.length + '. ¿Qué hago?',
+        botones: [{ label: 'Sumar las que faltan', value: 'sumar', primary: true },
+                  { label: 'Reemplazar todo', value: 'reemplazar' }, { label: 'Cancelar', value: 'no' }] });
+      if (q.valor === 'no' || !q.valor) return null;
+      reemplazar = q.valor === 'reemplazar';
+      if (reemplazar && !confirm('Se van a borrar las ' + S.fichas.length + ' fichas actuales y quedan solo las del respaldo. ¿Seguro?')) return null;
+    }
+    if (reemplazar) { await S.store.borrarFichas(); S.fichas = []; }
+    var uids = {}; S.fichas.forEach(function(f){ uids[f.uid] = 1; });
+    var cats = S.cats.slice();
+    (m.categorias || []).forEach(function(c){ if (cats.indexOf(c) === -1) cats.push(c); });
+    var sumadas = 0;
+    for (var j = 0; j < entrantes.length; j++) {
+      var e = entrantes[j];
+      if (uids[e.d.uid]) continue;
+      if (e.d.categoria && cats.indexOf(e.d.categoria) === -1) cats.push(e.d.categoria);
+      var c = await cifrar(S.key, { uid: e.d.uid || nuevoUid(), titulo: e.d.titulo, categoria: e.d.categoria, texto: e.d.texto });
+      await S.store.insertar({ datos: c.datos, iv: c.iv, created_at: e.fila.created_at, updated_at: e.fila.updated_at });
+      uids[e.d.uid] = 1; sumadas++;
+    }
+    await guardarCats(cats);
+    await recargar();
+    return { sumadas: sumadas, malas: malas };
+  }
+
+  function elegirArchivo(){
+    return new Promise(function(resolve){
+      var inp = $('neg-file'); inp.value = '';
+      inp.onchange = function(){
+        var file = inp.files[0]; if (!file) return resolve(null);
+        file.text().then(function(t){
+          try { var o = JSON.parse(t); resolve(validarPaquete(o) ? o : 'mal'); } catch(e){ resolve('mal'); }
+        });
+      };
+      inp.click();
+    });
+  }
+
+  async function importar(){
+    var p = await elegirArchivo();
+    if (!p) return;
+    if (p === 'mal') { alert('Ese archivo no es un respaldo de Negocio.'); return; }
+    try {
+      if (!S.key) {                      // pantalla de contraseña: destino vacío → copia tal cual
+        var n = await copiarCrudo(p);
+        alert('Respaldo importado (' + n + ' fichas). Ahora entrá con la contraseña de ese respaldo.');
+        await pintarLock(); return;
+      }
+      var r = await fusionar(p, true);
+      if (r) { alert('Listo: ' + r.sumadas + ' fichas importadas' + (r.malas ? ' (' + r.malas + ' no se pudieron abrir)' : '') + '.'); }
+      pintarLista(); mostrar('neg-list');
+    } catch(e){ alert('No se pudo importar: ' + e.message); }
+  }
+  $('neg-import').addEventListener('click', importar);
+  $('neg-import-lock').addEventListener('click', importar);
+
+  /* ---------- pasar lo local a Supabase ---------- */
+  async function migrarLocal(){
+    var d = local.leer();
+    if (!d.meta) return;
+    var p = paqueteDe(d);
+    try {
+      var n;
+      if (!S.key) { n = await copiarCrudo(p); }
+      else {
+        var r = await fusionar(p, false);
+        if (!r) return;
+        n = r.sumadas;
+      }
+      var borrar = confirm('Listo: ' + n + ' fichas pasadas a la base.\n\n¿Borro la copia local de este navegador? (Recomendado; si dudás, primero descargá un respaldo.)');
+      if (borrar) local.vaciar();
+      if (S.key) { pintarLista(); mostrar('neg-list'); } else { await pintarLock(); }
+    } catch(e){ alert('No se pudo pasar a la base: ' + e.message); }
+  }
+  $('neg-migrate').addEventListener('click', migrarLocal);
+  $('neg-migrate-lock-btn').addEventListener('click', migrarLocal);
+
+  /* ---------- ⚙ Listas de las apps (Protocolos, Mise y Stock) ----------
+     Edita las MISMAS tablas que la ⚙ de cada app (no van cifradas).
+     Guarda solo lo que cambió: filas nuevas sin id, editadas por id, borradas por id.
+     Valores y limpieza copiados de cada app: si una app cambia sus columnas, actualizar acá. */
+  var DIAS = ['Todos los días', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  var LISTAS = [
+    { id: 'proto', nombre: 'Protocolos', app: 'Protocolos', tabla: 'protocolos_items',
+      cols: [ { key: 'proto', label: 'Protocolo', tipo: 'opcion', opciones: ['Apertura', 'Cierre'] },
+              { key: 'txt', label: 'Ítem', tipo: 'texto', req: true, ancho: true } ],
+      limpiar: function(o){ o.proto = /^cierre/i.test(o.proto || '') ? 'Cierre' : 'Apertura'; } },
+    { id: 'mise', nombre: 'Mise · Ítems', app: 'Mise and Please', tabla: 'mise_items', agrupar: true,
+      cols: [ { key: 'cat', label: 'Categoría', tipo: 'sugerido', vacio: 'Sin categoría' },
+              { key: 'txt', label: 'Ítem', tipo: 'texto', req: true, ancho: true } ] },
+    { id: 'tareas', nombre: 'Mise · Tareas del día', app: 'Mise and Please', tabla: 'mise_tareas',
+      cols: [ { key: 'cat', label: 'Categoría', tipo: 'sugerido', vacio: 'Sin categoría' },
+              { key: 'txt', label: 'Tarea', tipo: 'texto', req: true, ancho: true },
+              { key: 'dia', label: 'Día', tipo: 'opcion', opciones: DIAS } ] },
+    { id: 'stock', nombre: 'Stock', app: 'Stock y Pedidos', tabla: 'stock_items',
+      cols: [ { key: 'categoria', label: 'Categoría', tipo: 'sugerido', vacio: '' },
+              { key: 'proveedor', label: 'Proveedor', tipo: 'sugerido', vacio: '' },
+              { key: 'item', label: 'Ítem', tipo: 'texto', req: true, ancho: true },
+              { key: 'paquete', label: 'Paquete', tipo: 'texto', vacio: '' },
+              { key: 'tipo', label: 'Se cuenta en', tipo: 'opcion', opciones: ['unidades', 'gramos'] },
+              { key: 'por_paquete', label: 'U/paq', tipo: 'num' },
+              { key: 'cantidad_minima', label: 'Mín', tipo: 'num' },
+              { key: 'ideal', label: 'Ideal', tipo: 'num' } ] }
+  ];
+  var C = { lista: LISTAS[0], orig: [], filas: [], filtros: {}, cargando: false, sigK: 1 };
+
+  function cliente(){
+    if (typeof supabase === 'undefined' || !supabase.createClient) return null;
+    base.sb = base.sb || supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    return base.sb;
+  }
+  function espacios(v){ return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
+  function numero(v){ var n = parseFloat(String(v == null ? '' : v).trim().replace(',', '.')); return isNaN(n) ? 0 : n; }
+  function valorCelda(c, v){ return c.tipo === 'num' ? numero(v) : espacios(v); }
+  function filaDistinta(L, a, b){
+    return L.cols.some(function(c){ return valorCelda(c, a[c.key]) !== valorCelda(c, b[c.key]); });
+  }
+  function firma(L, filas){
+    return JSON.stringify(filas.map(function(f){
+      return [f.id, f.position].concat(L.cols.map(function(c){ return valorCelda(c, f[c.key]); }));
+    }).sort(function(a, b){ return a[0] - b[0]; }));
+  }
+  function hayCambiosCfg(){
+    var L = C.lista;
+    if (C.filas.length !== C.orig.length) return true;
+    var porId = {}; C.orig.forEach(function(o){ porId[o.id] = o; });
+    return C.filas.some(function(f, i){
+      var o = porId[f.id];
+      return !o || filaDistinta(L, f, o) || (!L.agrupar && C.orig[i] && C.orig[i].id !== f.id);
+    });
+  }
+
+  async function leerTabla(L){
+    var sb = cliente();
+    if (!sb) throw new Error('No conecta con Supabase (en la vista previa del chat no conecta).');
+    var r = await conTiempo(sb.from(L.tabla).select('*').order('position').order('id'), 10000);
+    if (r.error) throw new Error(r.error.message);
+    return r.data;
+  }
+
+  async function cargarLista(L){
+    C.lista = L; C.filtros = {}; C.orig = []; C.filas = []; C.cargando = true;
+    pintarCfg();
+    try {
+      var data = await leerTabla(L);
+      C.orig = data;
+      C.filas = data.map(function(r){ var f = Object.assign({}, r); f._k = C.sigK++; return f; });
+      $('neg-cfg-err').textContent = '';
+    } catch(e){
+      $('neg-cfg-err').textContent = 'No se pudo leer la lista: ' + e.message;
+    }
+    C.cargando = false;
+    pintarCfg();
+  }
+
+  function abrirCfg(){
+    mostrar('neg-cfg');
+    cargarLista(C.lista);
+  }
+
+  function pintarTabsCfg(){
+    var tabs = $('neg-cfg-tabs'); tabs.innerHTML = '';
+    LISTAS.forEach(function(L){
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = L.nombre;
+      b.setAttribute('aria-pressed', String(L === C.lista));
+      b.addEventListener('click', function(){
+        if (L === C.lista) return;
+        if (hayCambiosCfg() && !confirm('Hay cambios sin guardar en ' + C.lista.nombre + '. ¿Descartarlos?')) return;
+        cargarLista(L);
+      });
+      tabs.appendChild(b);
+    });
+  }
+
+  function visibles(){
+    var L = C.lista;
+    return C.filas.filter(function(f){
+      return L.cols.every(function(c){
+        var q = norm(C.filtros[c.key] || '');
+        return !q || norm(f[c.key]).indexOf(q) !== -1;
+      });
+    });
+  }
+
+  function marcarFila(tr, f){
+    var o = f.id != null ? C.orig.find(function(x){ return x.id === f.id; }) : null;
+    tr.className = !o ? 'nueva' : (filaDistinta(C.lista, f, o) ? 'mod' : '');
+  }
+
+  function pintarCfg(){
+    var L = C.lista;
+    pintarTabsCfg();
+    $('neg-cfg-info').textContent = 'Es la misma lista que la ⚙ de ' + L.app + '. No la edites en los dos lados a la vez: gana el último que guarda.' +
+      (L.agrupar ? ' Al guardar se ordena por categoría y alfabético, igual que en Mise.' : '');
+    var head = $('neg-cfg-head'), body = $('neg-cfg-body');
+    head.innerHTML = ''; body.innerHTML = '';
+
+    var trh = document.createElement('tr'), trf = document.createElement('tr');
+    trf.className = 'filtro';
+    L.cols.forEach(function(c){
+      var th = document.createElement('th'); th.textContent = c.label; trh.appendChild(th);
+      var tf = document.createElement('th'), inp = document.createElement('input');
+      inp.type = 'text'; inp.placeholder = 'Filtrar…'; inp.value = C.filtros[c.key] || '';
+      inp.addEventListener('input', function(){ C.filtros[c.key] = inp.value; pintarFilasCfg(); });
+      tf.appendChild(inp); trf.appendChild(tf);
+    });
+    var thA = document.createElement('th'); thA.textContent = ''; trh.appendChild(thA);
+    trf.appendChild(document.createElement('th'));
+    head.appendChild(trh); head.appendChild(trf);
+
+    // sugerencias (categorías, proveedores) con los valores que ya existen
+    var dls = $('neg-cfg-dls'); dls.innerHTML = '';
+    L.cols.filter(function(c){ return c.tipo === 'sugerido'; }).forEach(function(c){
+      var dl = document.createElement('datalist'); dl.id = 'neg-dl-' + c.key;
+      var vistos = {};
+      C.filas.concat(C.orig).forEach(function(f){
+        var v = espacios(f[c.key]); if (v && !vistos[norm(v)]) { vistos[norm(v)] = 1; var o = document.createElement('option'); o.value = v; dl.appendChild(o); }
+      });
+      dls.appendChild(dl);
+    });
+    pintarFilasCfg();
+  }
+
+  function pintarFilasCfg(){
+    var L = C.lista, body = $('neg-cfg-body'); body.innerHTML = '';
+    var vis = visibles();
+    vis.forEach(function(f, vi){
+      var tr = document.createElement('tr');
+      L.cols.forEach(function(c){
+        var td = document.createElement('td'), inp;
+        if (c.tipo === 'opcion') {
+          inp = document.createElement('select');
+          c.opciones.forEach(function(op){ var o = document.createElement('option'); o.value = op; o.textContent = op; inp.appendChild(o); });
+          var actual = espacios(f[c.key]);
+          if (c.key === 'proto') actual = /^cierre/i.test(actual) ? 'Cierre' : 'Apertura';
+          inp.value = c.opciones.indexOf(actual) !== -1 ? actual : c.opciones[0];
+          if (f[c.key] !== inp.value) f[c.key] = inp.value;
+        } else {
+          inp = document.createElement('input'); inp.type = 'text';
+          inp.value = f[c.key] == null ? '' : String(f[c.key]);
+          if (c.tipo === 'num') { inp.inputMode = 'decimal'; inp.className = 'num'; }
+          if (c.tipo === 'sugerido') inp.setAttribute('list', 'neg-dl-' + c.key);
+          if (c.ancho) inp.className = 'wide';
+        }
+        inp.addEventListener(c.tipo === 'opcion' ? 'change' : 'input', function(){ f[c.key] = inp.value; marcarFila(tr, f); pintarCuentaCfg(); });
+        td.appendChild(inp); tr.appendChild(td);
+      });
+      var acc = document.createElement('td'); acc.className = 'cfg-acc';
+      function boton(txt, title, fn, off){
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.title = title;
+        b.disabled = !!off; b.addEventListener('click', fn); acc.appendChild(b);
+      }
+      if (!L.agrupar) {
+        boton('↑', 'Subir', function(){ mover(f, vis[vi - 1]); }, vi === 0);
+        boton('↓', 'Bajar', function(){ mover(f, vis[vi + 1]); }, vi === vis.length - 1);
+      }
+      boton('✕', 'Borrar fila', function(){
+        C.filas = C.filas.filter(function(x){ return x !== f; }); pintarFilasCfg();
+      });
+      tr.appendChild(acc);
+      marcarFila(tr, f);
+      body.appendChild(tr);
+    });
+    var vac = $('neg-cfg-empty');
+    vac.hidden = C.cargando || vis.length !== 0;
+    vac.textContent = C.filas.length ? 'Ninguna fila coincide con los filtros.' : 'La lista está vacía.';
+    if (C.cargando) { vac.hidden = false; vac.textContent = 'Cargando…'; }
+    pintarCuentaCfg();
+  }
+
+  function pintarCuentaCfg(){
+    $('neg-cfg-count').textContent = C.filas.length + ' filas' + (hayCambiosCfg() ? ' · cambios sin guardar' : '');
+  }
+
+  function mover(f, otra){
+    if (!otra) return;
+    var i = C.filas.indexOf(f), j = C.filas.indexOf(otra);
+    C.filas[i] = otra; C.filas[j] = f;
+    pintarFilasCfg();
+  }
+
+  $('neg-cfg-add').addEventListener('click', function(){
+    var L = C.lista, f = { id: null, _k: C.sigK++ };
+    L.cols.forEach(function(c){
+      f[c.key] = c.tipo === 'num' ? 0 : (c.tipo === 'opcion' ? c.opciones[0] : (C.filtros[c.key] || ''));
+    });
+    C.filas.push(f);
+    pintarFilasCfg();
+    var inputs = $('neg-cfg-body').querySelectorAll('tr:last-child input.wide');
+    if (inputs.length) { inputs[0].focus(); inputs[0].scrollIntoView({ block: 'center' }); }
+  });
+
+  $('neg-cfg-reload').addEventListener('click', function(){
+    if (hayCambiosCfg() && !confirm('¿Descartar los cambios sin guardar?')) return;
+    cargarLista(C.lista);
+  });
+  $('neg-cfg-back').addEventListener('click', function(ev){
+    ev.preventDefault();
+    if (hayCambiosCfg() && !confirm('Hay cambios sin guardar. ¿Salir igual?')) return;
+    pintarLista(); mostrar('neg-list');
+  });
+
+  $('neg-cfg-save').addEventListener('click', async function(){
+    var L = C.lista, err = $('neg-cfg-err'), btn = this;
+    err.textContent = '';
+    if (!hayCambiosCfg()) { err.textContent = 'No hay cambios para guardar.'; return; }
+
+    // 1) limpiar como lo hace cada app
+    var filas = C.filas.map(function(f){
+      var o = { id: f.id };
+      L.cols.forEach(function(c){
+        var v = valorCelda(c, f[c.key]);
+        if (c.tipo !== 'num') {
+          if (!v && c.vacio !== undefined) v = c.vacio;
+          if (c.tipo === 'opcion' && c.opciones.indexOf(v) === -1) v = c.opciones[0];
+        }
+        o[c.key] = v;
+      });
+      if (L.limpiar) L.limpiar(o);
+      return o;
+    });
+    // mismas mayúsculas para la misma categoría / proveedor (el agrupado depende del texto exacto)
+    L.cols.filter(function(c){ return c.tipo === 'sugerido'; }).forEach(function(c){
+      var canon = {};
+      C.orig.concat(filas).forEach(function(o){ var v = espacios(o[c.key]), k = norm(v); if (v && !(k in canon)) canon[k] = v; });
+      filas.forEach(function(o){ if (o[c.key]) o[c.key] = canon[norm(o[c.key])]; });
+    });
+    var req = L.cols.filter(function(c){ return c.req; });
+    var incompletas = filas.filter(function(o){ return req.some(function(c){ return !o[c.key]; }); }).length;
+    if (incompletas && !confirm(incompletas + ' fila(s) sin ' + req[0].label.toLowerCase() + ' se van a descartar. ¿Seguir?')) return;
+    filas = filas.filter(function(o){ return !req.some(function(c){ return !o[c.key]; }); });
+    if (!filas.length) { err.textContent = 'La lista quedó vacía: no se guarda.'; return; }
+    if (L.agrupar) {
+      var orden = {}, n = 0;
+      filas.forEach(function(r){ var k = r.cat || ''; if (!(k in orden)) orden[k] = n++; });
+      filas.sort(function(a, b){
+        var ca = orden[a.cat || ''], cb = orden[b.cat || ''];
+        return ca !== cb ? ca - cb : String(a.txt || '').localeCompare(String(b.txt || ''), 'es', { sensitivity: 'base' });
+      });
+    }
+    filas.forEach(function(o, i){ o.position = i; });
+
+    btn.disabled = true;
+    try {
+      // 2) ¿alguien la cambió desde la app mientras editabas?
+      var actual = await leerTabla(L);
+      if (firma(L, actual) !== firma(L, C.orig) &&
+          !confirm('Esta lista cambió desde ' + L.app + ' mientras la editabas. Si guardás, pisás esos cambios. ¿Guardar igual?')) { btn.disabled = false; return; }
+      var porId = {}; actual.forEach(function(o){ porId[o.id] = o; });
+      var quedan = {}; filas.forEach(function(o){ if (o.id != null) quedan[o.id] = 1; });
+      var nuevas = filas.filter(function(o){ return o.id == null || !porId[o.id]; });
+      var cambiadas = filas.filter(function(o){
+        var a = o.id != null && porId[o.id];
+        return a && (filaDistinta(L, o, a) || a.position !== o.position);
+      });
+      var borrar = actual.filter(function(o){ return !quedan[o.id]; }).map(function(o){ return o.id; });
+      var sb = cliente();
+      function sinId(o){ var x = Object.assign({}, o); delete x.id; return x; }
+
+      // 3) primero altas y cambios, al final bajas (si algo falla a mitad, no se pierde nada)
+      if (nuevas.length) {
+        var ri = await sb.from(L.tabla).insert(nuevas.map(sinId));
+        if (ri.error) throw new Error(ri.error.message);
+      }
+      for (var i = 0; i < cambiadas.length; i += 8) {
+        var tanda = await Promise.all(cambiadas.slice(i, i + 8).map(function(o){
+          return sb.from(L.tabla).update(sinId(o)).eq('id', o.id);
+        }));
+        tanda.forEach(function(r){ if (r.error) throw new Error(r.error.message); });
+      }
+      if (borrar.length) {
+        var rb = await sb.from(L.tabla).delete().in('id', borrar);
+        if (rb.error) throw new Error(rb.error.message);
+      }
+      await cargarLista(L);
+      $('neg-cfg-err').textContent = '';
+      $('neg-cfg-count').textContent = C.filas.length + ' filas · ✓ guardado (' + nuevas.length + ' nuevas, ' + cambiadas.length + ' cambiadas, ' + borrar.length + ' borradas)';
+    } catch(e){
+      err.textContent = 'No se pudo guardar: ' + e.message + '. Tocá "Recargar" para ver cómo quedó.';
+    } finally { btn.disabled = false; }
+  });
+
+  $('neg-cfg-btn').addEventListener('click', abrirCfg);
+
+  /* ---------- entrar / salir ---------- */
+  $('neg-open').addEventListener('click', abrirNegocio);
+  $('neg-lock-now').addEventListener('click', bloquear);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-neg-exit]'), function(a){
+    a.addEventListener('click', function(ev){ ev.preventDefault(); mostrar('view-list'); });
+  });
 })();
 </script>
