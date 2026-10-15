@@ -319,6 +319,10 @@
   .grid input.cell:focus{ border-color:var(--accent); }
   .grid td.rownum{ font-family:'IBM Plex Mono',monospace; color:var(--accent); background:var(--chip); }
   .grid tbody tr:nth-child(even) td.rownum{ background:#ebe4d6; }
+  .grid td.rownum{ cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .grid tr.dragging td{ background:#dbe5f4 !important; }
+  .grid tr.dragging td.rownum{ background:var(--accent) !important; color:#fff; cursor:grabbing; }
+  body.rowdrag, body.rowdrag *{ cursor:grabbing !important; user-select:none !important; -webkit-user-select:none !important; }
   .addrow{ border-radius:1.5mm; border:1px dashed #d8d0c2; font:700 8.5pt/1.1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; padding:14px; }
   .cfg .restore{ font-family:'IBM Plex Mono',monospace; font-size:12px; }
   .pop{ border-radius:1.5mm; }
@@ -417,15 +421,12 @@ function rebuildColors(){
 }
 function catColor(cat){ return _catColors[cat] || CAT_PALETTE[0]; }
 
-/* ---- orden: categoría (según aparición) y dentro, ítem alfabético ---- */
+/* ---- orden: categoría (según aparición) y dentro, el orden de la lista
+   (se cambia arrastrando el # en Configuración) ---- */
 function sortGrouped(rows){
   const order={}; let n=0;
   rows.forEach(r=>{ const c=(r.cat||""); if(!(c in order)) order[c]=n++; });
-  return rows.slice().sort((a,b)=>{
-    const ca=order[a.cat||""], cb=order[b.cat||""];
-    if(ca!==cb) return ca-cb;
-    return String(a.txt||"").localeCompare(String(b.txt||""),"es",{sensitivity:"base"});
-  });
+  return rows.slice().sort((a,b)=> order[a.cat||""] - order[b.cat||""]);
 }
 
 /* ---- mazo (se reconstruye cuando cargan/cambian los ítems) ---- */
@@ -613,7 +614,7 @@ async function saveDataset(tab, rows){
     return o;
   }).filter(r => cols.filter(c=>c.required).every(c => r[c.key]));
   if(clean.length===0) return { ok:false, msg:"La lista quedó vacía." };
-  const ordered = tab.id==="items" ? sortGrouped(clean) : clean;  // ítems: categoría + alfabético
+  const ordered = tab.id==="items" ? sortGrouped(clean) : clean;  // ítems: agrupados por categoría, en el orden elegido
   ordered.forEach((r,i)=> r.position=i);
   const cleanSorted = ordered;
   if(sb){
@@ -728,6 +729,8 @@ function addTaskControl(onAdd){
 function render(){
   const prevList = app.querySelector(".list");
   const sc = prevList ? prevList.scrollTop : 0;
+  const prevTbl = app.querySelector(".tbl-wrap");
+  const tsc = prevTbl ? prevTbl.scrollTop : 0;
   app.innerHTML="";
   const w=el("div",{cls:"wrap"});
   if(state==="home") home(w);
@@ -738,6 +741,8 @@ function render(){
   app.appendChild(w);
   const newList = app.querySelector(".list");
   if(newList) newList.scrollTop = sc;
+  const newTbl = app.querySelector(".tbl-wrap");
+  if(newTbl) newTbl.scrollTop = tsc;
   cacheList();
 }
 
@@ -849,6 +854,54 @@ function rowVisible(r){
   });
 }
 
+/* ---- mover filas arrastrando el # (mouse y dedo) ---- */
+function startRowDrag(e, tr, tbody){
+  if(e.button!==undefined && e.button!==0) return;
+  e.preventDefault();
+  const handle=e.currentTarget, wrap=tbody.closest(".tbl-wrap");
+  const before=[...tbody.children].map(r=>+r.dataset.idx);
+  let lastY=e.clientY, raf=0, active=true;
+  try{ handle.setPointerCapture(e.pointerId); }catch(_){}
+  tr.classList.add("dragging"); document.body.classList.add("rowdrag"); buzz(10);
+  function place(){
+    const rows=[...tbody.children].filter(r=>r!==tr);
+    const next=rows.find(r=>{ const b=r.getBoundingClientRect(); return lastY < b.top + b.height/2; });
+    if(next){ if(tr.nextSibling!==next) tbody.insertBefore(tr, next); }
+    else if(tbody.lastChild!==tr) tbody.appendChild(tr);
+  }
+  function tick(){   // auto-scroll cerca de los bordes
+    if(!active) return;
+    const b=wrap.getBoundingClientRect(), edge=44;
+    let v=0;
+    if(lastY < b.top+edge) v=-Math.ceil((b.top+edge-lastY)/4);
+    else if(lastY > b.bottom-edge) v=Math.ceil((lastY-(b.bottom-edge))/4);
+    if(v){ wrap.scrollTop+=v; place(); }
+    raf=requestAnimationFrame(tick);
+  }
+  raf=requestAnimationFrame(tick);
+  const move=ev=>{ if(ev.pointerId!==e.pointerId) return; lastY=ev.clientY; place(); };
+  const end=ev=>{
+    if(ev.pointerId!==e.pointerId) return;
+    active=false; cancelAnimationFrame(raf);
+    window.removeEventListener("pointermove",move);
+    window.removeEventListener("pointerup",end);
+    window.removeEventListener("pointercancel",end);
+    document.body.classList.remove("rowdrag");
+    const after=[...tbody.children].map(r=>+r.dataset.idx);
+    if(after.join()!==before.join()){
+      // las filas visibles se reacomodan en sus mismos lugares (respeta filtros)
+      const slots=before.slice().sort((a,b)=>a-b), old=CFG_ROWS.slice();
+      after.forEach((from,k)=>{ CFG_ROWS[slots[k]]=old[from]; });
+      CFG_MSG="Orden cambiado. Tocá Guardar cambios.";
+    }
+    render();
+  };
+  // en window: al mover la fila en la tabla el navegador suelta la captura del puntero
+  window.addEventListener("pointermove",move);
+  window.addEventListener("pointerup",end);
+  window.addEventListener("pointercancel",end);
+}
+
 function config(w){
   w.className="wrap cfg";
   const tabsRow=el("div",{cls:"cfg-tabs"});
@@ -858,8 +911,8 @@ function config(w){
     tabsRow.appendChild(b);
   });
   const hint = CFG_TAB==="items"
-    ? 'Editá cada celda. El <b>embudo</b> filtra como en Sheets. Las cantidades van como comentario durante el checklist, no acá.'
-    : 'Asigná a cada tarea un <b>día</b> (o “Todos los días”). Aparecen al final del checklist el día que corresponde.';
+    ? 'Editá cada celda. El <b>embudo</b> filtra como en Sheets. Las cantidades van como comentario durante el checklist, no acá. Arrastrá el <b>#</b> para cambiar el orden.'
+    : 'Asigná a cada tarea un <b>día</b> (o “Todos los días”). Aparecen al final del checklist el día que corresponde. Arrastrá el <b>#</b> para cambiar el orden.';
   const head=el("div",{cls:"head"},
     el("h2",{text:"Configuración"}),
     tabsRow,
@@ -886,8 +939,10 @@ function config(w){
   CFG_ROWS.forEach((r,idx)=>{
     if(!rowVisible(r)) return;
     shown++;
-    const tr=el("tr");
-    tr.appendChild(el("td",{cls:"rownum",text:String(shown)}));
+    const tr=el("tr",{"data-idx":idx});
+    const num=el("td",{cls:"rownum",text:String(shown),title:"Arrastrá para mover"});
+    num.addEventListener("pointerdown",e=>startRowDrag(e, tr, tbody));
+    tr.appendChild(num);
     CFG_COLS.forEach(c=>{
       if(c.type==="select"){
         const v=r[c.key]||"";
