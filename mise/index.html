@@ -742,7 +742,8 @@ function render(){
   const newList = app.querySelector(".list");
   if(newList) newList.scrollTop = sc;
   const newTbl = app.querySelector(".tbl-wrap");
-  if(newTbl) newTbl.scrollTop = tsc;
+  if(newTbl) newTbl.scrollTop = _tblTop ? 0 : tsc;
+  _tblTop = false;
   cacheList();
 }
 
@@ -808,6 +809,7 @@ let CFG_ROWS = [];          // filas de la pestaña activa (referencia a CFG_ROW
 let CFG_FILTERS = {};       // filtros de la pestaña activa
 let CFG_COLS = COLUMNS;     // columnas de la pestaña activa
 let CFG_MSG = "";
+let _tblTop = false;        // tras agregar una fila: mostrar la tabla desde arriba
 let _pendingFocus = null;   // {idx,key} para enfocar tras re-render
 let CFG_TAB = "items";
 let CFG_ROWS_BY = { items:[], tareas:[] };
@@ -975,13 +977,14 @@ function config(w){
   const add=el("button",{cls:"addrow",text:addLabel});
   add.addEventListener("click",()=>{
     CFG_FILTERS_BY[CFG_TAB]={}; CFG_FILTERS=CFG_FILTERS_BY[CFG_TAB]; // limpiar filtros para ver la fila nueva
-    const lastCat = CFG_ROWS.length? CFG_ROWS[CFG_ROWS.length-1].cat : "";
+    const firstCat = CFG_ROWS.length? CFG_ROWS[0].cat : "";   // la fila nueva va arriba de todo
     const nr={};
     CFG_COLS.forEach(c=>{
-      nr[c.key] = c.key==="cat" ? lastCat : (c.options ? (c.emptyDefault||c.options[0]) : "");
+      nr[c.key] = c.key==="cat" ? firstCat : (c.options ? (c.emptyDefault||c.options[0]) : "");
     });
-    CFG_ROWS.push(nr);
-    _pendingFocus = { idx: CFG_ROWS.length-1, key:"txt" };
+    CFG_ROWS.unshift(nr);
+    _pendingFocus = { idx: 0, key:"txt" };
+    _tblTop = true;
     render();
   });
 
