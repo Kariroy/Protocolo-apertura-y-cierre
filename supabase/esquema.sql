@@ -58,6 +58,7 @@ create table public.mise_items (
   ctx text,
   txt text not null,
   "position" integer not null default 0,
+  descripcion text,                              -- 009: cuándo hace falta / cuánto (opcional)
   constraint mise_items_pkey primary key (id)
 );
 

@@ -285,6 +285,8 @@
   .cnt{ font-family:'IBM Plex Mono',monospace; }
   .card{ border-radius:2mm; border-top-width:1mm; box-shadow:0 14px 30px -22px rgba(28,26,23,.45); }
   .card .txt{ font:700 32px/1.1 Archivo,sans-serif; letter-spacing:-.015em; }
+  .card .desc{ margin-top:10px; font:400 17px/1.35 Archivo,sans-serif; color:var(--muted); }
+  .task .tdesc{ margin-top:3px; font:400 14px/1.35 Archivo,sans-serif; color:var(--muted); }
   .cname{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
   .cdot{ border-radius:.4mm; width:1.6mm; height:3.8mm; }
   .card .ctx{ font-family:'IBM Plex Mono',monospace; border-radius:1mm; }
@@ -363,7 +365,8 @@ const ADMIN_PIN   = "1234";         // PIN para abrir Configuración
    emptyDefault = valor si queda vacío (para columnas no requeridas) */
 const COLUMNS = [
   { key:"cat", label:"Categoría", type:"select", emptyDefault:"Sin categoría" },
-  { key:"txt", label:"Ítem",      type:"text",   required:true }
+  { key:"txt", label:"Ítem",      type:"text",   required:true },
+  { key:"descripcion", label:"Descripción", type:"text" }   // cuándo hace falta / cuánto (opcional)
 ];
 
 const TAREAS_TABLE = "mise_tareas";   // tareas del día (limpieza, semanales, etc.)
@@ -445,7 +448,7 @@ function buildDeckFromData(data){
 function buildDeckFromRows(rows){
   let uid=0;
   const ordered = sortGrouped(rows.slice().sort((a,b)=>(a.position||0)-(b.position||0)));
-  return ordered.map(r => ({ id:uid++, cat:r.cat, ctx:r.ctx||null, txt:r.txt, comment:null }));
+  return ordered.map(r => ({ id:uid++, cat:r.cat, ctx:r.ctx||null, txt:r.txt, desc:r.descripcion||null, comment:null }));
 }
 function dataToRows(data){
   const rows=[]; let p=0;
@@ -623,7 +626,10 @@ async function saveDataset(tab, rows){
   if(sb){
     try{
       await sb.from(tab.table).delete().gte("id", 0);
-      const { error } = await sb.from(tab.table).insert(cleanSorted);
+      let { error } = await sb.from(tab.table).insert(cleanSorted);
+      if(error && /descripcion/.test(error.message||"")){   // falta correr 009: guardar sin descripción
+        ({ error } = await sb.from(tab.table).insert(cleanSorted.map(({descripcion, ...r})=>r)));
+      }
       if(error) throw error;
       if(tab.id==="items"){ const items = await fetchItems(); setDeck(buildDeckFromRows(items)); }
     }catch(e){ return { ok:false, msg:"No se pudo guardar en Supabase." }; }
@@ -831,7 +837,7 @@ function useTab(id){
 
 async function enterConfig(){
   CFG_MSG="";
-  CFG_ROWS_BY = { items: DECK.map(d=>({ cat:d.cat||"", txt:d.txt||"" })), tareas: [] };
+  CFG_ROWS_BY = { items: DECK.map(d=>({ cat:d.cat||"", txt:d.txt||"", descripcion:d.desc||"" })), tareas: [] };
   CFG_FILTERS_BY = { items:{}, tareas:{} };
   useTab("items");
   state="config"; render();
@@ -1061,7 +1067,7 @@ function config(w){
 /* recarga las filas de la pestaña activa desde su fuente (tras guardar/restaurar) */
 async function reloadCurTab(){
   if(CFG_TAB==="items"){
-    CFG_ROWS_BY.items = DECK.map(d=>({ cat:d.cat||"", txt:d.txt||"" }));
+    CFG_ROWS_BY.items = DECK.map(d=>({ cat:d.cat||"", txt:d.txt||"", descripcion:d.desc||"" }));
     CFG_ROWS = CFG_ROWS_BY.items;
   } else {
     try{
@@ -1227,6 +1233,7 @@ function cardEl(item,isTop,flash,stage){
   c.appendChild(el("div",{cls:"tag listo",text:"Listo"}));
   c.appendChild(el("div",{cls:"cathead"}, el("span",{cls:"cdot"}), el("span",{cls:"cname",text:item.cat})));
   c.appendChild(el("div",{cls:"txt",text:item.txt}));
+  if(item.desc) c.appendChild(el("div",{cls:"desc",text:item.desc}));
   if(!isTop){ c.style.transform="scale(.96) translateY(10px)"; c.style.opacity=".6"; return c; }
   c.appendChild(commentAffordance(item));
   c._item=item;
@@ -1361,6 +1368,8 @@ function taskRow(t, isOn, onToggle){
   );
   const info=el("div",{});
   info.appendChild(el("div",{cls:"lbl",text:t.txt}));
+  const desc = t.desc || (DECK.find(d=>d.cat===t.cat && d.txt===t.txt)||{}).desc;
+  if(desc) info.appendChild(el("div",{cls:"tdesc",text:desc}));
   info.appendChild(commentEditable(t));
   row.appendChild(info);
   row.addEventListener("click",onToggle);
