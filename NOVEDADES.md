@@ -6,6 +6,7 @@ No es un changelog de todo: solo lo que afecta a otra app, al hub, a la base o a
 
 ---
 
+- **17-oct-2026 · Protocolos** · Se sacó el botón "Restaurar lista original" de ⚙ Configuración. Aurelio pide que **ninguna app** lo tenga: **para Mise, Stock y Panel:** sacarlo si lo tienen. **Para Inicio y seguridad:** propuesta de regla en `CLAUDE.md`: "No poner botones de restaurar/reiniciar listas a valores por defecto en ninguna app".
 - **15-oct-2026 · Protocolos** · La lista del día ahora toma los ítems actuales de `protocolos_items` al abrir un protocolo (conserva lo marcado por texto; los días terminados no cambian). **Para el Panel (⚙ Listas):** lo que se edite ahí ya se ve en la lista de hoy. Sin cambios en la base.
 - **15-oct-2026 · Mise and Please** · Base: `009_mise_items_descripcion.sql`: columna opcional `mise_items.descripcion` (cuándo hace falta / cuánto; ej. "cargar si hay menos de la mitad"). Se ve en la tarjeta del swipe y en A producir; `esquema.sql` actualizado. **Para el Panel (⚙ Listas):** sumar la columna Descripción al editar `mise_items`. Próxima migración: `010`.
 - **15-oct-2026 · Mise and Please** · En ⚙ Configuración (Ítems y Tareas del día) las filas se reordenan arrastrando el #. El orden manda: `mise_items` ya no se ordena alfabético dentro de cada categoría, sino por `position` (agrupado por categoría según aparición); lo mismo en el swipe y en la lista A producir. **Para el Panel (⚙ Listas):** respetar `position` y no reordenar alfabético al guardar `mise_items`/`mise_tareas`.
