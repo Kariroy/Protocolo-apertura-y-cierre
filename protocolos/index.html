@@ -91,8 +91,6 @@
   .addrow{ margin-top:10px; border:1.5px dashed var(--line); background:transparent; color:var(--muted); border-radius:12px;
     padding:13px; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; width:100%; }
   .addrow:active{ transform:scale(.99); }
-  .cfg .restore{ background:none; border:none; color:var(--muted); font-family:inherit; font-size:13px; font-weight:700;
-    text-decoration:underline; cursor:pointer; padding:8px 2px; align-self:flex-start; }
   .cfg .msg{ font-size:13px; font-weight:700; color:var(--amber); min-height:18px; margin:4px 2px; }
   .cfg .cfoot{ padding:6px 16px calc(env(safe-area-inset-bottom) + 14px); display:flex; gap:12px; }
   .cfg .cfoot .btn{ flex:1; padding:16px; }
@@ -229,7 +227,6 @@
   .grid td.rownum{ font-family:'IBM Plex Mono',monospace; color:var(--accent); background:var(--chip); }
   .grid tbody tr:nth-child(even) td.rownum{ background:#ebe4d6; }
   .addrow{ border-radius:1.5mm; border:1px dashed #d8d0c2; font:700 8.5pt/1.1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; padding:14px; }
-  .cfg .restore{ font-family:'IBM Plex Mono',monospace; font-size:12px; }
 
   .seg{ background:var(--chip); border-radius:1.5mm; }
   .segbtn{ border-radius:1mm; font:700 8.5pt/1.1 'IBM Plex Mono',monospace; letter-spacing:.06em; text-transform:uppercase; padding:11px; }
@@ -506,20 +503,6 @@ async function saveItems(rows){
     }catch(e){ return { ok:false, msg:"No se pudo guardar en Supabase." }; }
   } else {
     setItemsFromRows(clean);
-  }
-  return { ok:true };
-}
-async function restoreDefaults(){
-  if(sb){
-    try{
-      await sb.from(ITEMS_TABLE).delete().gte("id", 0);
-      await seedItems();
-      var items = await fetchItems();
-      setItemsFromRows(items);
-    }catch(e){ return { ok:false, msg:"No se pudo restaurar." }; }
-  } else {
-    PROTOCOLOS.apertura.items = DEFAULT_ITEMS.apertura.slice();
-    PROTOCOLOS.cierre.items   = DEFAULT_ITEMS.cierre.slice();
   }
   return { ok:true };
 }
@@ -1044,21 +1027,8 @@ function renderConfig(wrap){
   });
 
   var msg = el("div",{cls:"msg",text:CFG_MSG});
-  var restore = el("button",{cls:"restore",text:"Restaurar lista original"});
-  restore.addEventListener("click",function(){
-    confirmDialog("Esto reemplaza TODOS los ítems por la lista original y borra tus cambios sin guardar. ¿Seguir?", async function(){
-      CFG_MSG = "Restaurando…"; render();
-      var res = await restoreDefaults();
-      if(res.ok){
-        CFG_ROWS = [];
-        PROTO_KEYS.forEach(function(k){ PROTOCOLOS[k].items.forEach(function(txt){ CFG_ROWS.push({proto:PROTO_LABEL[k], txt:txt}); }); });
-        CFG_FILTERS = {}; CFG_MSG = "Lista original cargada. Tocá Guardar para dejarla así.";
-      } else CFG_MSG = res.msg;
-      render();
-    }, "Sí, restaurar");
-  });
 
-  var body = el("div",{cls:"cbody"}, tblWrap, add, restore, msg);
+  var body = el("div",{cls:"cbody"}, tblWrap, add, msg);
 
   var cancel = el("button",{cls:"btn ghost",text:"Cancelar"});
   var save = el("button",{cls:"btn",text:"Guardar cambios"});
