@@ -149,6 +149,19 @@ create table public.stock_registro_items (
 );
 
 
+-- ============ Guías ============
+
+-- 010: qué fichas de recipes-data ve el personal (⚙ Fichas activas en guias/).
+-- Una fila por ficha, por su número. Sin fila = oculta (una ficha nueva arranca oculta).
+create table public.guias_estado (
+  num text not null,                 -- número de la ficha ("01", "02", …)
+  nombre text,                       -- solo de referencia
+  activa boolean not null default false,
+  updated_at timestamp with time zone not null default now(),
+  constraint guias_estado_pkey primary key (num)
+);
+
+
 -- ============ Tabla de prueba (ninguna app la usa; se puede borrar) ============
 
 create table public.notas_prueba (
@@ -174,6 +187,7 @@ alter table public.mise_registros       enable row level security;
 alter table public.stock_items          enable row level security;
 alter table public.stock_registros      enable row level security;
 alter table public.stock_registro_items enable row level security;
+alter table public.guias_estado         enable row level security;
 alter table public.notas_prueba         enable row level security;
 
 create policy "acceso publico protocolos_items" on public.protocolos_items
@@ -195,6 +209,8 @@ create policy "acceso publico stock_items" on public.stock_items
 create policy "acceso publico stock_registros" on public.stock_registros
   as permissive for all to anon using (true) with check (true);
 create policy "acceso publico stock_registro_items" on public.stock_registro_items
+  as permissive for all to anon using (true) with check (true);
+create policy "acceso publico guias_estado" on public.guias_estado
   as permissive for all to anon using (true) with check (true);
 create policy "acceso publico prueba" on public.notas_prueba
   as permissive for all to public using (true) with check (true);
