@@ -630,6 +630,7 @@ async function init(){
     if(state.screen === "home") render();
   }catch(e){ /* respaldo: items por defecto */ }
   try{ await fetchHoras(); if(state.screen==="home" || state.screen==="check") render(); }catch(e){ /* sin tabla: sin límite */ }
+  autoOpen();
   var lastLock = lockKey();
   setInterval(function(){
     var k = lockKey();
@@ -637,11 +638,20 @@ async function init(){
     lastLock = k;
   }, 30000);
 }
+/* Al entrar a la app: si justo un protocolo (con horario cargado) está en su horario, se abre directo.
+   Solo una vez, y solo si la persona todavía no tocó nada. Con "←" vuelve a la pantalla de elegir. */
+var _touched = false;
+function autoOpen(){
+  if(_touched || state.screen!=="home") return;
+  var abiertos = PROTO_KEYS.filter(function(k){ return (DESDE[k] || HASTA[k]) && !fueraHora(k); });
+  if(abiertos.length===1) openProto(abiertos[0]);
+}
 function lockKey(){ return PROTO_KEYS.map(function(k){ return fueraHora(k) || "-"; }).join(","); }
 
 function goHome(){ stopRealtime(); state.screen="home"; state.protoKey=null; CHK=[]; NOTA=""; DIA_ID=null; render(); }
 
 async function openProto(key){
+  _touched = true;
   state.protoKey = key; state.screen = "check"; NOTA = ""; DIA_ID = null;
   CHK = seedChk(key);
   render();
@@ -844,7 +854,7 @@ function renderCheck(wrap){
 
 /* ---------- PIN ---------- */
 var PIN_NEXT = "config";   // a dónde va después del PIN: "config" | "registro"
-function openPin(next){ _pinErr=""; PIN_NEXT = (next==="registro") ? "registro" : "config"; state.screen="pin"; render(); }
+function openPin(next){ _touched = true; _pinErr=""; PIN_NEXT = (next==="registro") ? "registro" : "config"; state.screen="pin"; render(); }
 function renderPin(wrap){
   wrap.className = "wrap full pin";
   var inp = el("input",{type:"password",inputmode:"numeric",autocomplete:"off",maxlength:"12",placeholder:"••••"});
