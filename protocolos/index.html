@@ -267,6 +267,8 @@
   .lockmsg{ margin:10px 0 4px; padding:11px 13px; border:1px solid #e6c9b3; background:#fbf1e8; color:var(--amber);
     border-radius:1.5mm; font-size:14px; font-weight:600; line-height:1.4; }
   .item.locked{ cursor:default; opacity:.55; }
+  .lockmsg.done{ border-color:#bfdccb; background:#eef7f1; color:var(--green); }
+  .finish.ok:disabled{ background:var(--green) !important; }
   .finish:disabled{ background:#b9b0a2 !important; cursor:default; transform:none; }
   .hdate .d2.late{ color:#b3261e; }
   .horas{ flex:1; overflow-y:auto; padding:16px; }
@@ -604,7 +606,8 @@ function startRealtime(proto, dia){
         if(!row) return;
         DIA_ID = row.id;
         CHK = normItems(row.items, proto);
-        if(!_notaFocus) NOTA = row.notas || "";
+        setTerminado(row);
+        if(!_notaFocus || TERMINADO) NOTA = row.notas || "";
         render();
       }catch(e){}
     })
@@ -616,6 +619,8 @@ var state = { screen:"home", protoKey:null };
 var CHK = [];          // [{txt, done}]
 var NOTA = "";
 var DIA_ID = null;     // id de la fila de hoy en Supabase
+var TERMINADO = null;  // null = no terminado; si no, hora "HH:MM" (o "") en que se marcó terminado → ya no se puede cambiar
+function setTerminado(row){ TERMINADO = (row && row.terminado) ? horaDe(row.terminado_at || row.updated_at) : null; }
 var _notaFocus = false;
 var app = document.getElementById("app");
 var _pinErr = "";
@@ -648,11 +653,11 @@ function autoOpen(){
 }
 function lockKey(){ return PROTO_KEYS.map(function(k){ return fueraHora(k) || "-"; }).join(","); }
 
-function goHome(){ stopRealtime(); state.screen="home"; state.protoKey=null; CHK=[]; NOTA=""; DIA_ID=null; render(); }
+function goHome(){ stopRealtime(); state.screen="home"; state.protoKey=null; CHK=[]; NOTA=""; DIA_ID=null; TERMINADO=null; render(); }
 
 async function openProto(key){
   _touched = true;
-  state.protoKey = key; state.screen = "check"; NOTA = ""; DIA_ID = null;
+  state.protoKey = key; state.screen = "check"; NOTA = ""; DIA_ID = null; TERMINADO = null;
   CHK = seedChk(key);
   render();
   if(!sb) return;
@@ -662,7 +667,7 @@ async function openProto(key){
     var row = await fetchDia(key, dia);
     if(!row) row = await createDia(key, dia);
     if(row){
-      DIA_ID = row.id; NOTA = row.notas || "";
+      DIA_ID = row.id; NOTA = row.notas || ""; setTerminado(row);
       if(row.terminado){ CHK = normItems(row.items, key); }   // día ya terminado: queda como se guardó (Registro)
       else {
         CHK = mergeItems(row.items, key);
@@ -675,7 +680,7 @@ async function openProto(key){
 }
 
 function toggleItem(row){
-  if(fueraHora(state.protoKey)){ render(); return; }
+  if(TERMINADO!==null || fueraHora(state.protoKey)){ render(); return; }
   row.done = !row.done;
   render();
   buzz(row.done ? 16 : 10);
@@ -684,7 +689,7 @@ function toggleItem(row){
 
 function finishProto(){
   var proto = state.protoKey;
-  if(fueraHora(proto)){ render(); return; }
+  if(TERMINADO!==null || fueraHora(proto)){ render(); return; }
   var faltan = CHK.filter(function(r){ return !r.done; }).length;
   var msg = faltan>0
     ? "Quedan "+faltan+" ítem"+(faltan>1?"s":"")+" sin marcar. ¿Marcar el protocolo de hoy como terminado igual? Queda guardado el registro del día."
@@ -790,7 +795,8 @@ function renderCheck(wrap){
   var esCierre = state.protoKey === "cierre";
   var horario = horarioTxt(state.protoKey);
   var fuera = fueraHora(state.protoKey);
-  var locked = !!fuera;
+  var terminado = TERMINADO!==null;
+  var locked = !!fuera || terminado;
 
   wrap.className = "wrap chk";
 
@@ -811,8 +817,9 @@ function renderCheck(wrap){
 
   /* lista */
   var list = el("div", { cls:"list" });
-  if(fuera==="antes") list.appendChild(el("div", { cls:"lockmsg", text:"Este protocolo se puede hacer desde las "+DESDE[state.protoKey]+". Todavía no se puede marcar ni terminar." }));
-  if(fuera==="despues") list.appendChild(el("div", { cls:"lockmsg", text:"Este protocolo se podía hacer hasta las "+HASTA[state.protoKey]+". Ya no se puede marcar ni terminar." }));
+  if(fuera==="antes" && !terminado) list.appendChild(el("div", { cls:"lockmsg", text:"Este protocolo se puede hacer desde las "+DESDE[state.protoKey]+". Todavía no se puede marcar ni terminar." }));
+  if(terminado) list.appendChild(el("div", { cls:"lockmsg done", text:"Protocolo terminado" + (TERMINADO ? " a las " + TERMINADO : "") + ". Ya no se puede cambiar." }));
+  else if(fuera==="despues") list.appendChild(el("div", { cls:"lockmsg", text:"Este protocolo se podía hacer hasta las "+HASTA[state.protoKey]+". Ya no se puede marcar ni terminar." }));
   CHK.forEach(function(row, i){
     var box = el("div", { cls:"box", style: row.done ? { background:accent, borderColor:accent } : {} },
       el("span",{html:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="display:block"><polyline points="20 6 9 17 4 12"/></svg>', style:{opacity: row.done?"1":"0", display:"block"}})
@@ -843,8 +850,8 @@ function renderCheck(wrap){
 
   /* footer: marcar como terminado */
   var syncTxt = sb ? "Lista compartida en vivo" : "Sin conexión — modo local (no se comparte)";
-  var fin = el("button", { cls:"finish", style:{ background:accent }, onClick:finishProto },
-    icon("checkCircle", 20, "#fff", 2.4), locked ? "Fuera de horario" : "Marcar como terminado");
+  var fin = el("button", { cls:"finish"+(terminado?" ok":""), style:{ background:accent }, onClick:finishProto },
+    icon("checkCircle", 20, "#fff", 2.4), terminado ? ("Terminado" + (TERMINADO ? " " + TERMINADO : "")) : locked ? "Fuera de horario" : "Marcar como terminado");
   if(locked) fin.disabled = true;
   wrap.appendChild(el("div", { cls:"cfoot" },
     fin,
