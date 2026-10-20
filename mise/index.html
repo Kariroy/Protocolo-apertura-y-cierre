@@ -697,14 +697,16 @@ function confirmDialog(msg, onYes, yesLabel){
   app.appendChild(scrim);
 }
 
-/* agregar una tarea al checklist a mano (categoría "Agregados") */
+/* agregar una tarea al checklist a mano: "Tareas de hoy" (las que deja el encargado) */
+const CAT_HOY = "Tareas de hoy";
+function catLabel(c){ return c==="Agregados" ? CAT_HOY : c; }   // listas viejas guardadas como "Agregados"
 async function addManual(txt){
   const t=(txt||"").trim(); if(!t) return;
   if(sb){
     try{
       const base = Array.isArray(SHARED)? SHARED : [];
       const maxPos = base.length? Math.max(...base.map(r=>r.position||0)) : -1;
-      const { error } = await sb.from(TABLE).insert([{ cat:"Agregados", txt:t, comment:null, done:false, position:maxPos+1 }]);
+      const { error } = await sb.from(TABLE).insert([{ cat:CAT_HOY, txt:t, comment:null, done:false, position:maxPos+1 }]);
       if(error) throw error;
       const rows = await fetchList();
       SHARED = rows.sort((a,b)=>a.position-b.position);
@@ -713,7 +715,7 @@ async function addManual(txt){
       return;
     }catch(e){ /* si falla, cae a local */ }
   }
-  LOCAL_EXTRA.push({ id:"x"+(_lx++), cat:"Agregados", txt:t, comment:null, status:"producir" });
+  LOCAL_EXTRA.push({ id:"x"+(_lx++), cat:CAT_HOY, txt:t, comment:null, status:"producir" });
   render();
 }
 
@@ -1427,7 +1429,7 @@ function doneShared(w){
     bar.querySelector(".n").textContent=`${n} / ${total}`;
   }
   const groups=[];
-  sortGrouped(tareas).forEach(t=>{ let g=groups.find(x=>x.key===t.cat); if(!g){ g={key:t.cat,items:[]}; groups.push(g);} g.items.push(t); });
+  sortGrouped(tareas).forEach(t=>{ const k=catLabel(t.cat); let g=groups.find(x=>x.key===k); if(!g){ g={key:k,items:[]}; groups.push(g);} g.items.push(t); });
   groups.forEach(g=>{
     const gd=el("div",{cls:"grp"}, el("div",{cls:"gt",text:g.key}));
     g.items.forEach(t=> gd.appendChild(taskRow(t, !!t.done, ()=>{ if(!t.done) buzz(12); toggleRow(t); })));
@@ -1462,7 +1464,7 @@ function doneLocal(w){
     bar.querySelector(".n").textContent=`${n} / ${total}`;
   }
   const groups=[];
-  sortGrouped(tareas).forEach(t=>{ let g=groups.find(x=>x.key===t.cat); if(!g){ g={key:t.cat,items:[]}; groups.push(g);} g.items.push(t); });
+  sortGrouped(tareas).forEach(t=>{ const k=catLabel(t.cat); let g=groups.find(x=>x.key===k); if(!g){ g={key:k,items:[]}; groups.push(g);} g.items.push(t); });
   groups.forEach(g=>{
     const gd=el("div",{cls:"grp"}, el("div",{cls:"gt",text:g.key}));
     g.items.forEach(t=>{
