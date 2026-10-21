@@ -270,6 +270,13 @@
 
   .home{ padding:calc(env(safe-area-inset-top) + 22px) 16px calc(env(safe-area-inset-bottom) + 24px); text-align:left; }
   .legend{ margin:0; }
+  .hoybox{ display:flex; flex-direction:column; min-height:0; flex:0 1 auto; }
+  .hoyt{ font:700 11px/1.2 'IBM Plex Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+  .hoylist{ overflow:auto; max-height:28vh; }
+  .hoyrow{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--line); font-size:15px; }
+  .hoyrow span{ flex:1; }
+  .hoydel{ border:none; background:transparent; color:var(--muted); font-size:15px; padding:4px 8px; cursor:pointer; }
+  .hoybox .addtask{ margin:10px 0 0; }
   .lg{ border-radius:1.5mm; padding:16px; }
   .lg .t{ font:700 17px/1.2 Archivo,sans-serif; }
   .lg.right{ border-color:#c9dccf; } .lg.left{ border-color:#e6d2c1; }
@@ -470,6 +477,8 @@ try{
 
 let channel = null;
 let SHARED = null;
+let PENDING = [];       // "Tareas de hoy" cargadas antes de que exista la lista (se suman al terminar el swipe)
+const POS_HOY = 10000;  // las tareas de hoy cargadas antes van al final de la lista
 let LOCAL_EXTRA = [];   // tareas manuales en modo local (sin Supabase)
 let _lx = 0;
 
@@ -491,8 +500,11 @@ async function init(){
     if(items.length===0){ await seedItems(); items = await fetchItems(); }
     if(items.length) setDeck(buildDeckFromRows(items));
     const rows = await fetchList();
-    if(rows.length){ SHARED = rows.sort((a,b)=>a.position-b.position); state="done"; }
-    else if(state==="done"){ SHARED = null; state="home"; }   // la lista se reinició mientras no estaba
+    if(isRealList(rows)){ SHARED = rows.sort((a,b)=>a.position-b.position); state="done"; }
+    else {
+      PENDING = rows;
+      if(state==="done"){ SHARED = null; state="home"; }   // la lista se reinició mientras no estaba
+    }
     startRealtime();
     render();
   }catch(e){ /* respaldo: queda la lista guardada o home */ }
@@ -510,7 +522,7 @@ function cacheList(){
   }catch(e){}
 }
 
-function reset(){ state="home"; pos=0; hist=[]; SHARED=null; LOCAL_EXTRA=[]; DECK.forEach(d=>{d.status=null;d.comment=null;}); render(); }
+function reset(){ state="home"; pos=0; hist=[]; SHARED=null; PENDING=[]; LOCAL_EXTRA=[]; DECK.forEach(d=>{d.status=null;d.comment=null;}); render(); }
 
 function restart(){
   confirmDialog("¿Seguro que querés volver a empezar? Se borra la lista actual y todos vuelven al inicio.", async ()=>{
@@ -525,12 +537,15 @@ async function fetchList(){
   if(error) throw error;
   return data || [];
 }
+/* la lista "existe" cuando tiene algo más que tareas de hoy cargadas de antemano */
+function isRealList(rows){ return rows.some(r=>catLabel(r.cat)!==CAT_HOY); }
 async function publishList(){
   const prod = DECK.filter(d=>d.status==="producir");
   if(!sb){ SHARED = null; return; }   // modo local: lo maneja doneLocal
   try{
     let rows = await fetchList();
-    if(rows.length===0){
+    if(!isRealList(rows)){
+      const pend = rows;   // tareas de hoy cargadas antes: quedan y se suman al final
       const prodRows = prod.map((t,i)=>({ cat:t.cat, txt:t.txt, comment:t.comment||null, done:false, position:i }));
       // tareas del día de hoy (o "Todos los días"), al final
       let dailyRows=[];
@@ -541,14 +556,23 @@ async function publishList(){
                       .map((t,i)=>({ cat:t.cat||"Tareas del día", txt:t.txt, comment:null, done:false, position:prodRows.length+i }));
       }catch(e){}
       const payload = prodRows.concat(dailyRows);
-      if(payload.length===0){ SHARED = null; return; }
-      const { data, error } = await sb.from(TABLE).insert(payload).select();
-      if(error) throw error;
-      rows = data;
+      if(payload.length===0 && pend.length===0){ SHARED = null; return; }
+      if(payload.length){
+        const { data, error } = await sb.from(TABLE).insert(payload).select();
+        if(error) throw error;
+        rows = pend.concat(data);
+      }
+      PENDING = [];
     }
     SHARED = rows.sort((a,b)=>a.position-b.position);
     startRealtime();
   }catch(e){ SHARED = null; }
+}
+async function removePending(t){
+  if(sb && t.id!=null && !String(t.id).startsWith("x")){ try{ await sb.from(TABLE).delete().eq("id",t.id); }catch(e){} }
+  PENDING = PENDING.filter(r=>r!==t);
+  LOCAL_EXTRA = LOCAL_EXTRA.filter(r=>r!==t);
+  render();
 }
 async function toggleRow(row){
   row.done = !row.done;
@@ -655,12 +679,13 @@ function startRealtime(){
     .on("postgres_changes",{event:"*",schema:"public",table:TABLE}, async ()=>{
       try{
         const rows = await fetchList();
-        if(rows.length){
+        if(isRealList(rows)){
           SHARED = rows.sort((a,b)=>a.position-b.position);
           if(state==="home"){ state="done"; render(); }
           else if(state==="done"){ render(); }
         } else {
-          if(state==="done"){ reset(); }
+          if(state==="done" && !rows.length){ reset(); }
+          else if(state!=="done"){ PENDING = rows; if(state==="home") render(); }
         }
       }catch(e){}
     })
@@ -702,7 +727,17 @@ const CAT_HOY = "Tareas de hoy";
 function catLabel(c){ return c==="Agregados" ? CAT_HOY : c; }   // listas viejas guardadas como "Agregados"
 async function addManual(txt){
   const t=(txt||"").trim(); if(!t) return;
-  if(sb){
+  if(sb && state==="home"){   // todavía no hay lista: queda guardada para cuando se termine el swipe
+    try{
+      const { error } = await sb.from(TABLE).insert([{ cat:CAT_HOY, txt:t, comment:null, done:false, position:POS_HOY+PENDING.length }]);
+      if(error) throw error;
+      PENDING = (await fetchList()).filter(r=>catLabel(r.cat)===CAT_HOY);
+      startRealtime();
+      render();
+      return;
+    }catch(e){ /* si falla, cae a local */ }
+  }
+  if(sb && state!=="home"){
     try{
       const base = Array.isArray(SHARED)? SHARED : [];
       const maxPos = base.length? Math.max(...base.map(r=>r.position||0)) : -1;
@@ -781,11 +816,18 @@ function home(w){
       el("div",{},el("div",{cls:"t",text:"Producir"}),el("div",{cls:"s",text:"Va a la lista de tareas"}))
     )
   );
+  const pend = sb ? PENDING : LOCAL_EXTRA;
+  const hoy=el("div",{cls:"hoybox"},
+    el("div",{cls:"hoyt",text:CAT_HOY}),
+    el("div",{cls:"hoylist"}, pend.map(t=>el("div",{cls:"hoyrow"},
+      el("span",{text:t.txt}),
+      el("button",{cls:"hoydel","aria-label":"Quitar",text:"✕",onClick:()=>removePending(t)})))),
+    addTaskControl(addManual));
   const bottom=el("div",{},
     el("div",{cls:"count",html:`<b>${DECK.length}</b> ítems para revisar`}),
     el("button",{cls:"btn",text:"Empezar",onClick:()=>{state="swipe";render()}})
   );
-  w.append(top,legend,bottom);
+  w.append(top,legend,hoy,bottom);
 }
 
 /* ---------- PIN ---------- */
