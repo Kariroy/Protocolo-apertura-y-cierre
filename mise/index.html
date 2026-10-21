@@ -310,6 +310,13 @@
   .done .date, .done .bar .n{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
   .done .bar .p{ height:4px; border-radius:0; } .done .bar .p i{ border-radius:0; }
   .grp .gt{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; color:var(--accent); }
+  .grp button.gt{ display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; padding:6px 0; margin-bottom:4px; cursor:pointer; text-align:left; }
+  .grp .gt .gn{ flex:1; }
+  .grp .gt .gc{ color:var(--muted); letter-spacing:.04em; font-variant-numeric:tabular-nums; }
+  .grp .gt .gc.ok{ color:var(--green); }
+  .grp .gt .chev{ color:var(--muted); font-size:13px; transition:transform .15s ease; }
+  .grp.closed .gt .chev{ transform:rotate(-90deg); }
+  .grp.closed .task{ display:none; }
   .task .box{ border-radius:1mm; border-width:2px; border-color:#b9b0a2; }
   .task .lbl{ font-weight:500; font-size:17px; }
   .restart, .addtask-btn, .addtask-input, .addtask-ok{ border-radius:1.5mm; }
@@ -1404,6 +1411,22 @@ function mix(a,b,t){
 
 /* ---------- DONE ---------- */
 function done(w){ if(Array.isArray(SHARED)) doneShared(w); else doneLocal(w); }
+
+/* secciones desplegables: cada dispositivo recuerda cuáles dejó cerradas */
+const CLOSED_KEY = "mise:secciones-cerradas";
+function readClosed(){ try{ const v=JSON.parse(localStorage.getItem(CLOSED_KEY)); return Array.isArray(v)? v : []; }catch(e){ return []; } }
+function setClosed(key, closed){
+  const set=new Set(readClosed()); closed ? set.add(key) : set.delete(key);
+  try{ localStorage.setItem(CLOSED_KEY, JSON.stringify([...set])); }catch(e){}
+}
+function groupBox(key, n){
+  const cnt=el("span",{cls:"gc"});
+  const head=el("button",{cls:"gt",type:"button"}, el("span",{cls:"gn",text:key}), cnt, el("span",{cls:"chev",text:"▾"}));
+  const gd=el("div",{cls:"grp"+(readClosed().includes(key)?" closed":"")}, head);
+  head.addEventListener("click",()=>{ const c=gd.classList.toggle("closed"); setClosed(key,c); });
+  gd._upd=()=>{ const k=gd.querySelectorAll(".task.on").length; cnt.textContent=`${k} / ${n}`; cnt.classList.toggle("ok", k===n); };
+  return gd;
+}
 function homeBar(){ return el("div",{cls:"hbar"}, el("a",{cls:"home-link",href:"../",text:"← Inicio"})); }
 
 function taskRow(t, isOn, onToggle){
@@ -1473,8 +1496,9 @@ function doneShared(w){
   const groups=[];
   sortGrouped(tareas).forEach(t=>{ const k=catLabel(t.cat); let g=groups.find(x=>x.key===k); if(!g){ g={key:k,items:[]}; groups.push(g);} g.items.push(t); });
   groups.forEach(g=>{
-    const gd=el("div",{cls:"grp"}, el("div",{cls:"gt",text:g.key}));
+    const gd=groupBox(g.key, g.items.length);
     g.items.forEach(t=> gd.appendChild(taskRow(t, !!t.done, ()=>{ if(!t.done) buzz(12); toggleRow(t); })));
+    gd._upd();
     list.appendChild(gd);
   });
   const foot=el("div",{cls:"foot"}, addTaskControl(addManual), el("button",{cls:"restart",text:"Volver a empezar",onClick:restart}));
@@ -1508,16 +1532,17 @@ function doneLocal(w){
   const groups=[];
   sortGrouped(tareas).forEach(t=>{ const k=catLabel(t.cat); let g=groups.find(x=>x.key===k); if(!g){ g={key:k,items:[]}; groups.push(g);} g.items.push(t); });
   groups.forEach(g=>{
-    const gd=el("div",{cls:"grp"}, el("div",{cls:"gt",text:g.key}));
+    const gd=groupBox(g.key, g.items.length);
     g.items.forEach(t=>{
       const row=taskRow(t, !!done_state[t.id], ()=>{
         done_state[t.id]=!done_state[t.id];
         row.classList.toggle("on",done_state[t.id]);
         if(done_state[t.id]) buzz(12);
-        updateBar();
+        updateBar(); gd._upd();
       });
       gd.appendChild(row);
     });
+    gd._upd();
     list.appendChild(gd);
   });
   const foot=el("div",{cls:"foot"}, addTaskControl(addManual), el("button",{cls:"restart",text:"Volver a empezar",onClick:restart}));
