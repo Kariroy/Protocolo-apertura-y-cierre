@@ -891,7 +891,7 @@ var CFG_ROWS = [];
 var CFG_FILTERS = {};
 var CFG_MSG = "";
 var _pendingFocus = null;
-var CFG_TAB = "items";        // "items" | "horarios"
+var CFG_TAB = "apertura";     // "apertura" | "cierre" | "horarios" (una pestaña por protocolo)
 var CFG_HORAS = {};           // horas en edición (Configuración → Horarios)
 var HIST_ROWS = null;         // filas de protocolos_dia para el Registro (null = sin cargar)
 var HIST_OPEN = {};           // ids desplegados en el Registro
@@ -901,12 +901,12 @@ function enterConfig(){
   PROTO_KEYS.forEach(function(k){
     PROTOCOLOS[k].items.forEach(function(txt){ CFG_ROWS.push({ proto:PROTO_LABEL[k], txt:txt }); });
   });
-  CFG_FILTERS = {}; CFG_MSG = ""; CFG_TAB = "items";
+  CFG_FILTERS = {}; CFG_MSG = ""; CFG_TAB = "apertura";
   state.screen = "config"; render();
 }
 
 function setCfgTab(t){
-  CFG_TAB = t; CFG_MSG = "";
+  CFG_TAB = t; CFG_MSG = ""; CFG_FILTERS = {};
   if(t==="horarios"){ CFG_HORAS = {}; PROTO_KEYS.forEach(function(k){ CFG_HORAS[k] = { desde:DESDE[k]||"", hasta:HASTA[k]||"" }; }); }
   render();
 }
@@ -914,13 +914,13 @@ function cfgTabsBar(){
   function tb(key,label){
     return el("button",{cls:"segbtn"+(CFG_TAB===key?" on":""),text:label,onClick:function(){ if(CFG_TAB!==key) setCfgTab(key); }});
   }
-  return el("div",{cls:"seg"}, tb("items","Ítems"), tb("horarios","Horarios"));
+  return el("div",{cls:"seg"}, tb("apertura","Apertura"), tb("cierre","Cierre"), tb("horarios","Horarios"));
 }
 
 function cfgVal(r,key){ return (r[key]==null?"":String(r[key])).trim(); }
 function uniqueValues(key){
   var set = new Map();
-  CFG_ROWS.forEach(function(r){ set.set(cfgVal(r,key), true); });
+  CFG_ROWS.forEach(function(r){ if(PROTO_KEYS.indexOf(CFG_TAB)<0 || normProto(r.proto)===CFG_TAB) set.set(cfgVal(r,key), true); });
   return [...set.keys()].sort(function(a,b){ return a===""? -1 : b===""? 1 : a.localeCompare(b,"es"); });
 }
 function rowVisible(r){
@@ -979,13 +979,15 @@ function renderConfig(wrap){
   var head = el("div",{cls:"chead"},
     el("h2",{text:"Configuración"}),
     cfgTabsBar(),
-    el("div",{cls:"hint",html:'Editá cada celda. El <b>embudo</b> de cada columna filtra como en Sheets. Elegí el protocolo (Apertura / Cierre) en su columna. Para cambiar el orden, agarrá el ítem desde el <b>#</b> y arrastralo.'})
+    el("div",{cls:"hint",html:'Ítems del protocolo de <b>'+PROTO_LABEL[CFG_TAB]+'</b>. Editá cada celda; el <b>embudo</b> filtra como en Sheets. Para cambiar el orden, agarrá el ítem desde el <b>#</b> y arrastralo.'})
   );
+  var tabKey = CFG_TAB;
+  var cols = COLUMNS.filter(function(c){ return c.key!=="proto"; });   // la pestaña ya dice el protocolo
 
   var table = el("table",{cls:"grid"});
   var thead = el("thead"); var htr = el("tr");
   htr.appendChild(el("th",{cls:"rownum",text:"#"}));
-  COLUMNS.forEach(function(c){
+  cols.forEach(function(c){
     var active = !!CFG_FILTERS[c.key];
     var fb = el("span",{cls:"fbtn"+(active?" on":""),text:"▾","aria-label":"Filtrar "+c.label});
     var th = el("th",{}, el("div",{cls:"thh"}, el("span",{text:c.label}), fb));
@@ -999,14 +1001,14 @@ function renderConfig(wrap){
   var tbody = el("tbody");
   var shown = 0;
   CFG_ROWS.forEach(function(r, idx){
-    if(!rowVisible(r)) return;
+    if(normProto(r.proto)!==tabKey || !rowVisible(r)) return;
     shown++;
     var tr = el("tr");
     tr.setAttribute("data-idx", idx);
     var num = el("td",{cls:"rownum grip",title:"Arrastrá para mover"}, el("span",{cls:"gi",text:"⋮⋮"}), el("span",{text:String(shown)}));
     num.addEventListener("pointerdown",function(e){ cfgDragStart(e, tr); });
     tr.appendChild(num);
-    COLUMNS.forEach(function(c){
+    cols.forEach(function(c){
       if(c.type==="select"){
         var v = r[c.key]||"";
         var cell = el("button",{cls:"selcell","data-idx":idx,"data-key":c.key},
@@ -1031,16 +1033,20 @@ function renderConfig(wrap){
 
   var tblWrap = el("div",{cls:"tbl-wrap"}, table);
   if(shown===0){
-    tblWrap.appendChild(el("div",{cls:"norows",text: CFG_ROWS.length? "Ningún ítem coincide con los filtros." : "No hay ítems. Agregá el primero abajo."}));
+    var hay = CFG_ROWS.some(function(r){ return normProto(r.proto)===tabKey; });
+    tblWrap.appendChild(el("div",{cls:"norows",text: hay ? "Ningún ítem coincide con los filtros." : "No hay ítems. Agregá el primero abajo."}));
   }
 
   var add = el("button",{cls:"addrow",text:"＋ Agregar ítem"});
   add.addEventListener("click",function(){
     CFG_FILTERS = {};
-    var lastProto = CFG_ROWS.length? CFG_ROWS[CFG_ROWS.length-1].proto : "Apertura";
-    CFG_ROWS.push({ proto:lastProto, txt:"" });
-    _pendingFocus = { idx: CFG_ROWS.length-1, key:"txt" };
+    var at = 0;   // va al final de los ítems de esta pestaña
+    CFG_ROWS.forEach(function(r,i){ if(normProto(r.proto)===tabKey) at = i+1; });
+    if(at===0 && tabKey==="cierre") at = CFG_ROWS.length;
+    CFG_ROWS.splice(at, 0, { proto:PROTO_LABEL[tabKey], txt:"" });
+    _pendingFocus = { idx: at, key:"txt" };
     render();
+    var w = app.querySelector(".tbl-wrap"); if(w) w.scrollTop = w.scrollHeight;
   });
 
   var msg = el("div",{cls:"msg",text:CFG_MSG});
