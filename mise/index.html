@@ -692,7 +692,7 @@ function startRealtime(){
           else if(state==="done"){ render(); }
         } else {
           if(state==="done" && !rows.length){ reset(); }
-          else if(state!=="done"){ PENDING = rows; if(state==="home") render(); }
+          else if(state!=="done"){ SHARED = null; PENDING = rows; if(state==="home") render(); }
         }
       }catch(e){}
     })
@@ -838,7 +838,10 @@ function home(w){
 }
 
 /* ---------- PIN ---------- */
-function openPin(){ _pinErr=""; state="pin"; render(); }
+let _cfgBack = "home";   // a qué pantalla vuelve al salir de ⚙ (inicio o la lista)
+function openPin(){ _pinErr=""; _cfgBack = state==="done" ? "done" : "home"; state="pin"; render(); }
+// con Supabase manda la lista compartida (alguien pudo crearla o reiniciarla mientras tanto)
+function exitCfg(){ state = sb ? (Array.isArray(SHARED) ? "done" : "home") : _cfgBack; render(); }
 function pin(w){
   w.className="wrap pin";
   const inp=el("input",{type:"password",inputmode:"numeric",autocomplete:"off",maxlength:"12",placeholder:"••••"});
@@ -851,7 +854,7 @@ function pin(w){
   };
   enter.addEventListener("click",tryIn);
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter") tryIn(); });
-  back.addEventListener("click",()=>{ state="home"; render(); });
+  back.addEventListener("click",exitCfg);
   w.append(
     el("h2",{text:"Configuración"}),
     el("p",{text:"Ingresá el PIN para editar los ítems"}),
@@ -1098,7 +1101,7 @@ function config(w){
 
   const cancel=el("button",{cls:"btn ghost",text:"Salir"});
   const save=el("button",{cls:"btn",text:"Guardar cambios"});
-  cancel.addEventListener("click",()=>{ state="home"; render(); });
+  cancel.addEventListener("click",exitCfg);
   save.addEventListener("click",async ()=>{
     save.disabled=true; save.textContent="Guardando…"; CFG_MSG="";
     const res=await saveDataset(tabDef(CFG_TAB), CFG_ROWS);
@@ -1427,7 +1430,8 @@ function groupBox(key, n){
   gd._upd=()=>{ const k=gd.querySelectorAll(".task.on").length; cnt.textContent=`${k} / ${n}`; cnt.classList.toggle("ok", k===n); };
   return gd;
 }
-function homeBar(){ return el("div",{cls:"hbar"}, el("a",{cls:"home-link",href:"../",text:"← Inicio"})); }
+function homeBar(){ return el("div",{cls:"hbar"}, el("a",{cls:"home-link",href:"../",text:"← Inicio"}),
+  el("button",{cls:"gear","aria-label":"Configuración",text:"⚙",onClick:openPin})); }
 
 function taskRow(t, isOn, onToggle){
   const row=el("div",{cls:"task"+(isOn?" on":"")},
