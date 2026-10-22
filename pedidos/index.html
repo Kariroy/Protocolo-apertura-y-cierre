@@ -333,6 +333,14 @@ table.stock th, .grid th{ background:var(--kraft-2); color:var(--ink-soft); font
 .tipocell{display:block;width:100%;min-width:96px;height:34px;border:0;background:transparent;cursor:pointer;text-align:left;padding:0 10px;
   font:600 11px/1 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
 .tipocell.g{color:var(--green)}
+/* # de cada fila: tocar = menú, arrastrar = mover (estándar de tablas) */
+.grid td.rownum{ cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+.grid tr.dragging td{ background:#dbe5f4 !important; }
+.dropline{ position:fixed; height:3px; background:var(--green); z-index:30; pointer-events:none; box-shadow:0 0 0 1px #fff; }
+.dragghost{ position:fixed; z-index:31; pointer-events:none; background:#fff; border:1px solid var(--green); border-radius:1.5mm;
+  padding:6px 10px; font:600 14px/1.2 Archivo,sans-serif; color:var(--ink); box-shadow:0 10px 24px -10px rgba(28,26,23,.45);
+  max-width:70vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+body.rowdrag, body.rowdrag *{ cursor:grabbing !important; user-select:none !important; -webkit-user-select:none !important; }
 </style>
 </head>
 <body>
@@ -1051,6 +1059,85 @@ function openCfg(){
     paquete:it.paquete||"", tipo:tipoOf(it), por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal) }));
   CFG_FILTERS={}; CFG_MSG=""; renderCfg();
 }
+/* ---- # de cada fila: tocar = menú (agregar arriba/abajo), arrastrar = mover (estándar de tablas, igual que Mise
+   y Protocolos: los números quedan fijos y una línea marca dónde cae la fila). Al guardar, position = orden de CFG_ROWS. ---- */
+let _dragEndAt=0;
+function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+function startRowDrag(e, tr, tbody){
+  if(e.button!==undefined && e.button!==0) return;
+  e.preventDefault();
+  const wrap=tbody.closest(".tbl-wrap");
+  const rows=Array.from(tbody.children);
+  const before=rows.map(r=>+r.getAttribute("data-idx"));
+  const src=rows.indexOf(tr);
+  const x0=e.clientX, y0=e.clientY;
+  let lastY=y0, lastX=x0, raf=0, dragging=false, target=src, line=null, ghost=null;
+  function boundary(){ const k=rows.findIndex(r=>{ const b=r.getBoundingClientRect(); return lastY < b.top+b.height/2; }); return k<0 ? rows.length : k; }
+  function paint(){
+    target=boundary();
+    const wb=wrap.getBoundingClientRect();
+    const ref = target<rows.length ? rows[target].getBoundingClientRect().top : rows[rows.length-1].getBoundingClientRect().bottom;
+    const head = tbody.previousSibling ? tbody.previousSibling.getBoundingClientRect().bottom : wb.top;
+    const y=Math.max(head, Math.min(wb.bottom, ref));
+    const noop = target===src || target===src+1;
+    line.style.cssText="left:"+wb.left+"px;width:"+wb.width+"px;top:"+(y-1.5)+"px;opacity:"+(noop?0:1);
+    ghost.style.left=Math.max(8, Math.min(lastX+14, window.innerWidth-ghost.offsetWidth-8))+"px";
+    ghost.style.top=Math.max(8, lastY-ghost.offsetHeight-12)+"px";
+  }
+  function begin(){
+    dragging=true; buzz(10);
+    tr.classList.add("dragging"); document.body.classList.add("rowdrag");
+    const r=CFG_ROWS[+tr.getAttribute("data-idx")]||{};
+    line=el("div",{cls:"dropline"});
+    ghost=el("div",{cls:"dragghost",text:String(r.item||"").trim()||"(sin nombre)"});
+    document.body.appendChild(line); document.body.appendChild(ghost);
+    paint(); raf=requestAnimationFrame(tick);
+  }
+  function tick(){   // auto-scroll cerca de los bordes
+    if(!dragging) return;
+    const b=wrap.getBoundingClientRect(), edge=44; let v=0;
+    if(lastY < b.top+edge) v=-Math.ceil((b.top+edge-lastY)/4);
+    else if(lastY > b.bottom-edge) v=Math.ceil((lastY-(b.bottom-edge))/4);
+    if(v){ wrap.scrollTop+=v; paint(); }
+    raf=requestAnimationFrame(tick);
+  }
+  function move(ev){
+    if(ev.pointerId!==e.pointerId) return;
+    lastY=ev.clientY; lastX=ev.clientX;
+    if(!dragging){ if(Math.abs(lastY-y0)>6 || Math.abs(lastX-x0)>6) begin(); else return; }
+    paint();
+  }
+  function end(ev){
+    if(ev.pointerId!==e.pointerId) return;
+    window.removeEventListener("pointermove",move); window.removeEventListener("pointerup",end); window.removeEventListener("pointercancel",end);
+    if(!dragging) return;   // fue un toque: el menú lo abre el click del #
+    _dragEndAt=Date.now(); dragging=false; cancelAnimationFrame(raf);
+    line.remove(); ghost.remove(); document.body.classList.remove("rowdrag");
+    if(ev.type==="pointerup" && target!==src && target!==src+1){
+      const after=before.slice(); const moved=after.splice(src,1)[0];
+      after.splice(target>src ? target-1 : target, 0, moved);
+      // las filas visibles se reacomodan en sus mismos lugares (respeta los filtros)
+      const slots=before.slice().sort((a,b)=>a-b), old=CFG_ROWS.slice();
+      after.forEach((from,k)=>{ CFG_ROWS[slots[k]]=old[from]; });
+      CFG_MSG="Orden cambiado. Tocá Guardar cambios.";
+    }
+    renderCfg();
+  }
+  window.addEventListener("pointermove",move); window.addEventListener("pointerup",end); window.addEventListener("pointercancel",end);
+}
+function insertCfgRow(at){   // la fila nueva toma la categoría de la de al lado
+  const near=CFG_ROWS[at-1]||CFG_ROWS[at]||{};
+  const nr={categoria:near.categoria||"",proveedor:"",item:"",paquete:"",tipo:"unidades",por_paquete:0,cantidad_minima:0,ideal:0};
+  CFG_ROWS.splice(at,0,nr);
+  if(!rowVisible(nr)) CFG_FILTERS={};   // que se vea la fila nueva
+  _pendingFocus={idx:at,key:"item"}; renderCfg();
+}
+function openRowMenu(idx, anchor){
+  const list=el("div",{cls:"olist"},
+    el("div",{cls:"opt"}, el("span",{cls:"ov",text:"↑  Agregar fila arriba",onClick:()=>{ closePopovers(); insertCfgRow(idx); }})),
+    el("div",{cls:"opt"}, el("span",{cls:"ov",text:"↓  Agregar fila abajo",onClick:()=>{ closePopovers(); insertCfgRow(idx+1); }})));
+  popoverAt(anchor, el("div",{}, el("div",{cls:"ptitle",text:"Fila "+anchor.textContent}), list));
+}
 function cfgVal(r,key){ return (r[key]==null?"":String(r[key])).trim(); }
 function uniqueValues(key){ const set=new Map(); CFG_ROWS.forEach(r=>set.set(cfgVal(r,key),true));
   return [...set.keys()].sort((a,b)=> a===""?-1 : b===""?1 : a.localeCompare(b,"es")); }
@@ -1062,7 +1149,7 @@ function renderCfg(){
   const ow=host.querySelector(".tbl-wrap"), keep=ow?{t:ow.scrollTop,l:ow.scrollLeft}:null, wy=window.scrollY;
   host.innerHTML="";
   const head=el("div",{cls:"cfg-head"},
-    el("div",{cls:"cfg-hint",html:'Se pide cuando el stock llega al <b>mínimo</b>, y se repone hasta el <b>ideal</b>. <b>Se cuenta en</b>: <b>unidades</b> cerradas o <b>gramos</b> (tocá para cambiar). En gramos, mín e ideal van en gramos. <b>U/paq</b> = unidades por paquete, o gramos por paquete si se cuenta en gramos (si lo dejás vacío se toma del paquete, ej. «(1kg)»). Redondea el pedido a paquetes enteros. Tocá un encabezado (el <b>▾</b>) para filtrar. El 0 gris es placeholder.'}));
+    el("div",{cls:"cfg-hint",html:'Se pide cuando el stock llega al <b>mínimo</b>, y se repone hasta el <b>ideal</b>. <b>Se cuenta en</b>: <b>unidades</b> cerradas o <b>gramos</b> (tocá para cambiar). En gramos, mín e ideal van en gramos. Tocá el <b>#</b> para agregar una fila arriba o abajo; arrastralo para moverla. <b>U/paq</b> = unidades por paquete, o gramos por paquete si se cuenta en gramos (si lo dejás vacío se toma del paquete, ej. «(1kg)»). Redondea el pedido a paquetes enteros. Tocá un encabezado (el <b>▾</b>) para filtrar. El 0 gris es placeholder.'}));
 
   const table=el("table",{cls:"grid"});
   const thead=el("thead"); const htr=el("tr");
@@ -1081,8 +1168,11 @@ function renderCfg(){
   const tbody=el("tbody"); let shown=0;
   CFG_ROWS.forEach((r,idx)=>{
     if(!rowVisible(r)) return; shown++;
-    const tr=el("tr");
-    tr.appendChild(el("td",{cls:"rownum",text:String(shown)}));
+    const tr=el("tr"); tr.setAttribute("data-idx", idx);
+    const numTd=el("td",{cls:"rownum",text:String(shown),title:"Tocá para agregar filas · arrastrá para mover"});
+    numTd.addEventListener("pointerdown",e=>startRowDrag(e, tr, tbody));
+    numTd.addEventListener("click",()=>{ if(Date.now()-_dragEndAt>400) openRowMenu(idx, numTd); });
+    tr.appendChild(numTd);
     CFG_COLUMNS.forEach(c=>{
       if(c.type==="select"){
         const v=r[c.key]||"";
@@ -1120,12 +1210,9 @@ function renderCfg(){
   const wrap=el("div",{cls:"tbl-wrap"}, table);
   if(shown===0) wrap.appendChild(el("div",{cls:"norows",text: CFG_ROWS.length?"Ningún ítem coincide con los filtros.":"No hay ítems. Agregá el primero abajo."}));
 
-  const add=el("button",{cls:"addrow",text:"＋ Agregar ítem"});
-  add.addEventListener("click",()=>{ CFG_FILTERS={};
-    const lastCat=CFG_ROWS.length?CFG_ROWS[CFG_ROWS.length-1].categoria:"";
-    CFG_ROWS.push({categoria:lastCat,proveedor:"",item:"",paquete:"",tipo:"unidades",por_paquete:0,cantidad_minima:0,ideal:0});
-    _pendingFocus={idx:CFG_ROWS.length-1,key:"item"}; renderCfg();
-    const w=host.querySelector(".tbl-wrap"); if(w) w.scrollTop=w.scrollHeight; });
+  // filas nuevas: tocando el # (agregar arriba/abajo); el botón queda solo con la tabla vacía
+  const add = shown ? null : el("button",{cls:"addrow",text:"＋ Agregar ítem"});
+  if(add) add.addEventListener("click",()=>insertCfgRow(CFG_ROWS.length));
 
   const msg=el("div",{cls:"cfg-msg",text:CFG_MSG});
   const restore=el("button",{cls:"cfg-restore",text:"Restaurar lista original"});
@@ -1133,7 +1220,7 @@ function renderCfg(){
     CFG_ROWS=DEFAULT_ITEMS.map(it=>({categoria:it.categoria,proveedor:it.proveedor,item:it.item,paquete:it.paquete,por_paquete:num(it.por_paquete),cantidad_minima:num(it.cantidad_minima),ideal:num(it.ideal)}));
     CFG_FILTERS={}; CFG_MSG="Lista original cargada. Tocá Guardar para dejarla así."; renderCfg(); },"Sí, restaurar"); });
 
-  const body=el("div",{cls:"cfg-scroll"}, wrap, add, restore, msg);
+  const body=el("div",{cls:"cfg-scroll"}, ...[wrap, add, restore, msg].filter(Boolean));
 
   const cancel=el("button",{cls:"cfgbtn",text:"Cancelar"}); cancel.addEventListener("click",()=>show("home"));
   const save=el("button",{cls:"cfgbtn save",text:"Guardar cambios"});
