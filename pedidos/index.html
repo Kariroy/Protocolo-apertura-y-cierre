@@ -1125,23 +1125,25 @@ function startRowDrag(e, tr, tbody){
   }
   window.addEventListener("pointermove",move); window.addEventListener("pointerup",end); window.addEventListener("pointercancel",end);
 }
-function insertCfgRow(at){   // la fila nueva toma la categoría de la de al lado
-  const near=CFG_ROWS[at-1]||CFG_ROWS[at]||{};
-  const nr={categoria:near.categoria||"",proveedor:"",item:"",paquete:"",tipo:"unidades",por_paquete:0,cantidad_minima:0,ideal:0};
+// la fila nueva toma la categoría de la fila donde se tocó el # (y lo que esté filtrado, ej. proveedor);
+// los filtros quedan puestos y la fila nueva se ve igual (_nueva)
+function insertCfgRow(at, refIdx){
+  const ref=(refIdx!=null ? CFG_ROWS[refIdx] : CFG_ROWS[at-1]) || {};
+  const nr={categoria:ref.categoria||"",proveedor:"",item:"",paquete:"",tipo:"unidades",por_paquete:0,cantidad_minima:0,ideal:0,_nueva:true};
+  ["proveedor","paquete","tipo"].forEach(k=>{ if(CFG_FILTERS[k] && ref[k]!=null) nr[k]=ref[k]; });
   CFG_ROWS.splice(at,0,nr);
-  if(!rowVisible(nr)) CFG_FILTERS={};   // que se vea la fila nueva
   _pendingFocus={idx:at,key:"item"}; renderCfg();
 }
 function openRowMenu(idx, anchor){
   const list=el("div",{cls:"olist"},
-    el("div",{cls:"opt"}, el("span",{cls:"ov",text:"↑  Agregar fila arriba",onClick:()=>{ closePopovers(); insertCfgRow(idx); }})),
-    el("div",{cls:"opt"}, el("span",{cls:"ov",text:"↓  Agregar fila abajo",onClick:()=>{ closePopovers(); insertCfgRow(idx+1); }})));
+    el("div",{cls:"opt"}, el("span",{cls:"ov",text:"↑  Agregar fila arriba",onClick:()=>{ closePopovers(); insertCfgRow(idx, idx); }})),
+    el("div",{cls:"opt"}, el("span",{cls:"ov",text:"↓  Agregar fila abajo",onClick:()=>{ closePopovers(); insertCfgRow(idx+1, idx); }})));
   popoverAt(anchor, el("div",{}, el("div",{cls:"ptitle",text:"Fila "+anchor.textContent}), list));
 }
 function cfgVal(r,key){ return (r[key]==null?"":String(r[key])).trim(); }
 function uniqueValues(key){ const set=new Map(); CFG_ROWS.forEach(r=>set.set(cfgVal(r,key),true));
   return [...set.keys()].sort((a,b)=> a===""?-1 : b===""?1 : a.localeCompare(b,"es")); }
-function rowVisible(r){ return CFG_COLUMNS.every(c=>{ const f=CFG_FILTERS[c.key]; if(!f) return true; return f.has(cfgVal(r,c.key)); }); }
+function rowVisible(r){ if(r._nueva) return true; return CFG_COLUMNS.every(c=>{ const f=CFG_FILTERS[c.key]; if(!f) return true; return f.has(cfgVal(r,c.key)); }); }
 
 function renderCfg(){
   const host=$("cfg-body");
