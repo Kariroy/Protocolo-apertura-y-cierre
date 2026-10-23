@@ -554,10 +554,15 @@ function fmt(n){ if(n===null||n===undefined||n==="") return ""; const x=Math.rou
 /* dos formas de contar: "unidades" (cerradas: cajas, botellas…) o "gramos".
    En gramos, mín/ideal/actual van en gramos y U/paq = gramos por paquete
    (si está vacío se toma del paquete, ej. "Paquete (1kg)" → 1000). */
-function tipoOf(it){ return it && it.tipo==="gramos" ? "gramos" : "unidades"; }
+/* Modelo (011): Se cuenta en (unidad) · Se compra en (paquete) · Trae (por_paquete) · Pedir con (mín) · Llenar hasta (ideal).
+   unidad "g" = se pesa. Pedido = ⌈(llenar hasta − hay) / trae⌉ en "se compra en". */
+function normUnidad(u){ const t=(u||"").trim(); return /^(g|gr|grs|gramo|gramos)\.?$/i.test(t) ? "g" : t; }
+function unidadOf(it){ if(!it) return "unidad"; const u=normUnidad(it.unidad); if(u) return u;
+  return it.tipo==="gramos" ? "g" : ((it.paquete||"").trim() || "unidad"); }   // vacío = lo mismo que se compra
+function tipoOf(it){ return unidadOf(it)==="g" ? "gramos" : "unidades"; }
 function gramosDe(paq){ const m=/(\d+(?:[.,]\d+)?)\s*(kg|g)\b/i.exec(paq||""); if(!m) return 0;
   const n=num(m[1].replace(",",".")); return m[2].toLowerCase()==="kg" ? n*1000 : n; }
-function porPaq(it){ const u=num(it.por_paquete); if(u>0) return u; return tipoOf(it)==="gramos" ? gramosDe(it.paquete) : 0; }
+function porPaq(it){ const u=num(it.por_paquete); if(u>0) return u; return tipoOf(it)==="gramos" ? gramosDe(it.paquete) : 1; }
 function conU(it,v){ return tipoOf(it)==="gramos" ? fmt(v)+" g" : fmt(v); }
 // celda vacía = "sin anotar" (no es 0): no se calcula ni se pide. 0 solo si alguien lo cargó.
 function sinAnotar(it){ return it._seen===false || it.contado===false; }
@@ -652,7 +657,7 @@ let offline = false;
 let localRegistros = [];
 
 function seedClone(){ return DEFAULT_ITEMS.map((it,i)=>({ id:"seed"+i, categoria:it.categoria, proveedor:it.proveedor,
-  item:it.item, paquete:it.paquete, tipo:tipoOf(it), por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal), position:i })); }
+  item:it.item, paquete:it.paquete, unidad:unidadOf(it), tipo:tipoOf(it), por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal), position:i })); }
 
 async function loadItems(){
   if(!SB_ON){ items=seedClone(); offline=true; return; }
@@ -669,7 +674,7 @@ async function loadItems(){
 }
 async function saveConfig(rows){
   const clean = rows.map((r,i)=>({ categoria:r.categoria||"", proveedor:r.proveedor||"", item:(r.item||"").trim(),
-    paquete:r.paquete||"", tipo:tipoOf(r), por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), position:i }))
+    paquete:r.paquete||"", unidad:unidadOf(r), tipo:tipoOf(r), por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), position:i }))
     .filter(r=>r.item!=="");
   if(!SB_ON){ items=clean.map((r,i)=>({ ...r, id:"loc"+i })); return; }
   await sb("DELETE","stock_items",{query:"id=gt.0"});
@@ -688,7 +693,7 @@ async function todayRegistro(){
 async function saveRegistro(rows){
   const fecha = todayISO();
   const snap = rows.map((r,i)=>({ categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item,
-    paquete:r.paquete||"", tipo:tipoOf(r), por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), cantidad_actual:num(r.cantidad_actual), contado:!!r._seen, position:i }));
+    paquete:r.paquete||"", unidad:unidadOf(r), tipo:tipoOf(r), por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), cantidad_actual:num(r.cantidad_actual), contado:!!r._seen, position:i }));
   const now = new Date().toISOString();
   const prev = await todayRegistro();
   if(!SB_ON){
@@ -702,7 +707,7 @@ async function saveRegistro(rows){
     try{ await sb("POST","stock_registro_items",{ body:snap.map(x=>({ ...x, registro_id:rid })) }); }
     catch(e){ // si falla, se vuelve a poner lo que había para no perder el conteo anterior
       if(old.length) await sb("POST","stock_registro_items",{ body:old.map(o=>({ categoria:o.categoria, proveedor:o.proveedor, item:o.item,
-        paquete:o.paquete, tipo:tipoOf(o), por_paquete:o.por_paquete, cantidad_minima:o.cantidad_minima, ideal:o.ideal, cantidad_actual:o.cantidad_actual,
+        paquete:o.paquete, unidad:o.unidad, tipo:tipoOf(o), por_paquete:o.por_paquete, cantidad_minima:o.cantidad_minima, ideal:o.ideal, cantidad_actual:o.cantidad_actual,
         position:o.position, contado:o.contado, registro_id:rid })) }).catch(()=>{});
       throw e; }
     let reg=prev;
@@ -745,7 +750,7 @@ async function startCount(){
   if(!items.length){ toast("No hay ítems cargados. Revisá Configuración."); return; }
   const rows = items.slice()
     .sort((a,b)=>(catIdx(a.categoria)-catIdx(b.categoria))||(a.position-b.position))
-    .map(it=>({ categoria:it.categoria, proveedor:it.proveedor, item:it.item, paquete:it.paquete, tipo:tipoOf(it),
+    .map(it=>({ categoria:it.categoria, proveedor:it.proveedor, item:it.item, paquete:it.paquete, unidad:unidadOf(it), tipo:tipoOf(it),
       por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal),
       cantidad_actual:0, _seen:false }));
   // la planilla es la del día: arranca con lo que ya se cargó hoy (lo de días anteriores no)
@@ -767,7 +772,7 @@ async function startCount(){
 }
 const COUNT_COLS=[
   { key:"item", label:"Ítem", get:r=>r.item||"" },
-  { key:"paquete", label:"Se cuenta en", get:r=>tipoOf(r)==="gramos"?"gramos":(r.paquete||"unidades") },
+  { key:"paquete", label:"Se cuenta en", get:r=>tipoOf(r)==="gramos"?"gramos":unidadOf(r) },
   { key:"actual", label:"Actual", num:true, get:r=>r._seen?fmt(r.cantidad_actual):SIN_ANOTAR }];
 const COUNT_CAT={ key:"categoria", label:"Categoría", get:r=>r.categoria||"" }; // filtro aparte (no es columna)
 let COUNT_FILTERS={};
@@ -819,7 +824,7 @@ let livePoll=null;
 const liveTimers=new Map();
 function isLive(){ return SB_ON && !offline; }
 function keyOf(s){ return (s||"").trim().toLowerCase(); }
-function snapOf(r,i,rid){ return { registro_id:rid, categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item, paquete:r.paquete||"", tipo:tipoOf(r),
+function snapOf(r,i,rid){ return { registro_id:rid, categoria:r.categoria||"", proveedor:r.proveedor||"", item:r.item, paquete:r.paquete||"", unidad:unidadOf(r), tipo:tipoOf(r),
   por_paquete:num(r.por_paquete), cantidad_minima:num(r.cantidad_minima), ideal:num(r.ideal), position:i }; }
 async function ensureTodayRegistro(){
   let reg=await todayRegistro(); if(reg) return { reg, fresh:false };
@@ -1001,9 +1006,9 @@ function downloadCSV(){
 
 /* exportar la lista de ⚙ */
 function cfgMatrix(){
-  const head=["Categoría","Proveedor","Ítem","Paquete","Se cuenta en","U/paq","Mín","Ideal"];
-  const body=CFG_ROWS.filter(r=>(r.item||"").trim()!=="").map(r=>[r.categoria||"",r.proveedor||"",(r.item||"").trim(),r.paquete||"",
-    tipoOf(r),fmt(num(r.por_paquete)),fmt(num(r.cantidad_minima)),fmt(num(r.ideal))]);
+  const head=["Categoría","Proveedor","Ítem","Se cuenta en","Se compra en","Trae","Pedir con","Llenar hasta"];
+  const body=CFG_ROWS.filter(r=>(r.item||"").trim()!=="").map(r=>[r.categoria||"",r.proveedor||"",(r.item||"").trim(),unidadOf(r),r.paquete||"",
+    fmt(num(r.por_paquete)),fmt(num(r.cantidad_minima)),fmt(num(r.ideal))]);
   return [head,...body];
 }
 function downloadCfgCSV(){
@@ -1062,11 +1067,11 @@ const CFG_COLUMNS = [
   { key:"categoria", label:"Categoría", type:"select", allowEmpty:true },
   { key:"proveedor", label:"Proveedor", type:"select", allowEmpty:true },
   { key:"item",      label:"Ítem",      type:"text",   required:true },
-  { key:"paquete",   label:"Paquete",   type:"text" },
-  { key:"tipo",      label:"Se cuenta en", type:"tipo" },
-  { key:"por_paquete", label:"U/paq", type:"num" },
-  { key:"cantidad_minima", label:"Mín", type:"num" },
-  { key:"ideal", label:"Ideal", type:"num" }
+  { key:"unidad",    label:"Se cuenta en", type:"select" },
+  { key:"paquete",   label:"Se compra en", type:"text" },
+  { key:"por_paquete", label:"Trae", type:"num" },
+  { key:"cantidad_minima", label:"Pedir con", type:"num" },
+  { key:"ideal", label:"Llenar hasta", type:"num" }
 ];
 let CFG_ROWS=[], CFG_FILTERS={}, CFG_MSG="", _pendingFocus=null;
 
@@ -1079,7 +1084,7 @@ function pinTry(){ if($("pin").value===ADMIN_PIN){ openCfg(); } else { toast("PI
 function openCfg(){
   $("pinpad").classList.add("hidden"); $("cfg-body").classList.remove("hidden");
   CFG_ROWS = items.map(it=>({ categoria:it.categoria||"", proveedor:it.proveedor||"", item:it.item||"",
-    paquete:it.paquete||"", tipo:tipoOf(it), por_paquete:num(it.por_paquete), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal) }));
+    paquete:it.paquete||"", unidad:normUnidad(it.unidad)||(it.tipo==="gramos"?"g":""), por_paquete:porPaq(it), cantidad_minima:num(it.cantidad_minima), ideal:num(it.ideal) }));
   CFG_FILTERS={}; CFG_MSG=""; renderCfg();
 }
 /* ---- # de cada fila: tocar = menú (agregar arriba/abajo), arrastrar = mover (estándar de tablas, igual que Mise
@@ -1152,8 +1157,8 @@ function startRowDrag(e, tr, tbody){
 // los filtros quedan puestos y la fila nueva se ve igual (_nueva)
 function insertCfgRow(at, refIdx){
   const ref=(refIdx!=null ? CFG_ROWS[refIdx] : CFG_ROWS[at-1]) || {};
-  const nr={categoria:ref.categoria||"",proveedor:"",item:"",paquete:"",tipo:"unidades",por_paquete:0,cantidad_minima:0,ideal:0,_nueva:true};
-  ["proveedor","paquete","tipo"].forEach(k=>{ if(CFG_FILTERS[k] && ref[k]!=null) nr[k]=ref[k]; });
+  const nr={categoria:ref.categoria||"",proveedor:"",item:"",paquete:"",unidad:"",por_paquete:1,cantidad_minima:0,ideal:0,_nueva:true};
+  ["proveedor","paquete","unidad"].forEach(k=>{ if(CFG_FILTERS[k] && ref[k]!=null) nr[k]=ref[k]; });
   CFG_ROWS.splice(at,0,nr);
   _pendingFocus={idx:at,key:"item"}; renderCfg();
 }
@@ -1174,7 +1179,7 @@ function renderCfg(){
   const ow=host.querySelector(".tbl-wrap"), keep=ow?{t:ow.scrollTop,l:ow.scrollLeft}:null, wy=window.scrollY;
   host.innerHTML="";
   const head=el("div",{cls:"cfg-head"},
-    el("div",{cls:"cfg-hint",html:'Se pide cuando el stock llega al <b>mínimo</b>, y se repone hasta el <b>ideal</b>. <b>Se cuenta en</b>: <b>unidades</b> cerradas o <b>gramos</b> (tocá para cambiar). En gramos, mín e ideal van en gramos. Tocá el <b>#</b> para agregar una fila arriba o abajo; arrastralo para moverla. <b>U/paq</b> = unidades por paquete, o gramos por paquete si se cuenta en gramos (si lo dejás vacío se toma del paquete, ej. «(1kg)»). Redondea el pedido a paquetes enteros. Tocá un encabezado (el <b>▾</b>) para filtrar. El 0 gris es placeholder.'}));
+    el("div",{cls:"cfg-hint",html:'<b>Se cuenta en</b>: qué cuenta el que hace stock (caja, botella… o <b>g</b> = se pesa). <b>Se compra en</b>: qué se le pide al proveedor. <b>Trae</b>: cuántos de lo que se cuenta vienen en lo que se compra (pack de 12 botellas → 12; Paquete (1kg) contado en g → 1000; si es lo mismo → 1). <b>Pedir con</b> y <b>Llenar hasta</b> van en lo que se cuenta: con eso o menos se pide, hasta llenar. Tocá el <b>#</b> para agregar una fila arriba o abajo; arrastralo para moverla. Tocá un encabezado (el <b>▾</b>) para filtrar.'}));
 
   const table=el("table",{cls:"grid"});
   const thead=el("thead"); const htr=el("tr");
@@ -1202,7 +1207,7 @@ function renderCfg(){
       if(c.type==="select"){
         const v=r[c.key]||"";
         const cell=el("button",{cls:"selcell"},
-          el("span",{cls:"cv"+(v?"":" empty"),text: v || (c.allowEmpty?"(ninguno)":"Elegí…")}),
+          el("span",{cls:"cv"+(v?"":" empty"),text: c.key==="unidad" ? (v==="g"?"g (se pesa)":(v||"= lo que se compra")) : (v || (c.allowEmpty?"(ninguno)":"Elegí…"))}),
           el("span",{cls:"car",text:"▾"}));
         cell.addEventListener("click",e=>{ e.stopPropagation(); openSelect(c,idx,cell); });
         tr.appendChild(el("td",{}, cell));
@@ -1248,7 +1253,7 @@ function renderCfg(){
   const exp=el("div",{cls:"exportrow cfg-export"}, cpy, dl);
   const restore=el("button",{cls:"cfg-restore",text:"Restaurar lista original"});
   restore.addEventListener("click",()=>{ confirmDialog("Esto reemplaza TODOS los ítems por la lista original (los 86 por defecto) y borra tus cambios sin guardar. ¿Seguir?",()=>{
-    CFG_ROWS=DEFAULT_ITEMS.map(it=>({categoria:it.categoria,proveedor:it.proveedor,item:it.item,paquete:it.paquete,por_paquete:num(it.por_paquete),cantidad_minima:num(it.cantidad_minima),ideal:num(it.ideal)}));
+    CFG_ROWS=DEFAULT_ITEMS.map(it=>({categoria:it.categoria,proveedor:it.proveedor,item:it.item,paquete:it.paquete,unidad:"",por_paquete:1,cantidad_minima:num(it.cantidad_minima),ideal:num(it.ideal)}));
     CFG_FILTERS={}; CFG_MSG="Lista original cargada. Tocá Guardar para dejarla así."; renderCfg(); },"Sí, restaurar"); });
 
   const body=el("div",{cls:"cfg-scroll"}, ...[wrap, add, exp, restore, msg].filter(Boolean));
@@ -1318,7 +1323,8 @@ function openSelect(col, idx, anchor){
     if(col.allowEmpty){ list.appendChild(el("div",{cls:"opt"},
       el("span",{cls:"ov none"+((cur===""||cur==null)?" cur":""),text:"(ninguno)",
         onClick:()=>{ CFG_ROWS[idx][key]=""; closePopovers(); renderCfg(); }}))); }
-    uniqueValues(key).filter(v=>v!=="").forEach(v=>{
+    const vals=uniqueValues(key).filter(v=>v!==""); if(key==="unidad" && vals.indexOf("g")<0) vals.unshift("g");   // "g" siempre a mano
+    vals.forEach(v=>{
       if(editing===v){ const inp=el("input",{cls:"oedit",type:"text",value:v}); noBubble(inp);
         inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); renameTo(v,inp.value); } if(e.key==="Escape"){ editing=null; repaint(); } });
         const ok=el("button",{cls:"oi ok",text:"✓",onClick:e=>{ e.stopPropagation(); renameTo(v,inp.value); }});
