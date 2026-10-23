@@ -347,6 +347,7 @@ body.rowdrag, body.rowdrag *{ cursor:grabbing !important; user-select:none !impo
 #cfg-body .grid input.cell[data-key="paquete"]{min-width:170px}
 #cfg-body .grid td.numtd{width:80px}
 #cfg-body .grid td.numtd input.cell{min-width:60px}
+.cfg-export{ margin-top:10px; }
 </style>
 </head>
 <body>
@@ -998,6 +999,21 @@ function downloadCSV(){
   setTimeout(()=>URL.revokeObjectURL(url),1000); toast("CSV descargado");
 }
 
+/* exportar la lista de ⚙ */
+function cfgMatrix(){
+  const head=["Categoría","Proveedor","Ítem","Paquete","Se cuenta en","U/paq","Mín","Ideal"];
+  const body=CFG_ROWS.filter(r=>(r.item||"").trim()!=="").map(r=>[r.categoria||"",r.proveedor||"",(r.item||"").trim(),r.paquete||"",
+    tipoOf(r),fmt(num(r.por_paquete)),fmt(num(r.cantidad_minima)),fmt(num(r.ideal))]);
+  return [head,...body];
+}
+function downloadCfgCSV(){
+  const blob=new Blob(["\ufeff"+toCSV(cfgMatrix())],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=url; a.download="stock_lista_"+todayISO()+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000); toast("Lista descargada");
+}
+
 /* pedidos (pestaña) */
 function provOrderOf(rows){ const o=[]; rows.forEach(r=>{ if(o.indexOf(r.proveedor)<0) o.push(r.proveedor); }); return o; }
 function pedidosGrouped(){
@@ -1224,12 +1240,18 @@ function renderCfg(){
   if(add) add.addEventListener("click",()=>insertCfgRow(CFG_ROWS.length));
 
   const msg=el("div",{cls:"cfg-msg",text:CFG_MSG});
+  // exportar la lista completa (lo que se ve en pantalla, con cambios sin guardar; ignora los filtros)
+  const cpy=el("button",{html:"&#9783;&nbsp; Copiar lista"});
+  cpy.addEventListener("click",()=>copyText(toTSV(cfgMatrix()),ok=>toast(ok?"Lista copiada — pegala donde quieras":"No se pudo copiar")));
+  const dl=el("button",{html:"&#8681;&nbsp; Descargar lista (CSV)"});
+  dl.addEventListener("click",downloadCfgCSV);
+  const exp=el("div",{cls:"exportrow cfg-export"}, cpy, dl);
   const restore=el("button",{cls:"cfg-restore",text:"Restaurar lista original"});
   restore.addEventListener("click",()=>{ confirmDialog("Esto reemplaza TODOS los ítems por la lista original (los 86 por defecto) y borra tus cambios sin guardar. ¿Seguir?",()=>{
     CFG_ROWS=DEFAULT_ITEMS.map(it=>({categoria:it.categoria,proveedor:it.proveedor,item:it.item,paquete:it.paquete,por_paquete:num(it.por_paquete),cantidad_minima:num(it.cantidad_minima),ideal:num(it.ideal)}));
     CFG_FILTERS={}; CFG_MSG="Lista original cargada. Tocá Guardar para dejarla así."; renderCfg(); },"Sí, restaurar"); });
 
-  const body=el("div",{cls:"cfg-scroll"}, ...[wrap, add, restore, msg].filter(Boolean));
+  const body=el("div",{cls:"cfg-scroll"}, ...[wrap, add, exp, restore, msg].filter(Boolean));
 
   const cancel=el("button",{cls:"cfgbtn",text:"Cancelar"}); cancel.addEventListener("click",()=>show("home"));
   const save=el("button",{cls:"cfgbtn save",text:"Guardar cambios"});
