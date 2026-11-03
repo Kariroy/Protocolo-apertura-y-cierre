@@ -207,6 +207,12 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;min-width:620px}
 #count-table td.numtd{width:90px}
 /* con el teclado abierto (escribiendo en Hacer stock) se ocultan Cancelar/Guardar para no comer pantalla */
 #count.typing .cfg-foot{display:none}
+#hped-table{min-width:0}
+#hped-table td.ro{white-space:normal}
+#hped-table td.numtd{width:90px}
+#hped.typing .cfg-foot{display:none}
+#hped .count-toolbar{flex-wrap:nowrap}
+#hped .count-toolbar .catbtn{flex:1 1 0;min-width:0}
 .grid th{position:sticky;top:0;background:#EFE9DB;z-index:2;text-align:left;font-size:12px;color:#6B6250;font-weight:800;padding:8px 8px;border-right:1px solid #D8CFBB;border-bottom:1px solid #C9BFA8;white-space:nowrap}
 .grid th .thh, table.stock th .thh{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .grid th.rownum{left:0;z-index:3;width:38px;min-width:38px;text-align:center;padding:8px 0}
@@ -367,17 +373,39 @@ body.rowdrag, body.rowdrag *{ cursor:grabbing !important; user-select:none !impo
 
   <!-- HOME -->
   <main class="home hidden" id="home">
-    <h2>Hacer stock</h2>
+    <h2>Stock y pedidos</h2>
     <div class="home-inner">
       <button class="bigbtn" id="go-count">
         <span class="bt">Hacer stock</span>
         <span class="bs">Completá la cantidad actual de cada ítem en una tabla</span>
+      </button>
+      <button class="bigbtn" id="go-hped">
+        <span class="bt">Hacer pedido</span>
+        <span class="bs">Poné cuánto pedir de cada cosa y sacá la lista de cada proveedor</span>
       </button>
     </div>
     <div class="notice hidden" id="home-notice"></div>
   </main>
 
   <!-- COUNT (tabla editable) -->
+  <!-- HACER PEDIDO (planilla: cuánto pedir) -->
+  <main class="config hidden" id="hped">
+    <div class="count-toolbar"><button class="catbtn" id="hp-catbtn">Categoría: todas ▾</button><button class="catbtn" id="hp-provbtn">Proveedor: todos ▾</button></div>
+    <div class="cfg-scroll">
+      <div class="tbl-wrap"><table class="grid" id="hped-table"></table></div>
+    </div>
+    <div class="cfg-foot">
+      <button class="cfgbtn" id="hped-clear">Borrar todo</button>
+      <button class="cfgbtn save" id="hped-go">Ver listas</button>
+    </div>
+  </main>
+
+  <!-- HACER PEDIDO: listas por proveedor -->
+  <main class="regview hidden" id="hpedlist">
+    <button class="copiar-todo" id="hp-copyall">&#9783;&nbsp; Copiar todo</button>
+    <div id="hp-tickets"></div>
+  </main>
+
   <main class="config hidden" id="count">
     <div class="count-toolbar"><button class="catbtn" id="ct-catbtn">Categoría: todas ▾</button></div>
     <div class="cfg-scroll">
@@ -733,9 +761,10 @@ async function loadRegistroItems(reg){
 }
 
 /* ---------- router de pantallas ---------- */
-const SCREENS=["home","count","save","reglist","regview","config"];
+const SCREENS=["home","count","save","reglist","regview","config","hped","hpedlist"];
 function show(scr){ closePopovers(); SCREENS.forEach(s=>$(s).classList.add("hidden")); $(scr).classList.remove("hidden");
   $("home-icons").style.display = (scr==="home")?"flex":"none";
+  if(scr==="home"){ $("phase").textContent="Stock"; $("counter").innerHTML="&nbsp;"; }
   $("progbar").classList.add("hidden");
   // Hacer stock queda angosto también en compu (3 columnas: estirada, Ítem se come la pantalla)
   document.querySelector(".app").classList.toggle("wide", scr==="config" || scr==="regview");
@@ -1033,24 +1062,28 @@ function lineText(r){ const q=fmt(pedirOf(r));
   return "- "+(r.paquete ? (q+" "+r.paquete+" de "+r.item) : (q+" "+r.item)); }
 function linesOf(arr){ return arr.map(lineText).join("\n"); }
 function renderPedidos(){
-  const g=pedidosGrouped(); const cont=$("tickets"); cont.innerHTML="";
-  if(g.size===0){ $("copyall").classList.add("hidden");
-    cont.innerHTML='<div class="empty">Nada para pedir.<br>Todos los ítems están por encima del mínimo.</div>'; return; }
-  $("copyall").classList.remove("hidden");
+  renderTickets($("tickets"), $("copyall"), pedidosGrouped(), pedirOf, linesOf,
+    'Nada para pedir.<br>Todos los ítems están por encima del mínimo.');
+}
+// tickets por proveedor: g = Map(proveedor → filas), qty(r) = cuánto, lines(arr) = texto para copiar
+function renderTickets(cont, copyAllBtn, g, qty, lines, emptyHtml){
+  cont.innerHTML="";
+  if(g.size===0){ copyAllBtn.classList.add("hidden"); cont.innerHTML='<div class="empty">'+emptyHtml+'</div>'; return; }
+  copyAllBtn.classList.remove("hidden");
   g.forEach((arr,prov)=>{
     const t=document.createElement("div"); t.className="ticket";
     const head=document.createElement("div"); head.className="t-head";
     const p=document.createElement("div"); p.className="p"; p.textContent=prov;
     const c=document.createElement("div"); c.className="c"; c.textContent=arr.length+(arr.length===1?" ítem":" ítems");
     const btn=document.createElement("button"); btn.className="copybtn"; btn.setAttribute("aria-label","Copiar "+prov); btn.innerHTML="&#9783;";
-    btn.addEventListener("click",()=>copyText("Pedido:\n"+linesOf(arr),ok=>{
+    btn.addEventListener("click",()=>copyText("Pedido:\n"+lines(arr),ok=>{
       if(ok){ btn.classList.add("ok"); btn.innerHTML="&#10003;"; toast("Copiado: "+prov);
         setTimeout(()=>{ btn.classList.remove("ok"); btn.innerHTML="&#9783;"; },1400); } else toast("No se pudo copiar"); }));
     head.appendChild(p); head.appendChild(c); head.appendChild(btn);
     const ul=document.createElement("ul"); ul.className="lines";
     arr.forEach(r=>{ const li=document.createElement("li");
       li.appendChild(document.createTextNode("- "));
-      const b=document.createElement("b"); b.textContent=fmt(pedirOf(r))+(r.paquete?(" "+r.paquete):"");
+      const b=document.createElement("b"); b.textContent=fmt(qty(r))+(r.paquete?(" "+r.paquete):"");
       li.appendChild(b); li.appendChild(document.createTextNode((r.paquete?" de ":" ")+r.item));
       ul.appendChild(li); });
     t.appendChild(head); t.appendChild(ul); cont.appendChild(t);
@@ -1058,6 +1091,80 @@ function renderPedidos(){
 }
 function copyAllPedidos(){ const g=pedidosGrouped(); if(!g.size){ toast("Nada para copiar"); return; }
   const b=[]; g.forEach((arr,prov)=>b.push(prov+":\n"+linesOf(arr)));
+  copyText(b.join("\n\n"),ok=>toast(ok?"Copiado todo":"No se pudo copiar")); }
+
+/* ============================================================
+   HACER PEDIDO — planilla donde se pone cuánto pedir (en "Se compra en")
+   y salen las listas por proveedor. El borrador queda en este dispositivo
+   (localStorage "pedidos:borrador") hasta que se borra.
+   ============================================================ */
+const HP_KEY="pedidos:borrador";
+let hp=null;   // { rows:[{...item, pedir}] }
+let HP_FILTERS={};
+const HP_COLS=[
+  { key:"item", label:"Ítem", get:r=>r.item||"" },
+  { key:"paquete", label:"Se compra en", get:r=>r.paquete||"" },
+  { key:"pedir", label:"Pedir", num:true, get:r=>r.pedir>0?fmt(r.pedir):"(nada)" }];
+const HP_CAT={ key:"categoria", get:r=>r.categoria||"" }, HP_PROV={ key:"proveedor", get:r=>r.proveedor||"" };
+function hpLoad(){ try{ return JSON.parse(localStorage.getItem(HP_KEY)||"{}")||{}; }catch(e){ return {}; } }
+function hpSave(){ if(!hp) return; const o={}; hp.rows.forEach(r=>{ if(r.pedir>0) o[keyOf(r.item)]=r.pedir; });
+  try{ localStorage.setItem(HP_KEY, JSON.stringify(o)); }catch(e){} }
+function startHped(){
+  if(!items.length){ toast("No hay ítems cargados. Revisá Configuración."); return; }
+  const saved=hpLoad();
+  const rows=items.slice().sort((a,b)=>(catIdx(a.categoria)-catIdx(b.categoria))||(a.position-b.position))
+    .map(it=>({ categoria:it.categoria||"", proveedor:it.proveedor||"", item:it.item, paquete:it.paquete||"", pedir:num(saved[keyOf(it.item)]) }));
+  hp={ rows }; HP_FILTERS={};
+  show("hped"); $("phase").textContent="Hacer pedido";
+  renderHped();
+}
+function hpVisible(){ return hp.rows.filter(r=>passesFilters(r,[...HP_COLS,HP_CAT,HP_PROV],HP_FILTERS)); }
+function hpCounter(){ const n=hp.rows.filter(r=>r.pedir>0).length; $("counter").textContent=n+(n===1?" ítem":" ítems")+" para pedir"; }
+function hpPaintBtn(id, key, label){ const b=$(id), f=HP_FILTERS[key];
+  b.textContent=label+": "+(!f?(key==="categoria"?"todas":"todos"):f.size===1?([...f][0]||"(vacías)"):(f.size+(key==="categoria"?" elegidas":" elegidos")))+" ▾";
+  b.classList.toggle("on",!!f); }
+function hpOpenFilter(col, btn){
+  const vals=[...new Set(hp.rows.map(col.get))].sort((a,b)=>col.key==="categoria"?((catIdx(a)-catIdx(b))||a.localeCompare(b,"es")):a.localeCompare(b,"es"));
+  openFilterPop(vals, HP_FILTERS[col.key], sel=>{ if(sel) HP_FILTERS[col.key]=sel; else delete HP_FILTERS[col.key]; renderHped(); }, btn);
+}
+function renderHped(){
+  const host=$("hped-table"); host.innerHTML="";
+  host.appendChild(el("thead",{}, el("tr",{}, ...HP_COLS.map(c=>thFilter(c,HP_FILTERS,hp.rows,renderHped)))));
+  hpPaintBtn("hp-catbtn","categoria","Categoría"); hpPaintBtn("hp-provbtn","proveedor","Proveedor");
+  const tb=el("tbody",{}); const vis=hpVisible();
+  vis.forEach(r=>{
+    const inp=el("input",{cls:"cell",type:"text",inputmode:"decimal",autocomplete:"off",value:r.pedir>0?fmt(r.pedir):"",placeholder:"—"});
+    inp.addEventListener("input",()=>{
+      let v=inp.value.replace(/[^0-9.,]/g,""); const k=v.search(/[.,]/);
+      if(k!==-1) v=v.slice(0,k+1)+v.slice(k+1).replace(/[.,]/g,""); inp.value=v;
+      r.pedir=num(v.replace(",",".")); hpCounter(); hpSave();
+    });
+    tb.appendChild(el("tr",{},
+      el("td",{cls:"ro",text:r.item}),
+      el("td",{cls:"ro soft",text:r.paquete||"—"}),
+      el("td",{cls:"numtd"}, inp)));
+  });
+  host.appendChild(tb);
+  const wrap=host.closest(".tbl-wrap"); let nr=wrap.querySelector(".norows"); if(nr) nr.remove();
+  if(!vis.length) wrap.appendChild(el("div",{cls:"norows",text:hp.rows.length?"Ningún ítem coincide con el filtro.":"No hay ítems. Revisá Configuración."}));
+  hpCounter();
+}
+function hpGrouped(){
+  const rows=hp.rows.filter(r=>r.pedir>0);
+  const ord=provOrderOf(hp.rows);
+  rows.sort((a,b)=>ord.indexOf(a.proveedor)-ord.indexOf(b.proveedor));
+  const m=new Map(); rows.forEach(r=>{ const k=r.proveedor||"—"; if(!m.has(k)) m.set(k,[]); m.get(k).push(r); });
+  return m;
+}
+function hpLine(r){ const q=fmt(r.pedir); return "- "+(r.paquete ? (q+" "+r.paquete+" de "+r.item) : (q+" "+r.item)); }
+function hpLines(arr){ return arr.map(hpLine).join("\n"); }
+function showHpedList(){
+  show("hpedlist"); $("phase").textContent="Listas de pedido";
+  const n=hp.rows.filter(r=>r.pedir>0).length; $("counter").textContent=n+(n===1?" ítem":" ítems");
+  renderTickets($("hp-tickets"), $("hp-copyall"), hpGrouped(), r=>r.pedir, hpLines, 'No pusiste nada para pedir.<br>Volvé y completá la columna Pedir.');
+}
+function hpCopyAll(){ const g=hpGrouped(); if(!g.size){ toast("Nada para copiar"); return; }
+  const b=[]; g.forEach((arr,prov)=>b.push(prov+":\n"+hpLines(arr)));
   copyText(b.join("\n\n"),ok=>toast(ok?"Copiado todo":"No se pudo copiar")); }
 
 /* ============================================================
@@ -1352,6 +1459,8 @@ function openSelect(col, idx, anchor){
 function goBack(){
   const cur=SCREENS.find(s=>!$(s).classList.contains("hidden"));
   if(cur==="count"){ count=null; show("home"); return; }
+  if(cur==="hped"){ show("home"); return; }
+  if(cur==="hpedlist"){ show("hped"); $("phase").textContent="Hacer pedido"; renderHped(); return; }
   if(cur==="save"){ show("count"); renderCountTable(); return; }
   if(cur==="reglist"){ show("home"); return; }
   if(cur==="regview"){ showRegList(); return; }
@@ -1364,6 +1473,16 @@ $("go-count").addEventListener("click",startCount);
 $("count-cancel").addEventListener("click",()=>{ count=null; show("home"); });
 $("count-save").addEventListener("click",goSave);
 $("ct-catbtn").addEventListener("click",openCatFilter);
+$("go-hped").addEventListener("click",startHped);
+$("hped-go").addEventListener("click",showHpedList);
+$("hp-copyall").addEventListener("click",hpCopyAll);
+$("hp-catbtn").addEventListener("click",()=>hpOpenFilter(HP_CAT,$("hp-catbtn")));
+$("hp-provbtn").addEventListener("click",()=>hpOpenFilter(HP_PROV,$("hp-provbtn")));
+$("hped-clear").addEventListener("click",()=>{ if(!hp||!hp.rows.some(r=>r.pedir>0)){ toast("No hay nada cargado"); return; }
+  confirmDialog("¿Borrar todas las cantidades del pedido?",()=>{ hp.rows.forEach(r=>r.pedir=0); hpSave(); renderHped(); },"Sí, borrar"); });
+$("hped").addEventListener("focusin",e=>{ if(e.target.tagName==="INPUT") $("hped").classList.add("typing"); });
+$("hped").addEventListener("focusout",()=>{ setTimeout(()=>{ const a=document.activeElement;
+  if(!(a && a.tagName==="INPUT" && $("hped").contains(a))) $("hped").classList.remove("typing"); },50); });
 $("count").addEventListener("focusin",e=>{ if(e.target.tagName==="INPUT") $("count").classList.add("typing"); });
 $("count").addEventListener("focusout",()=>{ setTimeout(()=>{ const a=document.activeElement;
   if(!(a && a.tagName==="INPUT" && $("count").contains(a))) $("count").classList.remove("typing"); },50); });
