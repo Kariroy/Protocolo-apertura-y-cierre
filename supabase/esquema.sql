@@ -152,6 +152,15 @@ create table public.stock_registro_items (
     references public.stock_registros(id) on delete cascade
 );
 
+-- 012: "Hacer pedido" — el pedido en curso, compartido. Una fila por ítem (item = nombre en minúsculas);
+-- cantidad en "Se compra en". Vaciar una celda borra la fila; "Borrar todo" borra todas.
+create table public.pedidos_borrador (
+  item text not null,
+  cantidad numeric not null default 0,
+  updated_at timestamp with time zone not null default now(),
+  constraint pedidos_borrador_pkey primary key (item)
+);
+
 
 -- ============ Guías ============
 
@@ -191,6 +200,7 @@ alter table public.mise_registros       enable row level security;
 alter table public.stock_items          enable row level security;
 alter table public.stock_registros      enable row level security;
 alter table public.stock_registro_items enable row level security;
+alter table public.pedidos_borrador     enable row level security;
 alter table public.guias_estado         enable row level security;
 alter table public.notas_prueba         enable row level security;
 
@@ -213,6 +223,8 @@ create policy "acceso publico stock_items" on public.stock_items
 create policy "acceso publico stock_registros" on public.stock_registros
   as permissive for all to anon using (true) with check (true);
 create policy "acceso publico stock_registro_items" on public.stock_registro_items
+  as permissive for all to anon using (true) with check (true);
+create policy "acceso publico pedidos_borrador" on public.pedidos_borrador
   as permissive for all to anon using (true) with check (true);
 create policy "acceso publico guias_estado" on public.guias_estado
   as permissive for all to anon using (true) with check (true);
