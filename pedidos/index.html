@@ -769,6 +769,8 @@ function show(scr){ closePopovers(); SCREENS.forEach(s=>$(s).classList.add("hidd
   // Hacer stock queda angosto también en compu (3 columnas: estirada, Ítem se come la pantalla)
   document.querySelector(".app").classList.toggle("wide", scr==="config" || scr==="regview");
   document.querySelector(".app").classList.toggle("cfgw", scr==="config");   // ⚙ todavía más ancha en compu
+  if((scr==="hped"||scr==="hpedlist") && hp && hp.live){ if(!hpPoll) hpPoll=setInterval(hpPollNow,4000); }
+  else if(hpPoll){ clearInterval(hpPoll); hpPoll=null; }
   if(scr==="count" && count && count.reg){ if(!livePoll) livePoll=setInterval(pollLive,LIVE_MS); }
   else if(livePoll){ clearInterval(livePoll); livePoll=null; }
 }
@@ -902,7 +904,7 @@ async function pollLive(){
       if(r._inp) r._inp.value = sn?fmt(q):""; } });
   if(changed) updateCountCounter();
 }
-document.addEventListener("visibilitychange",()=>{ if(!document.hidden) pollLive(); });
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ pollLive(); hpPollNow(); } });
 async function saveLive(){
   await flushCells();
   const reg=count.reg;
@@ -1095,8 +1097,9 @@ function copyAllPedidos(){ const g=pedidosGrouped(); if(!g.size){ toast("Nada pa
 
 /* ============================================================
    HACER PEDIDO — planilla donde se pone cuánto pedir (en "Se compra en")
-   y salen las listas por proveedor. El borrador queda en este dispositivo
-   (localStorage "pedidos:borrador") hasta que se borra.
+   y salen las listas por proveedor. El pedido en curso se guarda en la base
+   (pedidos_borrador, 012: compartido entre celulares y compu, en vivo) y además
+   en este dispositivo (localStorage "pedidos:borrador") por si no hay conexión.
    ============================================================ */
 const HP_KEY="pedidos:borrador";
 let hp=null;   // { rows:[{...item, pedir}] }
@@ -1109,17 +1112,35 @@ const HP_CAT={ key:"categoria", get:r=>r.categoria||"" }, HP_PROV={ key:"proveed
 function hpLoad(){ try{ return JSON.parse(localStorage.getItem(HP_KEY)||"{}")||{}; }catch(e){ return {}; } }
 function hpSave(){ if(!hp) return; const o={}; hp.rows.forEach(r=>{ if(r.pedir>0) o[keyOf(r.item)]=r.pedir; });
   try{ localStorage.setItem(HP_KEY, JSON.stringify(o)); }catch(e){} }
-function startHped(){
+let hpPoll=null; const hpTimers=new Map();
+async function hpFetch(){ return (await sb("GET","pedidos_borrador",{query:"select=item,cantidad"}))||[]; }
+async function startHped(){
   if(!items.length){ toast("No hay ítems cargados. Revisá Configuración."); return; }
-  const saved=hpLoad();
+  let saved=hpLoad(), live=false;
+  if(isLive()){ try{ const rows=await hpFetch(); saved={}; rows.forEach(x=>{ saved[x.item]=num(x.cantidad); }); live=true; }
+    catch(e){ toast("Sin pedido compartido: queda solo en este dispositivo"); } }
   const rows=items.slice().sort((a,b)=>(catIdx(a.categoria)-catIdx(b.categoria))||(a.position-b.position))
     .map(it=>({ categoria:it.categoria||"", proveedor:it.proveedor||"", item:it.item, paquete:it.paquete||"", pedir:num(saved[keyOf(it.item)]) }));
-  hp={ rows }; HP_FILTERS={};
+  hp={ rows, live }; HP_FILTERS={}; hpSave();
   show("hped"); $("phase").textContent="Hacer pedido";
   renderHped();
 }
 function hpVisible(){ return hp.rows.filter(r=>passesFilters(r,[...HP_COLS,HP_CAT,HP_PROV],HP_FILTERS)); }
-function hpCounter(){ const n=hp.rows.filter(r=>r.pedir>0).length; $("counter").textContent=n+(n===1?" ítem":" ítems")+" para pedir"; }
+function hpCounter(){ const n=hp.rows.filter(r=>r.pedir>0).length; $("counter").textContent=n+(n===1?" ítem":" ítems")+" para pedir"+(hp.live?" · en vivo":""); }
+// guardar una celda en la base (un rato después de dejar de escribir)
+function hpQueue(r){ if(!hp||!hp.live) return; r._t=Date.now(); clearTimeout(hpTimers.get(r)); hpTimers.set(r,setTimeout(()=>hpWrite(r),500)); }
+async function hpWrite(r){ hpTimers.delete(r); r._t=Date.now(); const k=keyOf(r.item);
+  try{ if(r.pedir>0) await sb("POST","pedidos_borrador",{ query:"on_conflict=item", body:[{ item:k, cantidad:r.pedir, updated_at:new Date().toISOString() }], prefer:"resolution=merge-duplicates" });
+       else await sb("DELETE","pedidos_borrador",{ query:"item=eq."+encodeURIComponent(k) }); }
+  catch(e){ toast("No se pudo guardar "+r.item+" (revisá la conexión)"); }
+  r._t=Date.now(); }
+// traer lo que cargan los demás (lo que uno está escribiendo manda)
+async function hpPollNow(){
+  if(!hp||!hp.live||document.hidden) return; let rows; try{ rows=await hpFetch(); }catch(e){ return; }
+  if(!hp) return; const m=new Map(rows.map(x=>[x.item,num(x.cantidad)])); let ch=false;
+  hp.rows.forEach(r=>{ if(hpTimers.has(r) || (r._t && Date.now()-r._t<6000) || document.activeElement===r._inp) return;
+    const v=m.get(keyOf(r.item))||0; if(v!==r.pedir){ r.pedir=v; ch=true; if(r._inp) r._inp.value=v>0?fmt(v):""; } });
+  if(ch){ hpCounter(); hpSave(); if(!$("hpedlist").classList.contains("hidden")) showHpedList(); } }
 function hpPaintBtn(id, key, label){ const b=$(id), f=HP_FILTERS[key];
   b.textContent=label+": "+(!f?(key==="categoria"?"todas":"todos"):f.size===1?([...f][0]||"(vacías)"):(f.size+(key==="categoria"?" elegidas":" elegidos")))+" ▾";
   b.classList.toggle("on",!!f); }
@@ -1137,8 +1158,9 @@ function renderHped(){
     inp.addEventListener("input",()=>{
       let v=inp.value.replace(/[^0-9.,]/g,""); const k=v.search(/[.,]/);
       if(k!==-1) v=v.slice(0,k+1)+v.slice(k+1).replace(/[.,]/g,""); inp.value=v;
-      r.pedir=num(v.replace(",",".")); hpCounter(); hpSave();
+      r.pedir=num(v.replace(",",".")); hpCounter(); hpSave(); hpQueue(r);
     });
+    r._inp=inp;
     tb.appendChild(el("tr",{},
       el("td",{cls:"ro",text:r.item}),
       el("td",{cls:"ro soft",text:r.paquete||"—"}),
@@ -1479,7 +1501,8 @@ $("hp-copyall").addEventListener("click",hpCopyAll);
 $("hp-catbtn").addEventListener("click",()=>hpOpenFilter(HP_CAT,$("hp-catbtn")));
 $("hp-provbtn").addEventListener("click",()=>hpOpenFilter(HP_PROV,$("hp-provbtn")));
 $("hped-clear").addEventListener("click",()=>{ if(!hp||!hp.rows.some(r=>r.pedir>0)){ toast("No hay nada cargado"); return; }
-  confirmDialog("¿Borrar todas las cantidades del pedido?",()=>{ hp.rows.forEach(r=>r.pedir=0); hpSave(); renderHped(); },"Sí, borrar"); });
+  confirmDialog("¿Borrar todas las cantidades del pedido? Se borra para todos.",async ()=>{ hp.rows.forEach(r=>{ r.pedir=0; clearTimeout(hpTimers.get(r)); hpTimers.delete(r); }); hpSave(); renderHped();
+    if(hp.live){ try{ await sb("DELETE","pedidos_borrador",{ query:"item=not.is.null" }); }catch(e){ toast("No se pudo borrar en la nube"); } } },"Sí, borrar"); });
 $("hped").addEventListener("focusin",e=>{ if(e.target.tagName==="INPUT") $("hped").classList.add("typing"); });
 $("hped").addEventListener("focusout",()=>{ setTimeout(()=>{ const a=document.activeElement;
   if(!(a && a.tagName==="INPUT" && $("hped").contains(a))) $("hped").classList.remove("typing"); },50); });
